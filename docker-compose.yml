@@ -1,0 +1,61 @@
+services:
+  web:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_SERVER=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=ryvin
+      - POSTGRES_PORT=5432
+      - SECRET_KEY=${SECRET_KEY:-supersecretkey}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=11520
+      - REFRESH_TOKEN_EXPIRE_MINUTES=43200
+    depends_on:
+      - db
+    networks:
+      - ryvin-network
+    restart: on-failure
+      
+  migrations:
+    build: .
+    # Use a bash script to handle migrations more safely
+    command: >
+      bash -c "python -m alembic current && 
+      python -m alembic upgrade head"
+    volumes:
+      - .:/app
+    environment:
+      - POSTGRES_SERVER=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=ryvin
+      - POSTGRES_PORT=5432
+    depends_on:
+      - db
+    networks:
+      - ryvin-network
+
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=ryvin
+    ports:
+      - "5432:5432"
+    networks:
+      - ryvin-network
+
+networks:
+  ryvin-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
