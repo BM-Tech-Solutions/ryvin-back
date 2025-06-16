@@ -13,13 +13,20 @@ class User(BaseModel):
     """
     User model for authentication and basic user information
     """
-    phone_number = Column(String, unique=True, index=True, nullable=False)
+    phone_number = Column(String, unique=True, index=True, nullable=True)
     email = Column(String, unique=True, index=True, nullable=True)
+    name = Column(String, nullable=True)
     is_verified = Column(Boolean, default=False, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     last_login = Column(DateTime, nullable=True)
     subscription_type = Column(String, default=SubscriptionType.FREE.value, nullable=False)
     subscription_expires_at = Column(DateTime, nullable=True)
+    
+    # Authentication related fields
+    hashed_password = Column(String, nullable=True)
+    verification_id = Column(String, nullable=True)  # For storing Firebase verification ID
+    provider = Column(String, nullable=True)  # For social login (e.g., 'google.com')
+    provider_user_id = Column(String, nullable=True)  # ID from the provider
     
     # Relationships
     profile = relationship("UserProfile", back_populates="user", uselist=False)

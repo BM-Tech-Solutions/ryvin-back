@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple
 import random
 import string
+import json
+import requests
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -19,25 +21,43 @@ class AuthService(BaseService):
     """
     Service for authentication-related operations
     """
-    def register_user(self, phone_number: str) -> User:
+    def send_otp(self, phone_number: str) -> Dict[str, Any]:
         """
-        Register a new user with phone number
+        Send OTP to user's phone number using Firebase Auth
+        Returns verification ID from Firebase
         """
         # Check if user already exists
         user_service = UserService(self.db)
         existing_user = user_service.get_user_by_phone(phone_number)
         
-        if existing_user:
-            if existing_user.is_verified:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="User with this phone number already exists"
-                )
-            # Return existing unverified user
-            return existing_user
+        # In a real implementation, we would integrate with Firebase Auth REST API
+        # to send the verification code
+        # For now, we'll simulate it with a mock verification ID
+        verification_id = f"firebase-{phone_number}-{self.generate_verification_code()}"
         
-        # Create new user
-        return user_service.create_user(phone_number)
+        # Store verification ID if user exists
+        if existing_user:
+            existing_user.verification_id = verification_id
+            self.db.commit()
+            self.db.refresh(existing_user)
+            
+            return {
+                "message": "OTP sent successfully",
+                "verification_id": verification_id,
+                "user_exists": True
+            }
+        
+        # Create a new unverified user
+        new_user = user_service.create_user(phone_number)
+        new_user.verification_id = verification_id
+        self.db.commit()
+        self.db.refresh(new_user)
+        
+        return {
+            "message": "OTP sent successfully",
+            "verification_id": verification_id,
+            "user_exists": False
+        }
     
     def generate_verification_code(self) -> str:
         """
@@ -55,15 +75,52 @@ class AuthService(BaseService):
         # In production, integrate with SMS service like Twilio
         return True
     
-    def verify_user(self, phone_number: str, code: str) -> User:
+    def verify_otp(self, verification_id: str, code: str) -> Dict[str, Any]:
         """
-        Verify user with verification code
+        Verify OTP code and return user information
         """
-        # In a real app, we would check the code against what was sent
-        # For now, we'll just verify the user
+        # Find user with this verification ID
+        user = self.db.query(User).filter(User.verification_id == verification_id).first()
         
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Invalid verification ID"
+            )
+        
+        # In a real implementation, we would validate the OTP with Firebase Auth
+        # For now, we'll accept any 6-digit code
+        if not code or len(code) != 6 or not code.isdigit():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid verification code"
+            )
+        
+        # Check if user is already verified (has completed registration)
         user_service = UserService(self.db)
-        user = user_service.get_user_by_phone(phone_number)
+        user_exists = user.is_verified and user.name is not None and user.email is not None
+        
+        # Mark phone as verified
+        user.is_verified = True
+        user.verification_id = None  # Clear verification ID after successful verification
+        self.db.commit()
+        self.db.refresh(user)
+        
+        # Create tokens
+        tokens = self.create_tokens(user)
+        
+        return {
+            "user_exists": user_exists,
+            "user_id": str(user.id),
+            **tokens
+        }
+    
+    def register_user(self, user_id: UUID, name: str, email: str) -> Dict[str, Any]:
+        """
+        Complete user registration with name and email
+        """
+        user_service = UserService(self.db)
+        user = user_service.get_user_by_id(user_id)
         
         if not user:
             raise HTTPException(
@@ -71,55 +128,34 @@ class AuthService(BaseService):
                 detail="User not found"
             )
         
-        # For demo purposes, accept any 6-digit code
-        if not code or len(code) != 6 or not code.isdigit():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid verification code"
-            )
-        
-        return user_service.verify_user(user)
-    
-    def authenticate_user(self, phone_number: str, password: str = None) -> User:
-        """
-        Authenticate a user by phone number and password
-        """
-        user_service = UserService(self.db)
-        user = user_service.get_user_by_phone(phone_number)
-        
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid credentials"
-            )
-        
-        if not user.is_active:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User is inactive"
-            )
-        
         if not user.is_verified:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User is not verified"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Phone number not verified"
             )
         
-        # If password is set and provided, verify it
-        if user.hashed_password and password:
-            if not verify_password(password, user.hashed_password):
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid credentials"
-                )
-        elif user.hashed_password and not password:
+        # Check if email is already in use
+        existing_email_user = user_service.get_user_by_email(email)
+        if existing_email_user and existing_email_user.id != user.id:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Password required"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already in use"
             )
         
-        # Update last login
-        return user_service.update_last_login(user)
+        # Update user information
+        user.name = name
+        user.email = email
+        self.db.commit()
+        self.db.refresh(user)
+        
+        # Create tokens
+        tokens = self.create_tokens(user)
+        
+        return {
+            "message": "User registered successfully",
+            "user_id": str(user.id),
+            **tokens
+        }
     
     def create_tokens(self, user: User) -> Dict[str, str]:
         """
@@ -197,3 +233,85 @@ class AuthService(BaseService):
             return True
         
         return False
+        
+    def social_login(self, access_token: str, provider: str) -> Dict[str, Any]:
+        """
+        Handle social login (Google)
+        """
+        if provider != "google.com":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unsupported provider"
+            )
+        
+        # Verify the token with Google
+        user_info = self._verify_google_token(access_token)
+        
+        if not user_info:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid access token"
+            )
+        
+        # Check if user exists by provider ID
+        user = self.db.query(User).filter(
+            User.provider == provider,
+            User.provider_user_id == user_info["sub"]
+        ).first()
+        
+        user_service = UserService(self.db)
+        user_exists = True
+        
+        if not user:
+            # Check if user exists by email
+            user = user_service.get_user_by_email(user_info["email"])
+            
+            if not user:
+                # Create new user
+                user = User(
+                    email=user_info["email"],
+                    name=user_info["name"],
+                    is_active=True,
+                    is_verified=True,
+                    provider=provider,
+                    provider_user_id=user_info["sub"]
+                )
+                self.db.add(user)
+                self.db.commit()
+                self.db.refresh(user)
+                user_exists = False
+            else:
+                # Update existing user with provider info
+                user.provider = provider
+                user.provider_user_id = user_info["sub"]
+                self.db.commit()
+                self.db.refresh(user)
+        
+        # Update last login
+        user = user_service.update_last_login(user)
+        
+        # Create tokens
+        tokens = self.create_tokens(user)
+        
+        return {
+            "user_exists": user_exists,
+            "user_id": str(user.id),
+            **tokens
+        }
+        
+    def _verify_google_token(self, access_token: str) -> Optional[Dict[str, Any]]:
+        """
+        Verify Google access token and get user info
+        """
+        try:
+            # In a real implementation, we would verify the token with Google
+            # https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=YOUR_TOKEN
+            response = requests.get(
+                f"https://www.googleapis.com/oauth2/v3/tokeninfo?access_token={access_token}"
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            return None
+        except Exception:
+            return None

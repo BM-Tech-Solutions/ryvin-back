@@ -1,6 +1,7 @@
 services:
   web:
     build: .
+    # Use the entrypoint script with web service
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - .:/app
@@ -16,17 +17,15 @@ services:
       - ACCESS_TOKEN_EXPIRE_MINUTES=11520
       - REFRESH_TOKEN_EXPIRE_MINUTES=43200
     depends_on:
-      - db
+      - migrations
     networks:
       - ryvin-network
     restart: on-failure
       
   migrations:
     build: .
-    # Use a bash script to handle migrations more safely
-    command: >
-      bash -c "python -m alembic current && 
-      python -m alembic upgrade head"
+    # Use the entrypoint script with migrations parameter
+    command: sh /app/docker-entrypoint.sh migrations
     volumes:
       - .:/app
     environment:

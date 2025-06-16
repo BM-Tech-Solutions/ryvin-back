@@ -13,18 +13,18 @@ class Settings(BaseSettings):
     VERSION: str = "0.1.0"
     
     # SECURITY
-    SECRET_KEY: str = secrets.token_urlsafe(32)
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
-    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 30  # 30 days
+    SECRET_KEY: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  # Default to 30 minutes if not specified
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # Default to 7 days if not specified
     
     # CORS
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
     
     # DATABASE
-    POSTGRES_SERVER: str = "localhost"
-    POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "postgres"
-    POSTGRES_DB: str = "ryvin"
+    POSTGRES_SERVER: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_DB: str
     POSTGRES_PORT: str = "5432"
     DATABASE_URI: Optional[PostgresDsn] = None
 
@@ -63,6 +63,21 @@ class Settings(BaseSettings):
     S3_ACCESS_KEY: Optional[str] = None
     S3_SECRET_KEY: Optional[str] = None
     S3_REGION: Optional[str] = None
+    
+    # Firebase Authentication (for Phone OTP)
+    FIREBASE_API_KEY: Optional[str] = None
+    FIREBASE_AUTH_DOMAIN: Optional[str] = None
+    FIREBASE_PROJECT_ID: Optional[str] = None
+    
+    # Google OAuth (for Social Login)
+    GOOGLE_CLIENT_ID: Optional[str] = None
+    GOOGLE_CLIENT_SECRET: Optional[str] = None
+    
+    # JWT Authentication
+    JWT_SECRET_KEY: Optional[str] = None
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
     # RATE LIMITING
     RATE_LIMIT_PER_MINUTE: int = 100

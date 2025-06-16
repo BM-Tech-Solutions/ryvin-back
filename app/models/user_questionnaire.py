@@ -107,7 +107,7 @@ class UserQuestionnaire(BaseModel):
     completed_at = Column(DateTime, nullable=True)
     
     # Relationships
-    user = relationship("User", back_populates="questionnaire")
+    user = relationship("User", back_populates="questionnaire", foreign_keys=[user_id])
     
     def __repr__(self):
         return f"<UserQuestionnaire {self.id}: User {self.user_id}>"

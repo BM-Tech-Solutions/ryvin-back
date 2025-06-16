@@ -1,7 +1,9 @@
-from typing import Any
+from typing import Any, Dict
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -11,75 +13,65 @@ from app.models.user import User
 from app.schemas.token import Token
 from app.services.auth_service import AuthService
 
+
+# Request models
+class SendOTPRequest(BaseModel):
+    phone_number: str
+
+
+class VerifyOTPRequest(BaseModel):
+    verification_id: str
+    code: str
+
+
+class RegisterUserRequest(BaseModel):
+    user_id: UUID
+    name: str
+    email: EmailStr
+
+
+class SocialLoginRequest(BaseModel):
+    access_token: str
+    provider: str = Field(..., description="Provider name, e.g. 'google.com'")
+
+
 router = APIRouter()
 
 
-@router.post("/register", status_code=status.HTTP_201_CREATED)
-def register(
-    phone_number: str,
+@router.post("/send-otp", status_code=status.HTTP_200_OK)
+def send_otp(
+    request: SendOTPRequest,
     db: Session = Depends(get_db)
-) -> Any:
+) -> Dict[str, Any]:
     """
-    Register a new user with phone number
+    Send OTP to user's phone number
     """
     auth_service = AuthService(db)
-    
-    # Register user
-    user = auth_service.register_user(phone_number)
-    
-    # Generate verification code
-    verification_code = auth_service.generate_verification_code()
-    
-    # Send SMS verification
-    auth_service.send_verification_code(phone_number, verification_code)
-    
-    return {
-        "message": "User registered successfully. Verification code sent.",
-        "user_id": user.id,
-        "verification_code": verification_code  # In production, don't return this
-    }
+    return auth_service.send_otp(request.phone_number)
 
 
 @router.post("/verify", status_code=status.HTTP_200_OK)
-def verify_phone(
-    phone_number: str,
-    verification_code: str,
+def verify_otp(
+    request: VerifyOTPRequest,
     db: Session = Depends(get_db)
-) -> Any:
+) -> Dict[str, Any]:
     """
-    Verify user's phone number with verification code
+    Verify OTP code and return user information
     """
     auth_service = AuthService(db)
-    
-    # Verify user with code
-    user = auth_service.verify_user(phone_number, verification_code)
-    
-    # Create tokens
-    tokens = auth_service.create_tokens(user)
-    
-    return {
-        "message": "Phone number verified successfully",
-        **tokens
-    }
+    return auth_service.verify_otp(request.verification_id, request.code)
 
 
-@router.post("/login", response_model=Token)
-def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
+@router.post("/register", status_code=status.HTTP_201_CREATED)
+def register_user(
+    request: RegisterUserRequest,
     db: Session = Depends(get_db)
-) -> Any:
+) -> Dict[str, Any]:
     """
-    OAuth2 compatible token login, get an access token for future requests
+    Complete user registration with name and email
     """
     auth_service = AuthService(db)
-    
-    # Authenticate user
-    user = auth_service.authenticate_user(form_data.username, form_data.password)
-    
-    # Create tokens
-    tokens = auth_service.create_tokens(user)
-    
-    return tokens
+    return auth_service.register_user(request.user_id, request.name, request.email)
 
 
 @router.post("/refresh", response_model=Token)
@@ -123,3 +115,15 @@ def logout(
         return {"message": "Logged out successfully"}
     else:
         return {"message": "Token already revoked or not found"}
+
+
+@router.post("/social-login", status_code=status.HTTP_200_OK)
+def social_login(
+    request: SocialLoginRequest,
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Handle social login (Google)
+    """
+    auth_service = AuthService(db)
+    return auth_service.social_login(request.access_token, request.provider)

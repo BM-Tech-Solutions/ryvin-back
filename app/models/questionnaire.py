@@ -117,7 +117,7 @@ class Questionnaire(BaseModel):
     completed_at = Column(DateTime, nullable=True)
     
     # Relationships
-    user = relationship("User", back_populates="questionnaire")
+    user = relationship("User", foreign_keys=[user_id])
     
     def is_complete(self) -> bool:
         """Check if the questionnaire is complete"""
