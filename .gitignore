@@ -48,6 +48,11 @@ docker-compose.override.yml
 *.dump
 postgres-data/
 
+# Firebase
+firebase-credentials.json
+*.json.key
+*-firebase-adminsdk-*.json
+
 # Alembic
 alembic/versions/__pycache__/
 
