@@ -68,6 +68,7 @@ class Settings(BaseSettings):
     FIREBASE_API_KEY: Optional[str] = None
     FIREBASE_AUTH_DOMAIN: Optional[str] = None
     FIREBASE_PROJECT_ID: Optional[str] = None
+    FIREBASE_SERVICE_ACCOUNT_PATH: Optional[str] = None
     
     # Google OAuth (for Social Login)
     GOOGLE_CLIENT_ID: Optional[str] = None
@@ -81,6 +82,9 @@ class Settings(BaseSettings):
     
     # RATE LIMITING
     RATE_LIMIT_PER_MINUTE: int = 100
+    
+    # API SECURITY
+    API_TOKEN: str   
 
 
 settings = Settings()

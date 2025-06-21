@@ -1,317 +1,656 @@
+"""Authentication Service
+--------------------
+Service for Firebase authentication operations with simplified flow.
+"""
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, Tuple
+from typing import Dict, Any, Optional
+import requests
+import json
+import uuid
 import random
 import string
-import json
-import requests
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
+from jose import jwt, JWTError
+from firebase_admin import auth as firebase_auth, credentials, initialize_app
 
 from app.core.config import settings
-from app.core.security import create_access_token, create_refresh_token, verify_password
+from app.core.security import create_access_token, create_refresh_token
 from app.models.user import User
 from app.models.token import RefreshToken
-from .base_service import BaseService
-from .user_service import UserService
+from app.services.base_service import BaseService
+from app.services.user_service import UserService
+
+
+# Initialize Firebase Admin SDK
+firebase_app = None
+
+if settings.FIREBASE_SERVICE_ACCOUNT_PATH:
+    try:
+        import os
+        # Check if file exists
+        if os.path.exists(settings.FIREBASE_SERVICE_ACCOUNT_PATH):
+            firebase_cred = credentials.Certificate(settings.FIREBASE_SERVICE_ACCOUNT_PATH)
+            firebase_app = initialize_app(firebase_cred)
+            print("Firebase Admin SDK initialized successfully")
+        else:
+            print(f"Firebase credentials file not found at: {settings.FIREBASE_SERVICE_ACCOUNT_PATH}")
+    except Exception as e:
+        print(f"Firebase initialization error: {str(e)}")
+        # Continue without Firebase initialization for development environments
+else:
+    print("FIREBASE_SERVICE_ACCOUNT_PATH not set in environment variables")
+    # Continue without Firebase initialization
 
 
 class AuthService(BaseService):
     """
-    Service for authentication-related operations
+    Service for authentication operations with simplified flow
     """
-    def send_otp(self, phone_number: str) -> Dict[str, Any]:
+    
+    def verify_user_exists(self, phone_number: str) -> Dict[str, Any]:
         """
-        Send OTP to user's phone number using Firebase Auth
-        Returns verification ID from Firebase
+        Verify if a user exists with the given phone number
         """
-        # Check if user already exists
-        user_service = UserService(self.db)
-        existing_user = user_service.get_user_by_phone(phone_number)
-        
-        # In a real implementation, we would integrate with Firebase Auth REST API
-        # to send the verification code
-        # For now, we'll simulate it with a mock verification ID
-        verification_id = f"firebase-{phone_number}-{self.generate_verification_code()}"
-        
-        # Store verification ID if user exists
-        if existing_user:
-            existing_user.verification_id = verification_id
-            self.db.commit()
-            self.db.refresh(existing_user)
+        try:
+            # Check if user exists in Firebase
+            try:
+                firebase_user = firebase_auth.get_user_by_phone_number(phone_number)
+                firebase_exists = True
+            except firebase_auth.UserNotFoundError:
+                firebase_exists = False
+            
+            # Check if user exists in our database
+            user = self.db.query(User).filter(User.phone == phone_number).first()
+            
+            response = {
+                "exists": firebase_exists or user is not None,
+                "phone_number": phone_number
+            }
+            
+            if user:
+                response["user_id"] = str(user.id)
+            
+            return response
+            
+        except Exception as e:
+            print(f"Error in verify_user_exists: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to verify user: {str(e)}"
+            )
+    
+    def verify_phone_token(self, firebase_token: str) -> Dict[str, Any]:
+        """
+        Verify phone number with Firebase ID token (only verification, no user creation)
+        """
+        try:
+            # Verify Firebase token
+            decoded_token = firebase_auth.verify_id_token(firebase_token)
+            firebase_uid = decoded_token.get("uid")
+            phone_number = decoded_token.get("phone_number")
+            
+            if not firebase_uid or not phone_number:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid Firebase token: missing uid or phone_number"
+                )
+            
+            # Get Firebase user to verify it exists
+            firebase_user = firebase_auth.get_user(firebase_uid)
             
             return {
-                "message": "OTP sent successfully",
-                "verification_id": verification_id,
-                "user_exists": True
+                "firebase_uid": firebase_uid,
+                "phone_number": phone_number,
+                "is_verified": True
             }
-        
-        # Create a new unverified user
-        new_user = user_service.create_user(phone_number)
-        new_user.verification_id = verification_id
-        self.db.commit()
-        self.db.refresh(new_user)
-        
-        return {
-            "message": "OTP sent successfully",
-            "verification_id": verification_id,
-            "user_exists": False
-        }
-    
-    def generate_verification_code(self) -> str:
-        """
-        Generate a 6-digit verification code
-        """
-        return ''.join(random.choices(string.digits, k=6))
-    
-    def send_verification_code(self, phone_number: str, code: str) -> bool:
-        """
-        Send verification code via SMS
-        In a real application, this would integrate with an SMS service
-        """
-        # In development, just print the code
-        print(f"Sending verification code {code} to {phone_number}")
-        # In production, integrate with SMS service like Twilio
-        return True
-    
-    def verify_otp(self, verification_id: str, code: str) -> Dict[str, Any]:
-        """
-        Verify OTP code and return user information
-        """
-        # Find user with this verification ID
-        user = self.db.query(User).filter(User.verification_id == verification_id).first()
-        
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Invalid verification ID"
-            )
-        
-        # In a real implementation, we would validate the OTP with Firebase Auth
-        # For now, we'll accept any 6-digit code
-        if not code or len(code) != 6 or not code.isdigit():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid verification code"
-            )
-        
-        # Check if user is already verified (has completed registration)
-        user_service = UserService(self.db)
-        user_exists = user.is_verified and user.name is not None and user.email is not None
-        
-        # Mark phone as verified
-        user.is_verified = True
-        user.verification_id = None  # Clear verification ID after successful verification
-        self.db.commit()
-        self.db.refresh(user)
-        
-        # Create tokens
-        tokens = self.create_tokens(user)
-        
-        return {
-            "user_exists": user_exists,
-            "user_id": str(user.id),
-            **tokens
-        }
-    
-    def register_user(self, user_id: UUID, name: str, email: str) -> Dict[str, Any]:
-        """
-        Complete user registration with name and email
-        """
-        user_service = UserService(self.db)
-        user = user_service.get_user_by_id(user_id)
-        
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
-        
-        if not user.is_verified:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Phone number not verified"
-            )
-        
-        # Check if email is already in use
-        existing_email_user = user_service.get_user_by_email(email)
-        if existing_email_user and existing_email_user.id != user.id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already in use"
-            )
-        
-        # Update user information
-        user.name = name
-        user.email = email
-        self.db.commit()
-        self.db.refresh(user)
-        
-        # Create tokens
-        tokens = self.create_tokens(user)
-        
-        return {
-            "message": "User registered successfully",
-            "user_id": str(user.id),
-            **tokens
-        }
-    
-    def create_tokens(self, user: User) -> Dict[str, str]:
-        """
-        Create access and refresh tokens for user
-        """
-        access_token = create_access_token(
-            data={"sub": str(user.id)}
-        )
-        
-        refresh_token = create_refresh_token(
-            data={"sub": str(user.id)}
-        )
-        
-        # Store refresh token in database
-        db_token = RefreshToken(
-            user_id=user.id,
-            token=refresh_token,
-            expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-        )
-        self.db.add(db_token)
-        self.db.commit()
-        
-        return {
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "token_type": "bearer"
-        }
-    
-    def refresh_tokens(self, refresh_token: str) -> Dict[str, str]:
-        """
-        Create new access and refresh tokens using a valid refresh token
-        """
-        # Find the token in the database
-        db_token = self.db.query(RefreshToken).filter(
-            RefreshToken.token == refresh_token,
-            RefreshToken.expires_at > datetime.utcnow(),
-            RefreshToken.is_revoked == False
-        ).first()
-        
-        if not db_token:
+            
+        except firebase_auth.InvalidIdTokenError as e:
+            print(f"Invalid Firebase token: {e}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired refresh token"
+                detail=f"Invalid Firebase token: {str(e)}"
             )
-        
-        # Revoke the old token
-        db_token.is_revoked = True
-        self.db.commit()
-        
-        # Get the user
-        user_service = UserService(self.db)
-        user = user_service.get_user_by_id(db_token.user_id)
-        
-        if not user or not user.is_active:
+        except Exception as e:
+            print(f"Error in verify_phone_token: {e}")
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User is inactive or deleted"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to verify phone token: {str(e)}"
             )
-        
-        # Create new tokens
-        return self.create_tokens(user)
     
-    def logout(self, refresh_token: str) -> bool:
+    def register_user(self, firebase_token: str, device_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Revoke a refresh token to logout
+        Register a new user with Firebase token after verification
         """
-        db_token = self.db.query(RefreshToken).filter(
-            RefreshToken.token == refresh_token,
-            RefreshToken.is_revoked == False
-        ).first()
-        
-        if db_token:
-            db_token.is_revoked = True
+        try:
+            # Verify Firebase token
+            decoded_token = firebase_auth.verify_id_token(firebase_token)
+            firebase_uid = decoded_token.get("uid")
+            phone_number = decoded_token.get("phone_number")
+            
+            if not firebase_uid or not phone_number:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid Firebase token: missing uid or phone_number"
+                )
+            
+            # Check if user already exists
+            user = self.db.query(User).filter(User.phone == phone_number).first()
+            if user:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="User with this phone number already exists"
+                )
+            
+            # Create new user with null profile fields
+            user = User(
+                phone=phone_number,
+                firebase_uid=firebase_uid,
+                is_verified=True,
+                last_login=datetime.utcnow(),
+                name=None,
+                email=None,
+                profile_image=None
+            )
+            
+            # Add device info if provided
+            if device_info:
+                if "device_id" in device_info:
+                    user.device_id = device_info.get("device_id")
+                if "platform" in device_info:
+                    user.platform = device_info.get("platform")
+            
+            self.db.add(user)
             self.db.commit()
-            return True
-        
-        return False
-        
-    def social_login(self, access_token: str, provider: str) -> Dict[str, Any]:
-        """
-        Handle social login (Google)
-        """
-        if provider != "google.com":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Unsupported provider"
+            self.db.refresh(user)
+            
+            # Generate tokens
+            access_token = create_access_token(subject=str(user.id))
+            refresh_token = self._generate_unique_refresh_token(str(user.id))
+            
+            # Store the refresh token in the database
+            expires_at = datetime.utcnow() + timedelta(days=30)
+            db_refresh_token = RefreshToken(
+                id=uuid.uuid4(),
+                user_id=user.id,
+                token=refresh_token,
+                expires_at=expires_at,
+                is_revoked=False
             )
-        
-        # Verify the token with Google
-        user_info = self._verify_google_token(access_token)
-        
-        if not user_info:
+            self.db.add(db_refresh_token)
+            self.db.commit()
+            
+            return {
+                "user_id": str(user.id),
+                "phone_number": phone_number,
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "token_type": "bearer"
+            }
+            
+        except firebase_auth.InvalidIdTokenError as e:
+            print(f"Invalid Firebase token: {e}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid access token"
+                detail=f"Invalid Firebase token: {str(e)}"
             )
-        
-        # Check if user exists by provider ID
-        user = self.db.query(User).filter(
-            User.provider == provider,
-            User.provider_user_id == user_info["sub"]
-        ).first()
-        
-        user_service = UserService(self.db)
-        user_exists = True
-        
-        if not user:
-            # Check if user exists by email
-            user = user_service.get_user_by_email(user_info["email"])
+        except Exception as e:
+            print(f"Error in register_user: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to register user: {str(e)}"
+            )
+    
+    def login_user(self, firebase_token: str, device_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Login with Firebase token
+        """
+        try:
+            # Verify Firebase token
+            decoded_token = firebase_auth.verify_id_token(firebase_token)
+            firebase_uid = decoded_token.get("uid")
+            phone_number = decoded_token.get("phone_number")
+            
+            if not firebase_uid or not phone_number:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid Firebase token: missing uid or phone_number"
+                )
+            
+            # Check if user exists in our database
+            user = self.db.query(User).filter(User.phone == phone_number).first()
+            
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="User not found. Please register first."
+                )
+            
+            # Update user's Firebase UID if it has changed
+            if user.firebase_uid != firebase_uid:
+                user.firebase_uid = firebase_uid
+            
+            # Update last login and device info
+            user.last_login = datetime.utcnow()
+            
+            if device_info:
+                if "device_id" in device_info:
+                    user.device_id = device_info.get("device_id")
+                if "platform" in device_info:
+                    user.platform = device_info.get("platform")
+            
+            self.db.commit()
+            self.db.refresh(user)
+            
+            # Check if profile is complete
+            profile_complete = user.name is not None and user.email is not None
+            
+            # Generate tokens
+            access_token = create_access_token(subject=str(user.id))
+            refresh_token = self._generate_unique_refresh_token(str(user.id))
+            
+            # Store the refresh token in the database
+            expires_at = datetime.utcnow() + timedelta(days=30)
+            
+            # Check if a refresh token already exists for this user
+            existing_token = self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
+            
+            if existing_token:
+                # Update existing token
+                existing_token.token = refresh_token
+                existing_token.expires_at = expires_at
+                existing_token.is_revoked = False
+            else:
+                # Create new refresh token record
+                db_refresh_token = RefreshToken(
+                    id=uuid.uuid4(),
+                    user_id=user.id,
+                    token=refresh_token,
+                    expires_at=expires_at,
+                    is_revoked=False
+                )
+                self.db.add(db_refresh_token)
+            
+            self.db.commit()
+            
+            return {
+                "user_id": str(user.id),
+                "phone_number": user.phone,
+                "name": user.name,
+                "email": user.email,
+                "profile_image": user.profile_image,
+                "profile_complete": profile_complete,
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "token_type": "bearer"
+            }
+            
+        except firebase_auth.InvalidIdTokenError as e:
+            print(f"Invalid Firebase token: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid Firebase token: {str(e)}"
+            )
+        except Exception as e:
+            print(f"Error in login_user: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to login user: {str(e)}"
+            )
+    
+    def verify_phone(self, firebase_token: str, device_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Verify phone number with Firebase ID token and create or update user
+        """
+        try:
+            # Verify Firebase token
+            decoded_token = firebase_auth.verify_id_token(firebase_token)
+            firebase_uid = decoded_token.get("uid")
+            phone_number = decoded_token.get("phone_number")
+            
+            if not firebase_uid or not phone_number:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid Firebase token: missing uid or phone_number"
+                )
+            
+            # Get Firebase user
+            firebase_user = firebase_auth.get_user(firebase_uid)
+            
+            # Check if user exists in our database
+            user = self.db.query(User).filter(User.phone == phone_number).first()
+            
+            user_exists = user is not None
+            profile_complete = user is not None and user.name is not None and user.email is not None
             
             if not user:
                 # Create new user
                 user = User(
-                    email=user_info["email"],
-                    name=user_info["name"],
-                    is_active=True,
+                    phone=phone_number,
+                    firebase_uid=firebase_uid,
                     is_verified=True,
-                    provider=provider,
-                    provider_user_id=user_info["sub"]
+                    last_login=datetime.utcnow()
                 )
+                
+                # Add device info if provided
+                if device_info:
+                    if "device_id" in device_info:
+                        user.device_id = device_info.get("device_id")
+                    if "platform" in device_info:
+                        user.platform = device_info.get("platform")
+                
                 self.db.add(user)
                 self.db.commit()
                 self.db.refresh(user)
-                user_exists = False
             else:
-                # Update existing user with provider info
-                user.provider = provider
-                user.provider_user_id = user_info["sub"]
+                # Update existing user
+                user.firebase_uid = firebase_uid
+                user.is_verified = True
+                user.last_login = datetime.utcnow()
+                
+                # Update device info if provided
+                if device_info:
+                    if "device_id" in device_info:
+                        user.device_id = device_info.get("device_id")
+                    if "platform" in device_info:
+                        user.platform = device_info.get("platform")
+                
                 self.db.commit()
                 self.db.refresh(user)
-        
-        # Update last login
-        user = user_service.update_last_login(user)
-        
-        # Create tokens
-        tokens = self.create_tokens(user)
-        
-        return {
-            "user_exists": user_exists,
-            "user_id": str(user.id),
-            **tokens
-        }
-        
-    def _verify_google_token(self, access_token: str) -> Optional[Dict[str, Any]]:
+            
+            # Generate tokens
+            access_token = create_access_token(subject=str(user.id))
+            refresh_token = self._generate_unique_refresh_token(str(user.id))
+            
+            # Store the refresh token in the database
+            expires_at = datetime.utcnow() + timedelta(days=30)
+            
+            # Check if a refresh token already exists for this user
+            existing_token = self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
+            
+            if existing_token:
+                # Update existing token
+                existing_token.token = refresh_token
+                existing_token.expires_at = expires_at
+                existing_token.is_revoked = False
+            else:
+                # Create new refresh token record
+                db_refresh_token = RefreshToken(
+                    id=uuid.uuid4(),
+                    user_id=user.id,
+                    token=refresh_token,
+                    expires_at=expires_at,
+                    is_revoked=False
+                )
+                self.db.add(db_refresh_token)
+            
+            self.db.commit()
+            
+            response = {
+                "user_exists": user_exists,
+                "profile_complete": profile_complete,
+                "user_id": str(user.id),
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "token_type": "bearer"
+            }
+            
+            # Include user data if profile is complete
+            if profile_complete:
+                response["user"] = {
+                    "id": str(user.id),
+                    "phone": user.phone,
+                    "name": user.name,
+                    "email": user.email,
+                    "is_verified": user.is_verified,
+                    "created_at": user.created_at.isoformat(),
+                    "last_login": user.last_login.isoformat() if user.last_login else None
+                }
+            
+            return response
+            
+        except firebase_auth.InvalidIdTokenError as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid Firebase token: {str(e)}"
+            )
+        except Exception as e:
+            print(f"Error in verify_phone: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to verify phone: {str(e)}"
+            )
+    
+    def complete_profile(
+        self,
+        access_token: str,
+        name: str,
+        email: str,
+        profile_image: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
-        Verify Google access token and get user info
+        Complete user profile after phone verification
         """
         try:
-            # In a real implementation, we would verify the token with Google
-            # https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=YOUR_TOKEN
-            response = requests.get(
-                f"https://www.googleapis.com/oauth2/v3/tokeninfo?access_token={access_token}"
+            # Verify access token
+            try:
+                payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=["HS256"])
+                
+                # Check token type
+                if payload.get("type") != "access":
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Invalid token type"
+                    )
+                    
+                user_id = UUID(payload.get("sub"))
+                
+            except (JWTError, ValueError) as e:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=f"Invalid or expired token: {str(e)}"
+                )
+            
+            # Get user by ID
+            user = self.db.query(User).filter(User.id == user_id).first()
+            
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="User not found"
+                )
+            
+            if not user.is_verified:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Phone number not verified"
+                )
+            
+            # Check if email is already in use
+            existing_email_user = self.db.query(User).filter(
+                User.email == email,
+                User.id != user.id
+            ).first()
+            
+            if existing_email_user:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email already in use"
+                )
+            
+            # Update user information
+            user.name = name
+            user.email = email
+            if profile_image:
+                user.profile_image = profile_image
+            
+            self.db.commit()
+            self.db.refresh(user)
+            
+            # Generate new tokens
+            access_token = create_access_token(subject=str(user.id))
+            refresh_token = self._generate_unique_refresh_token(str(user.id))
+            
+            # Store the refresh token in the database
+            expires_at = datetime.utcnow() + timedelta(days=30)
+            
+            # Check if a refresh token already exists for this user
+            existing_token = self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
+            
+            if existing_token:
+                # Update existing token
+                existing_token.token = refresh_token
+                existing_token.expires_at = expires_at
+                existing_token.is_revoked = False
+            else:
+                # Create new refresh token record
+                db_refresh_token = RefreshToken(
+                    id=uuid.uuid4(),
+                    user_id=user.id,
+                    token=refresh_token,
+                    expires_at=expires_at,
+                    is_revoked=False
+                )
+                self.db.add(db_refresh_token)
+            
+            self.db.commit()
+            
+            return {
+                "user_id": str(user.id),
+                "name": user.name,
+                "email": user.email,
+                "profile_image": user.profile_image,
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "token_type": "bearer"
+            }
+            
+        except Exception as e:
+            print(f"Error in complete_profile: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to complete profile: {str(e)}"
+            )
+    
+    def refresh_tokens(self, refresh_token: str) -> Dict[str, Any]:
+        """
+        Create new access and refresh tokens using a valid refresh token
+        """
+        try:
+            # Find the refresh token in the database
+            db_refresh_token = self.db.query(RefreshToken).filter(
+                RefreshToken.token == refresh_token,
+                RefreshToken.is_revoked == False,
+                RefreshToken.expires_at > datetime.utcnow()
+            ).first()
+            
+            if not db_refresh_token:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid or expired refresh token"
+                )
+            
+            # Create new tokens
+            access_token = create_access_token(subject=str(db_refresh_token.user_id))
+            new_refresh_token = self._generate_unique_refresh_token(str(db_refresh_token.user_id))
+            
+            # Update the refresh token in the database
+            db_refresh_token.token = new_refresh_token
+            db_refresh_token.expires_at = datetime.utcnow() + timedelta(days=30)
+            
+            self.db.commit()
+            
+            return {
+                "access_token": access_token,
+                "refresh_token": new_refresh_token,
+                "token_type": "bearer"
+            }
+            
+        except Exception as e:
+            print(f"Error in refresh_tokens: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to refresh tokens: {str(e)}"
+            )
+    
+    def logout(self, refresh_token: str) -> Dict[str, Any]:
+        """
+        Revoke a refresh token to logout
+        """
+        try:
+            # Find the refresh token in the database
+            db_refresh_token = self.db.query(RefreshToken).filter(
+                RefreshToken.token == refresh_token
+            ).first()
+            
+            if not db_refresh_token:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Token not found"
+                )
+            
+            # Revoke the token
+            db_refresh_token.is_revoked = True
+            self.db.commit()
+            
+            return {"message": "Successfully logged out"}
+            
+        except Exception as e:
+            print(f"Error in logout: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to logout: {str(e)}"
+            )
+    
+    def _generate_unique_refresh_token(self, user_id: str) -> str:
+        """
+        Generate a unique refresh token with a random suffix to ensure uniqueness
+        """
+        # Generate a random suffix (8 characters)
+        suffix = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+        
+        # Create a refresh token with the user ID and random suffix
+        return create_refresh_token(subject=f"{user_id}:{suffix}")
+        
+    def generate_test_token(self, phone_number: str) -> Optional[str]:
+        """
+        Generate a test Firebase ID token for a given phone number.
+        This is for testing purposes only.
+        """
+        try:
+            # Check if user exists in Firebase
+            try:
+                user = firebase_auth.get_user_by_phone_number(phone_number)
+                print(f"Found existing Firebase user with phone: {phone_number}")
+            except firebase_auth.UserNotFoundError:
+                # Create user if not exists
+                user = firebase_auth.create_user(
+                    phone_number=phone_number
+                )
+                print(f"Created new Firebase user with phone: {phone_number}")
+            
+            # Create custom token
+            custom_token = firebase_auth.create_custom_token(user.uid)
+            print(f"Created custom token for user: {user.uid}")
+            
+            # Exchange for ID token
+            response = requests.post(
+                f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key={settings.FIREBASE_API_KEY}",
+                json={
+                    "token": custom_token.decode('utf-8'),
+                    "returnSecureToken": True
+                }
             )
             
             if response.status_code == 200:
-                return response.json()
-            return None
-        except Exception:
+                id_token = response.json().get("idToken")
+                print(f"Successfully exchanged for ID token")
+                return id_token
+            else:
+                print(f"Error exchanging token: {response.text}")
+                return None
+        except Exception as e:
+            print(f"Error generating test token: {e}")
             return None

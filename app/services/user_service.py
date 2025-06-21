@@ -24,7 +24,7 @@ class UserService(BaseService):
         """
         Get user by phone number
         """
-        return self.db.query(User).filter(User.phone_number == phone_number).first()
+        return self.db.query(User).filter(User.phone == phone_number).first()
     
     def get_user_by_email(self, email: str) -> Optional[User]:
         """
@@ -39,7 +39,7 @@ class UserService(BaseService):
         Create a new user with phone number
         """
         user = User(
-            phone_number=phone_number,
+            phone=phone_number,
             is_active=True,
             is_verified=False
         )
@@ -62,7 +62,7 @@ class UserService(BaseService):
         """
         Update user's last login timestamp
         """
-        user.last_login_at = datetime.utcnow()
+        user.last_login = datetime.utcnow()
         self.db.commit()
         self.db.refresh(user)
         return user

@@ -13,9 +13,10 @@ class User(BaseModel):
     """
     User model for authentication and basic user information
     """
-    phone_number = Column(String, unique=True, index=True, nullable=True)
+    phone = Column(String, unique=True, index=True, nullable=True)  # Renamed from phone_number for consistency
     email = Column(String, unique=True, index=True, nullable=True)
     name = Column(String, nullable=True)
+    profile_image = Column(String, nullable=True)  # URL to profile image
     is_verified = Column(Boolean, default=False, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     last_login = Column(DateTime, nullable=True)
@@ -25,8 +26,13 @@ class User(BaseModel):
     # Authentication related fields
     hashed_password = Column(String, nullable=True)
     verification_id = Column(String, nullable=True)  # For storing Firebase verification ID
+    firebase_uid = Column(String, nullable=True)  # Firebase User ID for phone auth
     provider = Column(String, nullable=True)  # For social login (e.g., 'google.com')
     provider_user_id = Column(String, nullable=True)  # ID from the provider
+    
+    # Device information
+    device_id = Column(String, nullable=True)  # Device identifier
+    platform = Column(String, nullable=True)  # Device platform (iOS, Android, Web)
     
     # Relationships
     profile = relationship("UserProfile", back_populates="user", uselist=False)
@@ -64,4 +70,4 @@ class User(BaseModel):
     )
     
     def __repr__(self):
-        return f"<User {self.id}: {self.phone_number}>"
+        return f"<User {self.id}: {self.phone}>"

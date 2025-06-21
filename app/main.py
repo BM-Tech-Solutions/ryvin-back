@@ -1,14 +1,52 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, Security
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import APIKeyHeader
+from fastapi.openapi.utils import get_openapi
 
 from app.core.config import settings
+from app.core.middleware import APITokenMiddleware
+
+# Define API key security scheme for Swagger docs
+api_key_header = APIKeyHeader(name="API-Token", auto_error=False)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     description="API for Ryvin Dating Application",
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    swagger_ui_parameters={"persistAuthorization": True}
 )
+
+# Custom OpenAPI schema with security
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+    
+    # Add API key security scheme
+    openapi_schema["components"] = openapi_schema.get("components", {})
+    openapi_schema["components"]["securitySchemes"] = {
+        "APIKeyHeader": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "API-Token",
+            "description": "API token for protected endpoints"
+        }
+    }
+    
+    # Apply security globally
+    openapi_schema["security"] = [{"APIKeyHeader": []}]
+    
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
 
 # Set up CORS middleware
 app.add_middleware(
@@ -18,6 +56,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add API token middleware
+app.add_middleware(APITokenMiddleware)
 
 # Import and include API routers
 from app.api.api_v1.api import api_router

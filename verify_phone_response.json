@@ -1,0 +1,8 @@
+{
+  "user_exists": false,
+  "profile_complete": false,
+  "user_id": "61d41da6-e617-4d14-812b-5cd5f73e666d",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTEyMDgxNzAsInN1YiI6IjYxZDQxZGE2LWU2MTctNGQxNC04MTJiLTVjZDVmNzNlNjY2ZCIsInR5cGUiOiJhY2Nlc3MifQ.cTzWPrgvi8HzSmloDU0zYUPNS-A1lHESEqS9_N4u0XU",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTMxMDg5NzAsInN1YiI6IjYxZDQxZGE2LWU2MTctNGQxNC04MTJiLTVjZDVmNzNlNjY2ZDpNNUhlOGhCYyIsInR5cGUiOiJyZWZyZXNoIn0.K607P46HhV1ucnyHUz6wQwVrl_-4RCNEL04oT-_ncq8",
+  "token_type": "bearer"
+}
