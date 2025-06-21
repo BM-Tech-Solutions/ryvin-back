@@ -1,9 +1,0 @@
-{
-  "user_id": "61d41da6-e617-4d14-812b-5cd5f73e666d",
-  "name": "Fahed Kaddou",
-  "email": "fahed2.kaddou@ryvin.com",
-  "profile_image": "https://media.licdn.com/dms/image/v2/D4E03AQHdzfQt5c3gJQ/profile-displayphoto-shrink_400_400/B4EZVg7lTGHcAg-/0/1741087988112?e=1755734400&v=beta&t=rOCY4RpGG2_JNzSO18tRi2iqfpgkTyK7wA328yAP7og",
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTEyMDgxNzAsInN1YiI6IjYxZDQxZGE2LWU2MTctNGQxNC04MTJiLTVjZDVmNzNlNjY2ZCIsInR5cGUiOiJhY2Nlc3MifQ.cTzWPrgvi8HzSmloDU0zYUPNS-A1lHESEqS9_N4u0XU",
-  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTMxMDg5NzAsInN1YiI6IjYxZDQxZGE2LWU2MTctNGQxNC04MTJiLTVjZDVmNzNlNjY2ZDpVUDFKWGpzcyIsInR5cGUiOiJyZWZyZXNoIn0.r_925T0Lx5zGm-5RgBXC_DX6vRpfvl-v4UaMuKjQgKk",
-  "token_type": "bearer"
-}

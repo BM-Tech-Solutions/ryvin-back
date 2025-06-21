@@ -27,14 +27,38 @@ from app.services.user_service import UserService
 # Initialize Firebase Admin SDK
 firebase_app = None
 
-if settings.FIREBASE_SERVICE_ACCOUNT_PATH:
+# Try to initialize Firebase with environment variables first
+if (settings.FIREBASE_TYPE and settings.FIREBASE_PROJECT_ID_ENV and 
+    settings.FIREBASE_PRIVATE_KEY and settings.FIREBASE_CLIENT_EMAIL):
+    try:
+        # Create credentials dictionary from environment variables
+        firebase_cred_dict = {
+            "type": settings.FIREBASE_TYPE,
+            "project_id": settings.FIREBASE_PROJECT_ID_ENV,
+            "private_key_id": settings.FIREBASE_PRIVATE_KEY_ID,
+            "private_key": settings.FIREBASE_PRIVATE_KEY.replace('\\n', '\n'),  # Fix newlines in private key
+            "client_email": settings.FIREBASE_CLIENT_EMAIL,
+            "client_id": settings.FIREBASE_CLIENT_ID,
+            "auth_uri": settings.FIREBASE_AUTH_URI,
+            "token_uri": settings.FIREBASE_TOKEN_URI,
+            "auth_provider_x509_cert_url": settings.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
+            "client_x509_cert_url": settings.FIREBASE_CLIENT_X509_CERT_URL
+        }
+        firebase_cred = credentials.Certificate(firebase_cred_dict)
+        firebase_app = initialize_app(firebase_cred)
+        print("Firebase Admin SDK initialized successfully from environment variables")
+    except Exception as e:
+        print(f"Failed to initialize Firebase from environment variables: {e}")
+
+# Fall back to file-based credentials if environment variables are not available
+if firebase_app is None and settings.FIREBASE_SERVICE_ACCOUNT_PATH:
     try:
         import os
         # Check if file exists
         if os.path.exists(settings.FIREBASE_SERVICE_ACCOUNT_PATH):
             firebase_cred = credentials.Certificate(settings.FIREBASE_SERVICE_ACCOUNT_PATH)
             firebase_app = initialize_app(firebase_cred)
-            print("Firebase Admin SDK initialized successfully")
+            print("Firebase Admin SDK initialized successfully from credentials file")
         else:
             print(f"Firebase credentials file not found at: {settings.FIREBASE_SERVICE_ACCOUNT_PATH}")
     except Exception as e:

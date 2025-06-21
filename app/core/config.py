@@ -70,6 +70,18 @@ class Settings(BaseSettings):
     FIREBASE_PROJECT_ID: Optional[str] = None
     FIREBASE_SERVICE_ACCOUNT_PATH: Optional[str] = None
     
+    # Firebase Service Account Credentials (as environment variables)
+    FIREBASE_TYPE: Optional[str] = None
+    FIREBASE_PROJECT_ID_ENV: Optional[str] = None
+    FIREBASE_PRIVATE_KEY_ID: Optional[str] = None
+    FIREBASE_PRIVATE_KEY: Optional[str] = None
+    FIREBASE_CLIENT_EMAIL: Optional[str] = None
+    FIREBASE_CLIENT_ID: Optional[str] = None
+    FIREBASE_AUTH_URI: Optional[str] = None
+    FIREBASE_TOKEN_URI: Optional[str] = None
+    FIREBASE_AUTH_PROVIDER_X509_CERT_URL: Optional[str] = None
+    FIREBASE_CLIENT_X509_CERT_URL: Optional[str] = None
+    
     # Google OAuth (for Social Login)
     GOOGLE_CLIENT_ID: Optional[str] = None
     GOOGLE_CLIENT_SECRET: Optional[str] = None
