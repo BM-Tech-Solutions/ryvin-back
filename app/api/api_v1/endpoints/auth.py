@@ -1,9 +1,10 @@
 """
 Authentication Endpoints
 -----------------------
-Endpoints for Firebase phone authentication flow with simplified implementation.
+Endpoints for Firebase phone authentication and Google OAuth.
 """
 from typing import Any, Dict, Optional
+import requests
 
 from fastapi import APIRouter, Depends, HTTPException, status, Security
 from fastapi.security import APIKeyHeader
@@ -17,29 +18,21 @@ from app.models.user import User
 
 
 # Request models
-class VerifyUserRequest(BaseModel):
-    phone_number: str = Field(..., description="Phone number in E.164 format, e.g. '+213778788714'")
+class PhoneAuthRequest(BaseModel):
+    firebase_token: str = Field(..., description="Firebase ID token from phone verification")
+    device_info: Optional[Dict[str, str]] = Field(default=None, description="Device information")
 
 
-class VerifyPhoneRequest(BaseModel):
-    firebase_token: str = Field(..., description="Firebase ID token")
+class GoogleAuthRequest(BaseModel):
+    google_token: str = Field(..., description="Google OAuth access token")
+    device_info: Optional[Dict[str, str]] = Field(default=None, description="Device information")
 
 
 class CompleteProfileRequest(BaseModel):
-    access_token: str = Field(..., description="Access token received from verify-phone endpoint")
+    access_token: str = Field(..., description="Access token received from auth endpoint")
     name: str
     email: EmailStr
     profile_image: Optional[str] = None
-
-
-class RegisterRequest(BaseModel):
-    firebase_token: str = Field(..., description="Firebase ID token from verification")
-    device_info: Optional[Dict[str, str]] = Field(default=None, description="Device information")
-
-
-class LoginRequest(BaseModel):
-    firebase_token: str = Field(..., description="Firebase ID token")
-    device_info: Optional[Dict[str, str]] = Field(default=None, description="Device information")
 
 
 class RefreshTokenRequest(BaseModel):
@@ -47,16 +40,17 @@ class RefreshTokenRequest(BaseModel):
 
 
 # Response models
-class VerifyUserResponse(BaseModel):
-    exists: bool
-    user_id: Optional[str] = None
-    phone_number: str
-
-
-class VerifyPhoneResponse(BaseModel):
-    firebase_uid: str
-    phone_number: str
-    is_verified: bool
+class AuthResponse(BaseModel):
+    user_id: str
+    phone_number: Optional[str] = None
+    email: Optional[str] = None
+    name: Optional[str] = None
+    profile_image: Optional[str] = None
+    is_new_user: bool
+    is_profile_complete: bool
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
 
 
 class CompleteProfileResponse(BaseModel):
@@ -64,26 +58,6 @@ class CompleteProfileResponse(BaseModel):
     name: str
     email: str
     profile_image: Optional[str] = None
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
-
-
-class RegisterResponse(BaseModel):
-    user_id: str
-    phone_number: str
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
-
-
-class LoginResponse(BaseModel):
-    user_id: str
-    phone_number: str
-    name: Optional[str] = None
-    email: Optional[str] = None
-    profile_image: Optional[str] = None
-    profile_complete: bool
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
@@ -102,30 +76,49 @@ class LogoutResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/verify-user", response_model=VerifyUserResponse)
-def verify_user(
-    request: VerifyUserRequest,
+@router.post("/phone-auth", response_model=AuthResponse)
+def phone_auth(
+    request: PhoneAuthRequest,
     db: Session = Depends(get_db),
     api_key: str = Security(api_key_header)
 ) -> Any:
     """
-    Verify if a user exists with the given phone number
+    Authenticate with phone number using Firebase token.
+    Handles both new and existing users.
+    
+    1. Verifies the Firebase ID token
+    2. Checks if user exists
+    3. Creates account if user doesn't exist
+    4. Returns login info in both cases
     """
     auth_service = AuthService(db)
-    return auth_service.verify_user_exists(request.phone_number)
+    return auth_service.phone_auth(
+        firebase_token=request.firebase_token,
+        device_info=request.device_info
+    )
 
 
-@router.post("/verify-phone", response_model=VerifyPhoneResponse)
-def verify_phone(
-    request: VerifyPhoneRequest,
+@router.post("/google-auth", response_model=AuthResponse)
+def google_auth(
+    request: GoogleAuthRequest,
     db: Session = Depends(get_db),
     api_key: str = Security(api_key_header)
 ) -> Any:
     """
-    Verify phone number with Firebase ID token (only verification, no user creation)
+    Authenticate with Google OAuth token.
+    Handles both new and existing users.
+    
+    1. Verifies Google token
+    2. Retrieves user data from Google
+    3. Checks if email exists in our system
+    4. Creates account if user doesn't exist
+    5. Returns login info in both cases
     """
     auth_service = AuthService(db)
-    return auth_service.verify_phone_token(request.firebase_token)
+    return auth_service.google_auth(
+        google_token=request.google_token,
+        device_info=request.device_info
+    )
 
 
 @router.post("/complete-profile", response_model=CompleteProfileResponse)
@@ -135,7 +128,7 @@ def complete_profile(
     api_key: str = Security(api_key_header)
 ) -> Any:
     """
-    Complete user profile after phone verification
+    Complete user profile after authentication
     """
     auth_service = AuthService(db)
     return auth_service.complete_profile(
@@ -143,38 +136,6 @@ def complete_profile(
         name=request.name,
         email=request.email,
         profile_image=request.profile_image
-    )
-
-
-@router.post("/register", response_model=RegisterResponse)
-def register(
-    request: RegisterRequest,
-    db: Session = Depends(get_db),
-    api_key: str = Security(api_key_header)
-) -> Any:
-    """
-    Register a new user with Firebase token after verification
-    """
-    auth_service = AuthService(db)
-    return auth_service.register_user(
-        firebase_token=request.firebase_token,
-        device_info=request.device_info
-    )
-
-
-@router.post("/login", response_model=LoginResponse)
-def login(
-    request: LoginRequest,
-    db: Session = Depends(get_db),
-    api_key: str = Security(api_key_header)
-) -> Any:
-    """
-    Login with Firebase token
-    """
-    auth_service = AuthService(db)
-    return auth_service.login_user(
-        firebase_token=request.firebase_token,
-        device_info=request.device_info
     )
 
 

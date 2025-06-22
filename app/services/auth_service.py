@@ -599,6 +599,258 @@ class AuthService(BaseService):
                 detail=f"Failed to refresh tokens: {str(e)}"
             )
     
+    def phone_auth(self, firebase_token: str, device_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Unified phone authentication method that handles both new and existing users.
+        
+        1. Verifies the Firebase ID token
+        2. Checks if user exists
+        3. Creates account if user doesn't exist
+        4. Returns login info in both cases
+        """
+        try:
+            # Verify Firebase token
+            decoded_token = firebase_auth.verify_id_token(firebase_token)
+            firebase_uid = decoded_token.get("uid")
+            phone_number = decoded_token.get("phone_number")
+            
+            if not firebase_uid or not phone_number:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid Firebase token: missing uid or phone_number"
+                )
+            
+            # Check if user exists in our database
+            user = self.db.query(User).filter(User.phone == phone_number).first()
+            is_new_user = user is None
+            
+            if is_new_user:
+                # Create new user with null profile fields
+                user = User(
+                    phone=phone_number,
+                    firebase_uid=firebase_uid,
+                    is_verified=True,
+                    last_login=datetime.utcnow(),
+                    name=None,
+                    email=None,
+                    profile_image=None
+                )
+            else:
+                # Update existing user's Firebase UID if it has changed
+                if user.firebase_uid != firebase_uid:
+                    user.firebase_uid = firebase_uid
+                
+                # Update last login timestamp
+                user.last_login = datetime.utcnow()
+            
+            # Add or update device info if provided
+            if device_info:
+                if "device_id" in device_info:
+                    user.device_id = device_info.get("device_id")
+                if "platform" in device_info:
+                    user.platform = device_info.get("platform")
+            
+            # Save user to database
+            if is_new_user:
+                self.db.add(user)
+            self.db.commit()
+            self.db.refresh(user)
+            
+            # Check if profile is complete
+            is_profile_complete = user.name is not None and user.email is not None
+            
+            # Generate tokens
+            access_token = create_access_token(subject=str(user.id))
+            refresh_token = self._generate_unique_refresh_token(str(user.id))
+            
+            # Store the refresh token in the database
+            expires_at = datetime.utcnow() + timedelta(days=30)
+            
+            # Check if a refresh token already exists for this user
+            existing_token = self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
+            
+            if existing_token:
+                # Update existing token
+                existing_token.token = refresh_token
+                existing_token.expires_at = expires_at
+                existing_token.is_revoked = False
+            else:
+                # Create new refresh token record
+                db_refresh_token = RefreshToken(
+                    id=uuid.uuid4(),
+                    user_id=user.id,
+                    token=refresh_token,
+                    expires_at=expires_at,
+                    is_revoked=False
+                )
+                self.db.add(db_refresh_token)
+            
+            self.db.commit()
+            
+            return {
+                "user_id": str(user.id),
+                "phone_number": phone_number,
+                "email": user.email,
+                "name": user.name,
+                "profile_image": user.profile_image,
+                "is_new_user": is_new_user,
+                "is_profile_complete": is_profile_complete,
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "token_type": "bearer"
+            }
+            
+        except firebase_auth.InvalidIdTokenError as e:
+            print(f"Invalid Firebase token: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid Firebase token: {str(e)}"
+            )
+        except Exception as e:
+            print(f"Error in phone_auth: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to authenticate user: {str(e)}"
+            )
+    
+    def google_auth(self, google_token: str, device_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Unified Google authentication method that handles both new and existing users.
+        
+        1. Verifies Google token
+        2. Retrieves user data from Google
+        3. Checks if email exists in our system
+        4. Creates account if user doesn't exist
+        5. Returns login info in both cases
+        """
+        try:
+            # Get user info from Google using the token
+            google_user_info = self._get_google_user_info(google_token)
+            
+            if not google_user_info:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid Google token or unable to fetch user info"
+                )
+            
+            # Extract user data
+            email = google_user_info.get("email")
+            name = google_user_info.get("name")
+            profile_image = google_user_info.get("picture")
+            google_id = google_user_info.get("id")
+            
+            if not email:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email not provided by Google"
+                )
+            
+            # Check if user exists by email
+            user = self.db.query(User).filter(User.email == email).first()
+            is_new_user = user is None
+            
+            if is_new_user:
+                # Create new user
+                user = User(
+                    email=email,
+                    name=name,
+                    profile_image=profile_image,
+                    firebase_uid=None,  # No Firebase UID for Google auth
+                    is_verified=True,
+                    last_login=datetime.utcnow(),
+                    google_id=google_id
+                )
+            else:
+                # Update existing user
+                user.name = name if name else user.name
+                user.profile_image = profile_image if profile_image else user.profile_image
+                user.google_id = google_id
+                user.last_login = datetime.utcnow()
+                user.is_verified = True
+            
+            # Add or update device info if provided
+            if device_info:
+                if "device_id" in device_info:
+                    user.device_id = device_info.get("device_id")
+                if "platform" in device_info:
+                    user.platform = device_info.get("platform")
+            
+            # Save user to database
+            if is_new_user:
+                self.db.add(user)
+            self.db.commit()
+            self.db.refresh(user)
+            
+            # For Google auth, profile is complete by default
+            is_profile_complete = True
+            
+            # Generate tokens
+            access_token = create_access_token(subject=str(user.id))
+            refresh_token = self._generate_unique_refresh_token(str(user.id))
+            
+            # Store the refresh token in the database
+            expires_at = datetime.utcnow() + timedelta(days=30)
+            
+            # Check if a refresh token already exists for this user
+            existing_token = self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
+            
+            if existing_token:
+                # Update existing token
+                existing_token.token = refresh_token
+                existing_token.expires_at = expires_at
+                existing_token.is_revoked = False
+            else:
+                # Create new refresh token record
+                db_refresh_token = RefreshToken(
+                    id=uuid.uuid4(),
+                    user_id=user.id,
+                    token=refresh_token,
+                    expires_at=expires_at,
+                    is_revoked=False
+                )
+                self.db.add(db_refresh_token)
+            
+            self.db.commit()
+            
+            return {
+                "user_id": str(user.id),
+                "phone_number": user.phone,
+                "email": email,
+                "name": name,
+                "profile_image": profile_image,
+                "is_new_user": is_new_user,
+                "is_profile_complete": is_profile_complete,
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "token_type": "bearer"
+            }
+            
+        except Exception as e:
+            print(f"Error in google_auth: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to authenticate with Google: {str(e)}"
+            )
+    
+    def _get_google_user_info(self, google_token: str) -> Dict[str, Any]:
+        """
+        Get user info from Google using an access token
+        """
+        try:
+            response = requests.get(
+                "https://www.googleapis.com/oauth2/v2/userinfo",
+                headers={"Authorization": f"Bearer {google_token}"}
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                print(f"Google API error: {response.status_code} - {response.text}")
+                return None
+        except Exception as e:
+            print(f"Error fetching Google user info: {e}")
+            return None
+    
     def logout(self, refresh_token: str) -> Dict[str, Any]:
         """
         Revoke a refresh token to logout

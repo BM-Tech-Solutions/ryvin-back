@@ -27,6 +27,7 @@ class User(BaseModel):
     hashed_password = Column(String, nullable=True)
     verification_id = Column(String, nullable=True)  # For storing Firebase verification ID
     firebase_uid = Column(String, nullable=True)  # Firebase User ID for phone auth
+    google_id = Column(String, nullable=True)  # Google User ID for Google auth
     provider = Column(String, nullable=True)  # For social login (e.g., 'google.com')
     provider_user_id = Column(String, nullable=True)  # ID from the provider
     
