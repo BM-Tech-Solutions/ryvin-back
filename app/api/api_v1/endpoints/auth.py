@@ -5,6 +5,7 @@ Endpoints for Firebase phone authentication and Google OAuth.
 """
 from typing import Any, Dict, Optional
 import requests
+import httpx
 
 from fastapi import APIRouter, Depends, HTTPException, status, Security
 from fastapi.security import APIKeyHeader
@@ -16,10 +17,17 @@ from app.main import api_key_header
 from app.services.auth_service import AuthService
 from app.models.user import User
 
+# Firebase Admin SDK
+import firebase_admin
+from firebase_admin import auth as firebase_auth
+
+# Initialize Firebase Admin if not already initialized
+if not firebase_admin._apps:
+    firebase_admin.initialize_app()
 
 # Request models
 class PhoneAuthRequest(BaseModel):
-    firebase_token: str = Field(..., description="Firebase ID token from phone verification")
+    phone_number: str = Field(..., description="User's phone number")
     device_info: Optional[Dict[str, str]] = Field(default=None, description="Device information")
 
 
@@ -83,17 +91,17 @@ def phone_auth(
     api_key: str = Security(api_key_header)
 ) -> Any:
     """
-    Authenticate with phone number using Firebase token.
-    Handles both new and existing users.
+    Authenticate with phone number.
     
-    1. Verifies the Firebase ID token
-    2. Checks if user exists
-    3. Creates account if user doesn't exist
-    4. Returns login info in both cases
+    Note: Firebase token verification is handled in the frontend.
+    
+    1. Checks if user exists
+    2. Creates account if user doesn't exist
+    3. Returns login info in both cases
     """
     auth_service = AuthService(db)
     return auth_service.phone_auth(
-        firebase_token=request.firebase_token,
+        phone_number=request.phone_number,
         device_info=request.device_info
     )
 
@@ -170,23 +178,91 @@ def get_test_token(
     api_key: str = Security(api_key_header)
 ) -> Dict[str, str]:
     """
-    Generate a test Firebase ID token for a given phone number.
+    Generate a test token for a given phone number.
     This endpoint is for testing purposes only.
     
-    Use with the test phone numbers configured in Firebase console:
-    - +213 655 55 55 55 (code: 123456)
-    - +213 778 78 87 14 (code: 123123)
+    Use with test phone numbers:
+    - +213 655 55 55 55
+    - +213 778 78 87 14
     """
-    auth_service = AuthService(db)
-    token = auth_service.generate_test_token(phone_number)
+    # In the new flow, we don't need to generate Firebase tokens
+    # The frontend will handle the verification
+    return {
+        "message": "In the new flow, the frontend handles phone verification. Use the phone number directly with the /phone-auth endpoint.",
+        "phone_number": phone_number
+    }
+
+
+@router.get("/test-google-token/{email}")
+async def get_test_google_token(
+    email: str,
+    db: Session = Depends(get_db),
+    api_key: str = Security(api_key_header)
+) -> Dict[str, Any]:
+    """
+    Generate a test Firebase ID token for a given email.
+    This endpoint is for testing purposes only.
     
-    if not token:
+    Note: This creates a real Firebase user and generates a real ID token.
+    Use only in development/staging environments.
+    
+    Test emails:
+    - test1@example.com
+    - test2@example.com
+    """
+    try:
+        # Check if user exists in Firebase Auth
+        try:
+            user = firebase_auth.get_user_by_email(email)
+            # User exists, generate a custom token
+            custom_token = firebase_auth.create_custom_token(user.uid).decode('utf-8')
+        except (ValueError, firebase_auth.UserNotFoundError):
+            # Create a new test user in Firebase Auth
+            user = firebase_auth.create_user(
+                email=email,
+                email_verified=True,
+                display_name=email.split('@')[0].replace('.', ' ').title(),
+                photo_url=f"https://ui-avatars.com/api/?name={email[0].upper()}&background=random"
+            )
+            custom_token = firebase_auth.create_custom_token(user.uid).decode('utf-8')
+        
+        # Exchange custom token for ID token
+        id_token = await exchange_custom_token_for_id_token(custom_token)
+        
+        return {
+            "message": "Test Firebase ID token generated successfully. FOR TESTING ONLY.",
+            "email": email,
+            "id_token": id_token,
+            "uid": user.uid,
+            "name": user.display_name or email.split('@')[0].replace('.', ' ').title(),
+            "picture": user.photo_url
+        }
+        
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to generate test token"
+            detail=f"Error generating test token: {str(e)}"
         )
+
+
+async def exchange_custom_token_for_id_token(custom_token: str) -> str:
+    """
+    Exchange a Firebase custom token for an ID token using the Firebase REST API.
+    """
+    from app.core.config import settings
     
-    return {"firebase_token": token}
+    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key={settings.FIREBASE_API_KEY}"
+    
+    payload = {
+        "token": custom_token,
+        "returnSecureToken": True
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, json=payload)
+        response.raise_for_status()
+        data = response.json()
+        return data["idToken"]
 
 
 @router.get("/test-user/{user_id}")
@@ -211,16 +287,11 @@ def get_user_data(
         user_data = {
             "id": str(user.id),
             "phone": user.phone,
-            "name": user.name,
             "email": user.email,
-            "profile_image": user.profile_image,
-            "firebase_uid": user.firebase_uid,
+            "name": user.name,
             "is_verified": user.is_verified,
-            "is_active": user.is_active,
-            "created_at": user.created_at.isoformat() if user.created_at else None,
-            "last_login": user.last_login.isoformat() if user.last_login else None,
-            "device_id": user.device_id,
-            "platform": user.platform
+            "created_at": user.created_at.isoformat(),
+            "last_login": user.last_login.isoformat() if user.last_login else None
         }
         
         return {"user": user_data}

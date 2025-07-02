@@ -106,27 +106,21 @@ class AuthService(BaseService):
                 detail=f"Failed to verify user: {str(e)}"
             )
     
-    def verify_phone_token(self, firebase_token: str) -> Dict[str, Any]:
+    def verify_phone_token(self, phone_number: str) -> Dict[str, Any]:
         """
-        Verify phone number with Firebase ID token (only verification, no user creation)
+        Verify phone number (token verification is handled in the frontend)
+        
+        This method is kept for backward compatibility but doesn't perform verification
+        as it's now handled in the frontend.
         """
         try:
-            # Verify Firebase token
-            decoded_token = firebase_auth.verify_id_token(firebase_token)
-            firebase_uid = decoded_token.get("uid")
-            phone_number = decoded_token.get("phone_number")
-            
-            if not firebase_uid or not phone_number:
+            if not phone_number:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid Firebase token: missing uid or phone_number"
+                    detail="Phone number is required"
                 )
             
-            # Get Firebase user to verify it exists
-            firebase_user = firebase_auth.get_user(firebase_uid)
-            
             return {
-                "firebase_uid": firebase_uid,
                 "phone_number": phone_number,
                 "is_verified": True
             }
@@ -144,20 +138,17 @@ class AuthService(BaseService):
                 detail=f"Failed to verify phone token: {str(e)}"
             )
     
-    def register_user(self, firebase_token: str, device_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def register_user(self, phone_number: str, device_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Register a new user with Firebase token after verification
+        Register a new user with phone number after verification
+        
+        Note: Firebase token verification is handled in the frontend
         """
         try:
-            # Verify Firebase token
-            decoded_token = firebase_auth.verify_id_token(firebase_token)
-            firebase_uid = decoded_token.get("uid")
-            phone_number = decoded_token.get("phone_number")
-            
-            if not firebase_uid or not phone_number:
+            if not phone_number:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid Firebase token: missing uid or phone_number"
+                    detail="Phone number is required"
                 )
             
             # Check if user already exists
@@ -171,12 +162,12 @@ class AuthService(BaseService):
             # Create new user with null profile fields
             user = User(
                 phone=phone_number,
-                firebase_uid=firebase_uid,
                 is_verified=True,
                 last_login=datetime.utcnow(),
                 name=None,
                 email=None,
-                profile_image=None
+                profile_image=None,
+                firebase_uid=None  # Not storing Firebase UID as verification is in frontend
             )
             
             # Add device info if provided
@@ -227,20 +218,17 @@ class AuthService(BaseService):
                 detail=f"Failed to register user: {str(e)}"
             )
     
-    def login_user(self, firebase_token: str, device_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def login_user(self, phone_number: str, device_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Login with Firebase token
+        Login with phone number
+        
+        Note: Firebase token verification is handled in the frontend
         """
         try:
-            # Verify Firebase token
-            decoded_token = firebase_auth.verify_id_token(firebase_token)
-            firebase_uid = decoded_token.get("uid")
-            phone_number = decoded_token.get("phone_number")
-            
-            if not firebase_uid or not phone_number:
+            if not phone_number:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid Firebase token: missing uid or phone_number"
+                    detail="Phone number is required"
                 )
             
             # Check if user exists in our database
@@ -251,10 +239,6 @@ class AuthService(BaseService):
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="User not found. Please register first."
                 )
-            
-            # Update user's Firebase UID if it has changed
-            if user.firebase_uid != firebase_uid:
-                user.firebase_uid = firebase_uid
             
             # Update last login and device info
             user.last_login = datetime.utcnow()
@@ -324,24 +308,18 @@ class AuthService(BaseService):
                 detail=f"Failed to login user: {str(e)}"
             )
     
-    def verify_phone(self, firebase_token: str, device_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def verify_phone(self, phone_number: str, device_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Verify phone number with Firebase ID token and create or update user
+        Verify phone number and create or update user
+        
+        Note: Firebase token verification is handled in the frontend
         """
         try:
-            # Verify Firebase token
-            decoded_token = firebase_auth.verify_id_token(firebase_token)
-            firebase_uid = decoded_token.get("uid")
-            phone_number = decoded_token.get("phone_number")
-            
-            if not firebase_uid or not phone_number:
+            if not phone_number:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid Firebase token: missing uid or phone_number"
+                    detail="Phone number is required"
                 )
-            
-            # Get Firebase user
-            firebase_user = firebase_auth.get_user(firebase_uid)
             
             # Check if user exists in our database
             user = self.db.query(User).filter(User.phone == phone_number).first()
@@ -353,9 +331,11 @@ class AuthService(BaseService):
                 # Create new user
                 user = User(
                     phone=phone_number,
-                    firebase_uid=firebase_uid,
                     is_verified=True,
-                    last_login=datetime.utcnow()
+                    last_login=datetime.utcnow(),
+                    name=None,
+                    email=None,
+                    profile_image=None
                 )
                 
                 # Add device info if provided
@@ -370,7 +350,6 @@ class AuthService(BaseService):
                 self.db.refresh(user)
             else:
                 # Update existing user
-                user.firebase_uid = firebase_uid
                 user.is_verified = True
                 user.last_login = datetime.utcnow()
                 
@@ -599,25 +578,21 @@ class AuthService(BaseService):
                 detail=f"Failed to refresh tokens: {str(e)}"
             )
     
-    def phone_auth(self, firebase_token: str, device_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def phone_auth(self, phone_number: str, device_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Unified phone authentication method that handles both new and existing users.
         
-        1. Verifies the Firebase ID token
-        2. Checks if user exists
-        3. Creates account if user doesn't exist
-        4. Returns login info in both cases
+        1. Checks if user exists
+        2. Creates account if user doesn't exist
+        3. Returns login info in both cases
+        
+        Note: Firebase token verification is handled in the frontend
         """
         try:
-            # Verify Firebase token
-            decoded_token = firebase_auth.verify_id_token(firebase_token)
-            firebase_uid = decoded_token.get("uid")
-            phone_number = decoded_token.get("phone_number")
-            
-            if not firebase_uid or not phone_number:
+            if not phone_number:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid Firebase token: missing uid or phone_number"
+                    detail="Phone number is required"
                 )
             
             # Check if user exists in our database
@@ -628,18 +603,14 @@ class AuthService(BaseService):
                 # Create new user with null profile fields
                 user = User(
                     phone=phone_number,
-                    firebase_uid=firebase_uid,
                     is_verified=True,
                     last_login=datetime.utcnow(),
                     name=None,
                     email=None,
-                    profile_image=None
+                    profile_image=None,
+                    firebase_uid=None  # Not storing Firebase UID as verification is in frontend
                 )
             else:
-                # Update existing user's Firebase UID if it has changed
-                if user.firebase_uid != firebase_uid:
-                    user.firebase_uid = firebase_uid
-                
                 # Update last login timestamp
                 user.last_login = datetime.utcnow()
             
@@ -717,27 +688,39 @@ class AuthService(BaseService):
         """
         Unified Google authentication method that handles both new and existing users.
         
-        1. Verifies Google token
-        2. Retrieves user data from Google
+        1. Verifies Google token using Firebase Admin SDK
+        2. Retrieves user data from the verified token
         3. Checks if email exists in our system
         4. Creates account if user doesn't exist
         5. Returns login info in both cases
         """
         try:
-            # Get user info from Google using the token
-            google_user_info = self._get_google_user_info(google_token)
-            
-            if not google_user_info:
+            # Verify the Google ID token using Firebase Admin SDK
+            try:
+                decoded_token = firebase_auth.verify_id_token(google_token)
+                
+                # Extract user data from the decoded token
+                email = decoded_token.get('email')
+                name = decoded_token.get('name', '')
+                profile_image = decoded_token.get('picture', '')
+                google_id = decoded_token.get('sub')
+                
+                if not email:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Email not found in the Google token"
+                    )
+                    
+            except (ValueError, firebase_auth.InvalidIdTokenError) as e:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid Google token or unable to fetch user info"
+                    detail=f"Invalid Google token: {str(e)}"
                 )
-            
-            # Extract user data
-            email = google_user_info.get("email")
-            name = google_user_info.get("name")
-            profile_image = google_user_info.get("picture")
-            google_id = google_user_info.get("id")
+            except Exception as e:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Error verifying Google token: {str(e)}"
+                )
             
             if not email:
                 raise HTTPException(
