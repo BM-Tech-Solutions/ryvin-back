@@ -17,6 +17,7 @@ class UserQuestionnaire(BaseModel):
     """
     User questionnaire model containing compatibility information
     """
+    __tablename__ = 'userquestionnaire'
     user_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False, unique=True)
     
     # Religion et spiritualité

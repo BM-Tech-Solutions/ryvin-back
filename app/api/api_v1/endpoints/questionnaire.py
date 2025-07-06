@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -35,7 +35,7 @@ def update_questionnaire(
     Update current user's questionnaire
     """
     questionnaire_service = QuestionnaireService(db)
-    questionnaire = questionnaire_service.update_or_create_questionnaire(current_user.id, questionnaire_in)
+    questionnaire = questionnaire_service.update_questionnaire(current_user.id, questionnaire_in)
     return questionnaire
 
 
@@ -54,3 +54,15 @@ def complete_questionnaire(
         "message": "Questionnaire completed successfully",
         "completed_at": result.completed_at
     }
+
+
+@router.get("/categories", response_model=Dict[str, Any])
+def get_questions_by_categories(
+    db: Session = Depends(get_db)
+) -> Any:
+    """
+    Get all questionnaire questions organized by categories from the database
+    """
+    questionnaire_service = QuestionnaireService(db)
+    categories = questionnaire_service.get_questions_by_categories()
+    return {"categories": categories}

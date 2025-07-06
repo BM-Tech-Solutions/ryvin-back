@@ -4,7 +4,9 @@ from uuid import UUID
 from fastapi import HTTPException, status
 
 from app.models.user import User
-from app.models.user_questionnaire import UserQuestionnaire
+from app.models.questionnaire import Questionnaire
+from app.models.questionnaire_category import QuestionnaireCategory
+from app.models.questionnaire_field import QuestionnaireField
 from app.schemas.questionnaire import QuestionnaireUpdate
 from .base_service import BaseService
 
@@ -13,23 +15,23 @@ class QuestionnaireService(BaseService):
     """
     Service for questionnaire-related operations
     """
-    def get_questionnaire(self, user_id: UUID) -> Optional[UserQuestionnaire]:
+    def get_questionnaire(self, user_id: UUID) -> Optional[Questionnaire]:
         """
         Get user questionnaire by user ID
         """
-        return self.db.query(UserQuestionnaire).filter(UserQuestionnaire.user_id == user_id).first()
+        return self.db.query(Questionnaire).filter(Questionnaire.user_id == user_id).first()
     
-    def create_questionnaire(self, user_id: UUID) -> UserQuestionnaire:
+    def create_questionnaire(self, user_id: UUID) -> Questionnaire:
         """
         Create an empty questionnaire for a user
         """
-        questionnaire = UserQuestionnaire(user_id=user_id)
+        questionnaire = Questionnaire(user_id=user_id)
         self.db.add(questionnaire)
         self.db.commit()
         self.db.refresh(questionnaire)
         return questionnaire
     
-    def get_or_create_questionnaire(self, user_id: UUID) -> UserQuestionnaire:
+    def get_or_create_questionnaire(self, user_id: UUID) -> Questionnaire:
         """
         Get existing questionnaire or create a new one
         """
@@ -38,7 +40,7 @@ class QuestionnaireService(BaseService):
             questionnaire = self.create_questionnaire(user_id)
         return questionnaire
     
-    def update_questionnaire(self, user_id: UUID, questionnaire_data: QuestionnaireUpdate) -> UserQuestionnaire:
+    def update_questionnaire(self, user_id: UUID, questionnaire_data: QuestionnaireUpdate) -> Questionnaire:
         """
         Update user questionnaire
         """
@@ -125,3 +127,48 @@ class QuestionnaireService(BaseService):
         
         # Ensure score is between 0 and 100
         return max(0, min(score, max_score))
+    
+    def get_questions_by_categories(self) -> Dict[str, Any]:
+        """
+        Get all questionnaire questions organized by categories from the database
+        """
+        # Query all categories ordered by their order_position field
+        categories_db = self.db.query(QuestionnaireCategory).order_by(QuestionnaireCategory.order_position).all()
+        
+        # Build the response dictionary
+        categories = {}
+        
+        for category in categories_db:
+            # Query all fields for this category ordered by their order_position field
+            fields_db = self.db.query(QuestionnaireField).filter(
+                QuestionnaireField.category_id == category.id
+            ).order_by(QuestionnaireField.order_position).all()
+            
+            # Build the fields list for this category
+            fields = []
+            for field in fields_db:
+                field_data = {
+                    "name": field.name,
+                    "label": field.label,
+                    "field_type": field.field_type,
+                    "required": field.required
+                }
+                
+                # Add options if available
+                if field.options:
+                    field_data["options"] = field.options
+                
+                # Add description if available
+                if field.description:
+                    field_data["description"] = field.description
+                    
+                fields.append(field_data)
+            
+            # Add the category to the response
+            categories[category.name] = {
+                "title": category.display_name,
+                "description": category.description,
+                "fields": fields
+            }
+        
+        return categories
