@@ -33,14 +33,36 @@ backend/
 ### Local Development
 
 1. Clone the repository
-2. Create a virtual environment: `python -m venv venv`
-3. Activate the virtual environment:
+1. make sure "uv" is installed: `pip install uv`
+1. Create a virtual environment & Install dependencies: `uv sync`
+1. make sure "pre-commit" hooks are installed: `uv run pre-commit install`
+1. Activate the virtual environment:
    - Windows: `venv\Scripts\activate`
    - Unix/MacOS: `source venv/bin/activate`
-4. Install dependencies: `pip install -r requirements.txt`
-5. Set up environment variables (copy `.env.example` to `.env` and adjust as needed)
-6. Run migrations: `alembic upgrade head`
-7. Start the server: `uvicorn app.main:app --reload`
+1. Set up environment variables (copy `.env.example` to `.env` and adjust as needed)
+1. Run migrations: `alembic upgrade head`
+1. Start the server: `uvicorn app.main:app --reload`
+
+#### about **uv**:
+* built with rust, that means it's fast
+* to install/uninstall a new dependency: `uv add new-dependecy` or `uv remove new-dependecy`
+* you can use `uv pip install` but `uv add` is better
+* uses "pyproject.toml" + "uv.lock" instead of "requirements.txt"
+* to create "requirements.txt" from pyproject.toml: `uv pip compile pyproject.toml -o requirements.txt`
+* `uv run main.py` does 3 things:
+   1. activates venv
+   1. runs main.py
+   1. deactivates venv
+
+#### about **ruff**:
+* built with rust, that means it's fast
+* replaces: flake8, black, isort
+* config file: "ruff.toml"
+
+#### about **pre-commit**:
+* install the hooks using: `uv run pre-commit install`
+* standard way to enforce checks (like linting, formatting, etc.) before each Git commit.
+* config file: ".pre-commit-config.yaml"
 
 ### Using Docker
 

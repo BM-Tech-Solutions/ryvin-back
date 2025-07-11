@@ -1,0 +1,45 @@
+[project]
+name = "ryvin-back"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    # API Framework
+    "fastapi>=0.100.0",
+    "uvicorn>=0.22.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "python-multipart>=0.0.6",
+    # Database
+    "sqlalchemy>=2.0.0",
+    "alembic>=1.11.0",
+    "psycopg2-binary>=2.9.6",
+    # Authentication & Security
+    "python-jose>=3.3.0",
+    "passlib>=1.7.4",
+    "bcrypt>=4.0.1",
+    "firebase-admin>=6.2.0",
+    # Validation
+    "email-validator>=2.0.0",
+    "phonenumbers>=8.13.0",
+    # Utilities
+    "python-dotenv>=1.0.0",
+    "loguru>=0.7.0",
+    "tenacity>=8.2.2",
+    "pillow>=10.0.0", # For image processing
+    "python-magic>=0.4.27", # For file type detection
+    "requests>=2.31.0", # For HTTP requests
+    "jinja2>=3.1.2", # For templating
+    "pytz>=2023.3", # For timezone handling
+    # Storage
+    "minio>=7.1.15", # For S3-compatible storage
+    # Testing
+    "pytest>=7.3.1",
+    "httpx>=0.24.1",
+    "pytest-cov>=4.1.0",
+    # Dev
+    "ruff", #replaces: flake8, black, isort
+    "pre-commit>=4.2.0",
+    "ipykernel>=6.29.5",  #for jupyter notebook
+]
