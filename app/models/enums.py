@@ -320,6 +320,7 @@ class MeetingStatus(BaseStrEnum):
 
 class FieldType(BaseStrEnum):
     TEXT = "text"
+    INTEGER = "integer"
     SELECT = "select"
     BOOLEAN = "boolean"
 

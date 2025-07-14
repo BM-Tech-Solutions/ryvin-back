@@ -1,125 +1,127 @@
 from datetime import datetime
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+from uuid import UUID
 
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Text
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy import DateTime, ForeignKey, Text
+from sqlalchemy.dialects.postgresql import UUID as pgUUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import BaseModel
-from app.models.enums import (
-    PracticeLevel, ImportanceLevel, SportFrequency, DietType, HygieneImportance,
-    ConsumptionLevel, StyleType, EducationPreference, PersonalityType,
-    LoveLanguage, SocialFrequency, SocialTolerance, IntimacyFrequency,
-    ComfortLevel, PublicAffectionLevel, CompatibilityType
-)
+from app.core.database import Base
+
+if TYPE_CHECKING:
+    from .user import User
 
 
-class Questionnaire(BaseModel):
+class Questionnaire(Base):
     """
     User questionnaire model for compatibility matching
     """
-    user_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False, unique=True)
-    
+
+    __tablename__ = "questionnaire"
+
+    user_id: Mapped[UUID] = mapped_column(
+        pgUUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), unique=True
+    )
+
     # Religion et spiritualité
-    religion = Column(String, nullable=True)
-    est_pratiquant = Column(String, nullable=True)
-    partenaire_meme_religion = Column(String, nullable=True)
-    accepte_autre_religion = Column(Boolean, nullable=True)
-    transmission_foi_enfants = Column(Boolean, nullable=True)
-    meme_vision_education_religieuse = Column(Boolean, nullable=True)
-    
+    religion: Mapped[Optional[str]]
+    est_pratiquant: Mapped[Optional[str]]
+    partenaire_meme_religion: Mapped[Optional[str]]
+    accepte_autre_religion: Mapped[Optional[bool]]
+    transmission_foi_enfants: Mapped[Optional[bool]]
+    meme_vision_education_religieuse: Mapped[Optional[bool]]
+
     # Mode de vie
-    frequence_sport = Column(String, nullable=True)
-    habitudes_alimentaires = Column(String, nullable=True)
-    approche_hygiene = Column(String, nullable=True)
-    fume = Column(String, nullable=True)
-    boit_alcool = Column(String, nullable=True)
-    
+    frequence_sport: Mapped[Optional[str]]
+    habitudes_alimentaires: Mapped[Optional[str]]
+    approche_hygiene: Mapped[Optional[str]]
+    fume: Mapped[Optional[str]]
+    boit_alcool: Mapped[Optional[str]]
+
     # Préférences partenaire
-    sport_partenaire = Column(String, nullable=True)
-    memes_habitudes_alimentaires = Column(Boolean, nullable=True)
-    importance_proprete_partenaire = Column(String, nullable=True)
-    accepte_fumeur = Column(Boolean, nullable=True)
-    accepte_buveur = Column(Boolean, nullable=True)
-    
+    sport_partenaire: Mapped[Optional[str]]
+    memes_habitudes_alimentaires: Mapped[Optional[bool]]
+    importance_proprete_partenaire: Mapped[Optional[str]]
+    accepte_fumeur: Mapped[Optional[bool]]
+    accepte_buveur: Mapped[Optional[bool]]
+
     # Physique
-    description_physique = Column(Text, nullable=True)
-    style_vestimentaire = Column(String, nullable=True)
-    importance_apparence_soi = Column(String, nullable=True)
-    importance_apparence_partenaire = Column(String, nullable=True)
-    partenaire_ideal_physique = Column(Text, nullable=True)
-    criteres_physiques_non_negotiables = Column(Text, nullable=True)
-    
+    description_physique: Mapped[Optional[str]] = mapped_column(Text)
+    style_vestimentaire: Mapped[Optional[str]]
+    importance_apparence_soi: Mapped[Optional[str]]
+    importance_apparence_partenaire: Mapped[Optional[str]]
+    partenaire_ideal_physique: Mapped[Optional[str]] = mapped_column(Text)
+    criteres_physiques_non_negotiables: Mapped[Optional[str]] = mapped_column(Text)
+
     # Enfants et famille
-    souhaite_enfants = Column(Boolean, nullable=True)
-    partenaire_doit_vouloir_enfants = Column(Boolean, nullable=True)
-    nombre_enfants_souhaite = Column(String, nullable=True)
-    importance_vie_famille = Column(String, nullable=True)
-    relation_famille_origine = Column(Text, nullable=True)
-    importance_relation_belle_famille = Column(String, nullable=True)
-    
+    souhaite_enfants: Mapped[Optional[bool]]
+    partenaire_doit_vouloir_enfants: Mapped[Optional[bool]]
+    nombre_enfants_souhaite: Mapped[Optional[str]]
+    importance_vie_famille: Mapped[Optional[str]]
+    relation_famille_origine: Mapped[Optional[str]] = mapped_column(Text)
+    importance_relation_belle_famille: Mapped[Optional[str]]
+
     # Éducation et valeurs
-    valeurs_importantes = Column(Text, nullable=True)
-    valeurs_partenaire = Column(Text, nullable=True)
-    vision_roles_foyer = Column(Text, nullable=True)
-    attentes_education_enfants = Column(Text, nullable=True)
-    preference_education_enfants = Column(String, nullable=True)
-    
+    valeurs_importantes: Mapped[Optional[str]] = mapped_column(Text)
+    valeurs_partenaire: Mapped[Optional[str]] = mapped_column(Text)
+    vision_roles_foyer: Mapped[Optional[str]] = mapped_column(Text)
+    attentes_education_enfants: Mapped[Optional[str]] = mapped_column(Text)
+    preference_education_enfants: Mapped[Optional[str]]
+
     # Personnalité
-    traits_personnalite = Column(Text, nullable=True)
-    defauts_reconnus = Column(Text, nullable=True)
-    personnalite_partenaire_compatible = Column(String, nullable=True)
-    personnalite_partenaire_incompatible = Column(String, nullable=True)
-    langage_amour = Column(String, nullable=True)
-    
+    traits_personnalite: Mapped[Optional[str]] = mapped_column(Text)
+    defauts_reconnus: Mapped[Optional[str]] = mapped_column(Text)
+    personnalite_partenaire_compatible: Mapped[Optional[str]]
+    personnalite_partenaire_incompatible: Mapped[Optional[str]]
+    langage_amour: Mapped[Optional[str]]
+
     # Loisirs et intérêts
-    loisirs_principaux = Column(Text, nullable=True)
-    interets_communs_necessaires = Column(Boolean, nullable=True)
-    interets_importants_partenaire = Column(Text, nullable=True)
-    activites_couple = Column(Text, nullable=True)
-    
+    loisirs_principaux: Mapped[Optional[str]] = mapped_column(Text)
+    interets_communs_necessaires: Mapped[Optional[bool]]
+    interets_importants_partenaire: Mapped[Optional[str]] = mapped_column(Text)
+    activites_couple: Mapped[Optional[str]] = mapped_column(Text)
+
     # Social
-    frequence_sorties = Column(String, nullable=True)
-    type_sorties_preferees = Column(Text, nullable=True)
-    introversion_extraversion = Column(String, nullable=True)
-    tolerance_amis_partenaire = Column(String, nullable=True)
-    
+    frequence_sorties: Mapped[Optional[str]]
+    type_sorties_preferees: Mapped[Optional[str]] = mapped_column(Text)
+    introversion_extraversion: Mapped[Optional[str]]
+    tolerance_amis_partenaire: Mapped[Optional[str]]
+
     # Communication et conflits
-    style_communication = Column(Text, nullable=True)
-    gestion_conflits = Column(Text, nullable=True)
-    expression_emotions = Column(Text, nullable=True)
-    attentes_communication_partenaire = Column(Text, nullable=True)
-    
+    style_communication: Mapped[Optional[str]] = mapped_column(Text)
+    gestion_conflits: Mapped[Optional[str]] = mapped_column(Text)
+    expression_emotions: Mapped[Optional[str]] = mapped_column(Text)
+    attentes_communication_partenaire: Mapped[Optional[str]] = mapped_column(Text)
+
     # Intimité
-    importance_intimite = Column(String, nullable=True)
-    frequence_intimite_ideale = Column(String, nullable=True)
-    confort_discussion_intimite = Column(String, nullable=True)
-    niveau_affection_publique = Column(String, nullable=True)
-    
+    importance_intimite: Mapped[Optional[str]]
+    frequence_intimite_ideale: Mapped[Optional[str]]
+    confort_discussion_intimite: Mapped[Optional[str]]
+    niveau_affection_publique: Mapped[Optional[str]]
+
     # Finances
-    situation_financiere_actuelle = Column(Text, nullable=True)
-    gestion_finances_couple = Column(Text, nullable=True)
-    importance_situation_financiere_partenaire = Column(String, nullable=True)
-    objectifs_financiers = Column(Text, nullable=True)
-    
+    situation_financiere_actuelle: Mapped[Optional[str]] = mapped_column(Text)
+    gestion_finances_couple: Mapped[Optional[str]] = mapped_column(Text)
+    importance_situation_financiere_partenaire: Mapped[Optional[str]]
+    objectifs_financiers: Mapped[Optional[str]] = mapped_column(Text)
+
     # Habitation et géographie
-    situation_logement_actuelle = Column(Text, nullable=True)
-    preferences_habitation_future = Column(Text, nullable=True)
-    flexibilite_demenagement = Column(Boolean, nullable=True)
-    preferences_environnement_vie = Column(Text, nullable=True)
-    
+    situation_logement_actuelle: Mapped[Optional[str]] = mapped_column(Text)
+    preferences_habitation_future: Mapped[Optional[str]] = mapped_column(Text)
+    flexibilite_demenagement: Mapped[Optional[bool]]
+    preferences_environnement_vie: Mapped[Optional[str]] = mapped_column(Text)
+
     # Compatibilité et attentes
-    type_compatibilite_recherchee = Column(String, nullable=True)
-    attentes_relation = Column(Text, nullable=True)
-    rythme_progression_relation = Column(Text, nullable=True)
-    
+    type_compatibilite_recherchee: Mapped[Optional[str]]
+    attentes_relation: Mapped[Optional[str]] = mapped_column(Text)
+    rythme_progression_relation: Mapped[Optional[str]] = mapped_column(Text)
+
     # Completion status
-    completed_at = Column(DateTime, nullable=True)
-    
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+
     # Relationships
-    user = relationship("User", foreign_keys=[user_id])
-    
+    user: Mapped["User"] = relationship(foreign_keys=[user_id])
+
     def is_complete(self) -> bool:
         """Check if the questionnaire is complete"""
-        # A questionnaire is considered complete if completed_at is set
         return self.completed_at is not None

@@ -1,32 +1,50 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
+from uuid import UUID
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy import DateTime, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID as pgUUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import BaseModel
+from app.core.database import Base
 from app.models.enums import JourneyStep
 
+if TYPE_CHECKING:
+    from .match import Match
+    from .meeting_request import MeetingRequest
+    from .message import Message
 
-class Journey(BaseModel):
+
+class Journey(Base):
     """
     Journey model representing the structured path of a relationship
     """
-    match_id = Column(UUID(as_uuid=True), ForeignKey("match.id"), nullable=False, unique=True)
-    current_step = Column(Integer, default=JourneyStep.PRE_COMPATIBILITY.value, nullable=False)
-    step1_completed_at = Column(DateTime, nullable=True)  # Pré-compatibilité
-    step2_completed_at = Column(DateTime, nullable=True)  # Appel vocal/vidéo
-    step3_completed_at = Column(DateTime, nullable=True)  # Photos débloquées
-    step4_completed_at = Column(DateTime, nullable=True)  # Rencontre physique
-    step5_completed_at = Column(DateTime, nullable=True)  # Bilan rencontre
-    is_completed = Column(Boolean, default=False, nullable=False)
-    ended_by = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=True)
-    end_reason = Column(String, nullable=True)
-    
+
+    __tablename__ = "journey"
+
+    match_id: Mapped[UUID] = mapped_column(
+        pgUUID(as_uuid=True), ForeignKey("match.id"), unique=True
+    )
+    ended_by: Mapped[UUID | None] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"))
+    current_step: Mapped[int] = mapped_column(default=JourneyStep.PRE_COMPATIBILITY)
+    # Pré-compatibilité
+    step1_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Appel vocal/vidéo
+    step2_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Photos débloquées
+    step3_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Rencontre physique
+    step4_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Bilan rencontre
+    step5_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    is_completed: Mapped[bool] = mapped_column(default=False)
+    end_reason: Mapped[str | None]
+
     # Relationships
-    match = relationship("Match", back_populates="journey")
-    messages = relationship("Message", back_populates="journey")
-    meeting_requests = relationship("MeetingRequest", back_populates="journey")
-    
+    match: Mapped["Match"] = relationship(back_populates="journey", foreign_keys=[match_id])
+    messages: Mapped[list["Message"]] = relationship(back_populates="journey")
+    meeting_requests: Mapped[list["MeetingRequest"]] = relationship(back_populates="journey")
+
     def __repr__(self):
         return f"<Journey {self.id}: Match {self.match_id}, Step: {self.current_step}>"

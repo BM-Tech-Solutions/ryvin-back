@@ -1,35 +1,46 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text
-from sqlalchemy.dialects.postgresql import ARRAY, UUID, JSONB
-from sqlalchemy.orm import relationship
+from typing import TYPE_CHECKING, List, Optional
+from uuid import UUID
 
-from app.models.base import BaseModel
-from app.models.enums import Gender, RelationshipType, ProfessionalStatus, EducationLevel
+from sqlalchemy import ForeignKey
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as pgUUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.core.database import Base
+
+if TYPE_CHECKING:
+    from .user import User
 
 
-class UserProfile(BaseModel):
+class UserProfile(Base):
     """
     User profile model containing personal information
     """
-    user_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False, unique=True)
-    prenom = Column(String, nullable=False)
-    genre = Column(String, nullable=False)  # Using Gender enum values
-    age = Column(Integer, nullable=False)
-    ville = Column(String, nullable=False)
-    nationalite = Column(String, nullable=False)
-    langues = Column(JSONB, nullable=False, default=list)  # List of languages as JSON
-    situation_professionnelle = Column(String, nullable=False)  # Using ProfessionalStatus enum values
-    niveau_etudes = Column(String, nullable=False)  # Using EducationLevel enum values
-    deja_marie = Column(Boolean, nullable=False)
-    a_des_enfants = Column(Boolean, nullable=False)
-    nombre_enfants = Column(Integer, nullable=True)
-    type_relation_recherchee = Column(String, nullable=False)  # Using RelationshipType enum values
-    genre_recherche = Column(String, nullable=False)  # Using Gender enum values
-    photos = Column(JSONB, nullable=False, default=list)  # List of photo URLs as JSON
-    is_profile_complete = Column(Boolean, default=False, nullable=False)
-    profile_completion_step = Column(Integer, default=1, nullable=False)
-    
+
+    __tablename__ = "user_profile"
+
+    user_id: Mapped[UUID] = mapped_column(
+        pgUUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), unique=True
+    )
+    prenom: Mapped[str]
+    genre: Mapped[str]  # Using Gender enum values
+    age: Mapped[int]
+    ville: Mapped[str]
+    nationalite: Mapped[str]
+    langues: Mapped[List[str]] = mapped_column(JSONB, default=list)  # List of languages as JSON
+    situation_professionnelle: Mapped[str]  # Using ProfessionalStatus enum values
+    niveau_etudes: Mapped[str]  # Using EducationLevel enum values
+    deja_marie: Mapped[bool]
+    a_des_enfants: Mapped[bool]
+    nombre_enfants: Mapped[Optional[int]]
+    type_relation_recherchee: Mapped[str]  # Using RelationshipType enum values
+    genre_recherche: Mapped[str]  # Using Gender enum values
+    photos: Mapped[List[str]] = mapped_column(JSONB, default=list)  # List of photo URLs as JSON
+    is_profile_complete: Mapped[bool] = mapped_column(default=False)
+    profile_completion_step: Mapped[int] = mapped_column(default=1)
+
     # Relationships
-    user = relationship("User", back_populates="profile")
-    
-    def __repr__(self):
+    user: Mapped["User"] = relationship(back_populates="profile", foreign_keys=[user_id])
+
+    def __repr__(self) -> str:
         return f"<UserProfile {self.id}: {self.prenom}, {self.age}>"

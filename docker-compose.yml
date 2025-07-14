@@ -21,7 +21,7 @@ services:
     networks:
       - ryvin-network
     restart: on-failure
-      
+
   migrations:
     build: .
     # Use the entrypoint script with migrations parameter

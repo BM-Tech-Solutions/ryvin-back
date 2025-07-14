@@ -1,114 +1,119 @@
 from datetime import datetime
+from typing import TYPE_CHECKING, Optional
+from uuid import UUID
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy import DateTime, ForeignKey, Text
+from sqlalchemy.dialects.postgresql import UUID as pgUUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import BaseModel
-from app.models.enums import (
-    PracticeLevel, ImportanceLevel, SportFrequency, DietType, HygieneImportance,
-    ConsumptionLevel, StyleType, EducationPreference, PersonalityType,
-    LoveLanguage, SocialFrequency, SocialTolerance, IntimacyFrequency,
-    ComfortLevel, PublicAffectionLevel, CompatibilityType
-)
+from app.core.database import Base
+
+if TYPE_CHECKING:
+    from .user import User
 
 
-class UserQuestionnaire(BaseModel):
+class UserQuestionnaire(Base):
     """
     User questionnaire model containing compatibility information
     """
-    __tablename__ = 'userquestionnaire'
-    user_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False, unique=True)
-    
+
+    __tablename__ = "user_questionnaire"
+
+    user_id: Mapped[UUID] = mapped_column(
+        pgUUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), unique=True
+    )
+
     # Religion et spiritualité
-    religion = Column(String, nullable=True)
-    est_pratiquant = Column(String, nullable=True)  # Using PracticeLevel enum values
-    partenaire_meme_religion = Column(String, nullable=True)  # Using ImportanceLevel enum values
-    accepte_autre_religion = Column(Boolean, nullable=True)
-    transmission_foi_enfants = Column(Boolean, nullable=True)
-    meme_vision_education_religieuse = Column(Boolean, nullable=True)
-    
+    religion: Mapped[Optional[str]]
+    est_pratiquant: Mapped[Optional[str]]  # Using PracticeLevel enum values
+    partenaire_meme_religion: Mapped[Optional[str]]  # Using ImportanceLevel enum values
+    accepte_autre_religion: Mapped[Optional[bool]]
+    transmission_foi_enfants: Mapped[Optional[bool]]
+    meme_vision_education_religieuse: Mapped[Optional[bool]]
+
     # Mode de vie
-    frequence_sport = Column(String, nullable=True)  # Using SportFrequency enum values
-    habitudes_alimentaires = Column(String, nullable=True)  # Using DietType enum values
-    approche_hygiene = Column(String, nullable=True)  # Using HygieneImportance enum values
-    fume = Column(String, nullable=True)  # Using ConsumptionLevel enum values
-    boit_alcool = Column(String, nullable=True)  # Using ConsumptionLevel enum values
-    
+    frequence_sport: Mapped[Optional[str]]  # Using SportFrequency enum values
+    habitudes_alimentaires: Mapped[Optional[str]]  # Using DietType enum values
+    approche_hygiene: Mapped[Optional[str]]  # Using HygieneImportance enum values
+    fume: Mapped[Optional[str]]  # Using ConsumptionLevel enum values
+    boit_alcool: Mapped[Optional[str]]  # Using ConsumptionLevel enum values
+
     # Préférences partenaire
-    sport_partenaire = Column(String, nullable=True)  # Using SportFrequency enum values
-    memes_habitudes_alimentaires = Column(Boolean, nullable=True)
-    importance_proprete_partenaire = Column(String, nullable=True)  # Using ImportanceLevel enum values
-    accepte_fumeur = Column(Boolean, nullable=True)
-    accepte_buveur = Column(Boolean, nullable=True)
-    
+    sport_partenaire: Mapped[Optional[str]]  # Using SportFrequency enum values
+    memes_habitudes_alimentaires: Mapped[Optional[bool]]
+    importance_proprete_partenaire: Mapped[Optional[str]]  # Using ImportanceLevel enum values
+    accepte_fumeur: Mapped[Optional[bool]]
+    accepte_buveur: Mapped[Optional[bool]]
+
     # Physique
-    description_physique = Column(Text, nullable=True)
-    style_vestimentaire = Column(String, nullable=True)  # Using StyleType enum values
-    importance_apparence_soi = Column(String, nullable=True)  # Using ImportanceLevel enum values
-    importance_apparence_partenaire = Column(String, nullable=True)  # Using ImportanceLevel enum values
-    partenaire_ideal_physique = Column(Text, nullable=True)
-    criteres_physiques_non_negotiables = Column(Text, nullable=True)
-    
+    description_physique: Mapped[Optional[str]] = mapped_column(Text)
+    style_vestimentaire: Mapped[Optional[str]]  # Using StyleType enum values
+    importance_apparence_soi: Mapped[Optional[str]]  # Using ImportanceLevel enum values
+    importance_apparence_partenaire: Mapped[Optional[str]]  # Using ImportanceLevel enum values
+    partenaire_ideal_physique: Mapped[Optional[str]] = mapped_column(Text)
+    criteres_physiques_non_negotiables: Mapped[Optional[str]] = mapped_column(Text)
+
     # Enfants et famille
-    souhaite_enfants = Column(Boolean, nullable=True)
-    partenaire_doit_vouloir_enfants = Column(Boolean, nullable=True)
-    nombre_enfants_souhaite = Column(Integer, nullable=True)
-    approche_educative = Column(Text, nullable=True)
-    accepte_partenaire_avec_enfants = Column(Boolean, nullable=True)
-    memes_valeurs_educatives = Column(Boolean, nullable=True)
-    
+    souhaite_enfants: Mapped[Optional[bool]]
+    partenaire_doit_vouloir_enfants: Mapped[Optional[bool]]
+    nombre_enfants_souhaite: Mapped[Optional[int]]
+    approche_educative: Mapped[Optional[str]] = mapped_column(Text)
+    accepte_partenaire_avec_enfants: Mapped[Optional[bool]]
+    memes_valeurs_educatives: Mapped[Optional[bool]]
+
     # Socio-économique
-    importance_situation_financiere = Column(String, nullable=True)  # Using ImportanceLevel enum values
-    niveau_etudes_partenaire = Column(String, nullable=True)  # Using EducationPreference enum values
-    approche_argent_couple = Column(Text, nullable=True)
-    
+    importance_situation_financiere: Mapped[Optional[str]]  # Using ImportanceLevel enum values
+    niveau_etudes_partenaire: Mapped[Optional[str]]  # Using EducationPreference enum values
+    approche_argent_couple: Mapped[Optional[str]] = mapped_column(Text)
+
     # Personnalité
-    personalite = Column(String, nullable=True)  # Using PersonalityType enum values
-    preference_personalite_partenaire = Column(String, nullable=True)  # Using PersonalityType enum values
-    langage_amour = Column(String, nullable=True)  # Using LoveLanguage enum values
-    meme_langage_amour = Column(Boolean, nullable=True)
-    frequence_voir_amis = Column(String, nullable=True)  # Using SocialFrequency enum values
-    tolerance_mode_vie_social = Column(String, nullable=True)  # Using SocialTolerance enum values
-    gestion_conflits = Column(Text, nullable=True)
-    
+    personalite: Mapped[Optional[str]]  # Using PersonalityType enum values
+    preference_personalite_partenaire: Mapped[Optional[str]]  # Using PersonalityType enum values
+    langage_amour: Mapped[Optional[str]]  # Using LoveLanguage enum values
+    meme_langage_amour: Mapped[Optional[bool]]
+    frequence_voir_amis: Mapped[Optional[str]]  # Using SocialFrequency enum values
+    tolerance_mode_vie_social: Mapped[Optional[str]]  # Using SocialTolerance enum values
+    gestion_conflits: Mapped[Optional[str]] = mapped_column(Text)
+
     # Sexualité
-    importance_sexualite = Column(String, nullable=True)  # Using ImportanceLevel enum values
-    frequence_ideale_rapports = Column(String, nullable=True)  # Using IntimacyFrequency enum values
-    confort_parler_sexualite = Column(String, nullable=True)  # Using ComfortLevel enum values
-    valeurs_sexuelles_proches = Column(Boolean, nullable=True)
-    demonstrations_publiques_affection = Column(String, nullable=True)  # Using PublicAffectionLevel enum values
-    vision_sexualite_couple = Column(Text, nullable=True)
-    
+    importance_sexualite: Mapped[Optional[str]]  # Using ImportanceLevel enum values
+    frequence_ideale_rapports: Mapped[Optional[str]]  # Using IntimacyFrequency enum values
+    confort_parler_sexualite: Mapped[Optional[str]]  # Using ComfortLevel enum values
+    valeurs_sexuelles_proches: Mapped[Optional[bool]]
+    demonstrations_publiques_affection: Mapped[
+        Optional[str]
+    ]  # Using PublicAffectionLevel enum values
+    vision_sexualite_couple: Mapped[Optional[str]] = mapped_column(Text)
+
     # Valeurs politiques
-    orientation_politique = Column(Text, nullable=True)
-    importance_convictions_partenaire = Column(Text, nullable=True)
-    
+    orientation_politique: Mapped[Optional[str]] = mapped_column(Text)
+    importance_convictions_partenaire: Mapped[Optional[str]] = mapped_column(Text)
+
     # Animaux
-    a_animal = Column(Boolean, nullable=True)
-    type_animal = Column(String, nullable=True)
-    accepte_partenaire_avec_animal = Column(Boolean, nullable=True)
-    allergies_animaux = Column(Boolean, nullable=True)
-    allergies_quels_animaux = Column(String, nullable=True)
-    
+    a_animal: Mapped[Optional[bool]]
+    type_animal: Mapped[Optional[str]]
+    accepte_partenaire_avec_animal: Mapped[Optional[bool]]
+    allergies_animaux: Mapped[Optional[bool]]
+    allergies_quels_animaux: Mapped[Optional[str]]
+
     # Compatibilité
-    recherche_type = Column(String, nullable=True)  # Using CompatibilityType enum values
-    
+    recherche_type: Mapped[Optional[str]]  # Using CompatibilityType enum values
+
     # Questions finales
-    vie_couple_ideale = Column(Text, nullable=True)
-    ce_qui_fait_craquer = Column(Text, nullable=True)
-    defaut_intolerable = Column(Text, nullable=True)
-    plus_grande_qualite = Column(Text, nullable=True)
-    plus_grand_defaut = Column(Text, nullable=True)
-    partenaire_ideal_personnalite = Column(Text, nullable=True)
-    lecons_relations_passees = Column(Text, nullable=True)
-    vision_10_ans = Column(Text, nullable=True)
-    raison_inscription = Column(Text, nullable=True)
-    
-    completed_at = Column(DateTime, nullable=True)
-    
+    vie_couple_ideale: Mapped[Optional[str]] = mapped_column(Text)
+    ce_qui_fait_craquer: Mapped[Optional[str]] = mapped_column(Text)
+    defaut_intolerable: Mapped[Optional[str]] = mapped_column(Text)
+    plus_grande_qualite: Mapped[Optional[str]] = mapped_column(Text)
+    plus_grand_defaut: Mapped[Optional[str]] = mapped_column(Text)
+    partenaire_ideal_personnalite: Mapped[Optional[str]] = mapped_column(Text)
+    lecons_relations_passees: Mapped[Optional[str]] = mapped_column(Text)
+    vision_10_ans: Mapped[Optional[str]] = mapped_column(Text)
+    raison_inscription: Mapped[Optional[str]] = mapped_column(Text)
+
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+
     # Relationships
-    user = relationship("User", back_populates="questionnaire", foreign_keys=[user_id])
-    
-    def __repr__(self):
+    user: Mapped["User"] = relationship(back_populates="questionnaire", foreign_keys=[user_id])
+
+    def __repr__(self) -> str:
         return f"<UserQuestionnaire {self.id}: User {self.user_id}>"
