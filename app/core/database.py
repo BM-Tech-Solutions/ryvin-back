@@ -1,20 +1,47 @@
-from typing import Generator
+import uuid
+from datetime import datetime
+from typing import Annotated, Generator
 
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from fastapi import Depends
+from sqlalchemy import DateTime, create_engine
+from sqlalchemy.dialects.postgresql import UUID as pgUUID
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
-from app.core.config import settings
+from app.core.security import utc_now
 
-engine = create_engine(str(settings.DATABASE_URI))
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+from .config import settings
 
-Base = declarative_base()
+# Create a synchronous engine
+engine = create_engine(str(settings.DATABASE_URI), echo=False, future=True)
 
-# Dependency to get DB session
-def get_db() -> Generator:
+# Create a configured session class
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+
+
+# Base class for all models
+class Base(DeclarativeBase):
+    """
+    Base model for all SQLAlchemy models
+    """
+
+    __abstract__ = True
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        pgUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now)
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+
+def get_session() -> Generator[Session, None, None]:
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+
+SessionDep = Annotated[Session, Depends(get_session)]

@@ -23,7 +23,7 @@ class QuestionnaireField(Base):
     name: Mapped[str] = mapped_column(unique=True)
     label: Mapped[str]
     description: Mapped[str] = mapped_column(Text, default="")
-    order: Mapped[int] = mapped_column(default=0)
+    order_position: Mapped[int] = mapped_column(default=0)
     field_type: Mapped[str] = mapped_column(default=FieldType.TEXT)
     required: Mapped[bool] = mapped_column(default=False)
 

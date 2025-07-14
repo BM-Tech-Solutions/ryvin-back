@@ -19,7 +19,7 @@ class QuestionnaireCategory(Base):
     name: Mapped[str] = mapped_column(unique=True)
     label: Mapped[str]
     description: Mapped[str] = mapped_column(Text, default="")
-    order: Mapped[int] = mapped_column(default=0)
+    order_position: Mapped[int] = mapped_column(default=0)
     step: Mapped[int]
 
     # Define relationship with QuestionnaireField
