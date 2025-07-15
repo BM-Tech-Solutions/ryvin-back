@@ -25,5 +25,4 @@ class Photo(Base):
     is_primary: Mapped[bool] = mapped_column(default=False)
 
     # Relationship
-    # removed back_populates="photos" temporarily because User contains another "photos" field
-    user: Mapped["User"] = relationship(foreign_keys=[user_id])
+    user: Mapped["User"] = relationship(back_populates="photos", foreign_keys=[user_id])

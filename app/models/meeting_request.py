@@ -38,7 +38,9 @@ class MeetingRequest(Base):
         back_populates="meeting_requests", foreign_keys=[requested_by]
     )
     feedback: Mapped["MeetingFeedback | None"] = relationship(
-        back_populates="meeting_request", uselist=False
+        back_populates="meeting_request",
+        uselist=False,
+        foreign_keys="MeetingFeedback.meeting_request_id",
     )
 
     def __repr__(self):

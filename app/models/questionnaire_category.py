@@ -23,4 +23,6 @@ class QuestionnaireCategory(Base):
     step: Mapped[int]
 
     # Define relationship with QuestionnaireField
-    fields: Mapped[list["QuestionnaireField"]] = relationship(back_populates="category")
+    fields: Mapped[list["QuestionnaireField"]] = relationship(
+        back_populates="category", foreign_keys="QuestionnaireField.category_id"
+    )

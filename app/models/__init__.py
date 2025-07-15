@@ -11,5 +11,4 @@ from app.models.questionnaire_category import QuestionnaireCategory
 from app.models.questionnaire_field import QuestionnaireField
 from app.models.token import RefreshToken
 from app.models.user import User
-from app.models.user_profile import UserProfile
-from app.models.user_questionnaire import UserQuestionnaire
+from app.models.profile import Profile

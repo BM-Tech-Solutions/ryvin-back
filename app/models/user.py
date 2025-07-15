@@ -12,8 +12,9 @@ if TYPE_CHECKING:
     from .meeting_feedback import MeetingFeedback
     from .meeting_request import MeetingRequest
     from .message import Message
-    from .user_profile import UserProfile
-    from .user_questionnaire import UserQuestionnaire
+    from .photo import Photo
+    from .profile import Profile
+    from .questionnaire import Questionnaire
 
 
 class User(Base):
@@ -26,15 +27,18 @@ class User(Base):
     phone_number: Mapped[str] = mapped_column(unique=True, index=True)
     email: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
     is_verified: Mapped[bool] = mapped_column(default=False)
+    has_completed_questionnaire: Mapped[bool] = mapped_column(default=False)
     is_active: Mapped[bool] = mapped_column(default=True)
     last_login: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     subscription_type: Mapped[str] = mapped_column(default=SubscriptionType.FREE)
     subscription_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
     # Relationships
-    profile: Mapped[Optional["UserProfile"]] = relationship(back_populates="user", uselist=False)
-    questionnaire: Mapped[Optional["UserQuestionnaire"]] = relationship(
-        back_populates="user", uselist=False
+    profile: Mapped[Optional["Profile"]] = relationship(
+        back_populates="user", uselist=False, foreign_keys="Profile.user_id"
+    )
+    questionnaire: Mapped[Optional["Questionnaire"]] = relationship(
+        back_populates="user", uselist=False, foreign_keys="Questionnaire.user_id"
     )
 
     matches_as_user1: Mapped[List["Match"]] = relationship(
@@ -52,6 +56,9 @@ class User(Base):
     )
     meeting_feedbacks: Mapped[List["MeetingFeedback"]] = relationship(
         back_populates="user", foreign_keys="MeetingFeedback.user_id"
+    )
+    photos: Mapped[List["Photo"]] = relationship(
+        back_populates="user", foreign_keys="Photo.user_id"
     )
 
     def __repr__(self) -> str:

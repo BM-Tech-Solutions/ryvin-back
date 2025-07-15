@@ -43,8 +43,12 @@ class Journey(Base):
 
     # Relationships
     match: Mapped["Match"] = relationship(back_populates="journey", foreign_keys=[match_id])
-    messages: Mapped[list["Message"]] = relationship(back_populates="journey")
-    meeting_requests: Mapped[list["MeetingRequest"]] = relationship(back_populates="journey")
+    messages: Mapped[list["Message"]] = relationship(
+        back_populates="journey", foreign_keys="Message.journey_id"
+    )
+    meeting_requests: Mapped[list["MeetingRequest"]] = relationship(
+        back_populates="journey", foreign_keys="MeetingRequest.journey_id"
+    )
 
     def __repr__(self):
         return f"<Journey {self.id}: Match {self.match_id}, Step: {self.current_step}>"

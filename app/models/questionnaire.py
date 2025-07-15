@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Text
+from sqlalchemy import DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID as pgUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -23,104 +23,94 @@ class Questionnaire(Base):
         pgUUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), unique=True
     )
 
-    # Religion et spiritualité
-    religion: Mapped[Optional[str]]
-    est_pratiquant: Mapped[Optional[str]]
-    partenaire_meme_religion: Mapped[Optional[str]]
-    accepte_autre_religion: Mapped[Optional[bool]]
-    transmission_foi_enfants: Mapped[Optional[bool]]
-    meme_vision_education_religieuse: Mapped[Optional[bool]]
+    # religious_and_spiritual_beliefs
+    religion_spirituality: Mapped[Optional[str]]
+    religious_practice: Mapped[Optional[str]]
+    partner_must_share_religion: Mapped[Optional[str]]
+    accept_non_believer: Mapped[Optional[str]]
+    faith_transmission_to_children: Mapped[Optional[str]]
+    partner_same_religious_education_vision: Mapped[Optional[str]]
 
-    # Mode de vie
-    frequence_sport: Mapped[Optional[str]]
-    habitudes_alimentaires: Mapped[Optional[str]]
-    approche_hygiene: Mapped[Optional[str]]
-    fume: Mapped[Optional[str]]
-    boit_alcool: Mapped[Optional[str]]
+    # political_and_societal_values
+    political_orientation: Mapped[Optional[str]]
+    partner_share_convictions_importance: Mapped[Optional[str]]
+    lessons_from_past_relationships: Mapped[Optional[str]]
 
-    # Préférences partenaire
-    sport_partenaire: Mapped[Optional[str]]
-    memes_habitudes_alimentaires: Mapped[Optional[bool]]
-    importance_proprete_partenaire: Mapped[Optional[str]]
-    accepte_fumeur: Mapped[Optional[bool]]
-    accepte_buveur: Mapped[Optional[bool]]
+    # lifestyle_you
+    sport_frequency: Mapped[Optional[str]]
+    specific_dietary_habits: Mapped[Optional[str]]
+    hygiene_tidiness_approach: Mapped[Optional[str]]
+    smoker: Mapped[Optional[str]]
+    drinks_alcohol: Mapped[Optional[str]]
 
-    # Physique
-    description_physique: Mapped[Optional[str]] = mapped_column(Text)
-    style_vestimentaire: Mapped[Optional[str]]
-    importance_apparence_soi: Mapped[Optional[str]]
-    importance_apparence_partenaire: Mapped[Optional[str]]
-    partenaire_ideal_physique: Mapped[Optional[str]] = mapped_column(Text)
-    criteres_physiques_non_negotiables: Mapped[Optional[str]] = mapped_column(Text)
+    # lifestyle_partner
+    partner_sport_frequency: Mapped[Optional[str]]
+    partner_same_dietary_habits: Mapped[Optional[str]]
+    partner_cleanliness_importance: Mapped[Optional[str]]
+    accept_smoker_partner: Mapped[Optional[str]]
+    accept_alcohol_consumer_partner: Mapped[Optional[str]]
+    has_pet: Mapped[Optional[str]]
+    type_of_pet: Mapped[Optional[str]]
+    ready_to_live_with_pet: Mapped[Optional[str]]
+    allergic_to_animals: Mapped[Optional[str]]
+    which_animals_allergic: Mapped[Optional[str]]
 
-    # Enfants et famille
-    souhaite_enfants: Mapped[Optional[bool]]
-    partenaire_doit_vouloir_enfants: Mapped[Optional[bool]]
-    nombre_enfants_souhaite: Mapped[Optional[str]]
-    importance_vie_famille: Mapped[Optional[str]]
-    relation_famille_origine: Mapped[Optional[str]] = mapped_column(Text)
-    importance_relation_belle_famille: Mapped[Optional[str]]
+    # personality_and_social_relations
+    personality_type: Mapped[Optional[str]]
+    partner_personality_preference: Mapped[Optional[str]]
+    primary_love_language: Mapped[Optional[str]]
+    partner_same_love_language: Mapped[Optional[str]]
+    friends_visit_frequency: Mapped[Optional[str]]
+    tolerance_social_vs_homebody: Mapped[Optional[str]]
+    conflict_management: Mapped[Optional[str]]
+    greatest_quality_in_relationship: Mapped[Optional[str]]
+    greatest_flaw_in_relationship: Mapped[Optional[str]]
+    what_attracts_you: Mapped[Optional[str]]
+    intolerable_flaw: Mapped[Optional[str]]
 
-    # Éducation et valeurs
-    valeurs_importantes: Mapped[Optional[str]] = mapped_column(Text)
-    valeurs_partenaire: Mapped[Optional[str]] = mapped_column(Text)
-    vision_roles_foyer: Mapped[Optional[str]] = mapped_column(Text)
-    attentes_education_enfants: Mapped[Optional[str]] = mapped_column(Text)
-    preference_education_enfants: Mapped[Optional[str]]
+    # physical_preferences_and_attraction
+    physical_description: Mapped[Optional[str]]
+    main_dressing_style: Mapped[Optional[str]]
+    importance_of_appearance: Mapped[Optional[str]]
+    partner_hygiene_appearance_importance: Mapped[Optional[str]]
+    important_physical_aspects_partner: Mapped[Optional[str]]
 
-    # Personnalité
-    traits_personnalite: Mapped[Optional[str]] = mapped_column(Text)
-    defauts_reconnus: Mapped[Optional[str]] = mapped_column(Text)
-    personnalite_partenaire_compatible: Mapped[Optional[str]]
-    personnalite_partenaire_incompatible: Mapped[Optional[str]]
-    langage_amour: Mapped[Optional[str]]
+    # sexuality_and_intimacy
+    importance_of_sexuality: Mapped[Optional[str]]
+    ideal_intimate_frequency: Mapped[Optional[str]]
+    comfort_level_talking_sexuality: Mapped[Optional[str]]
+    partner_sexual_values_alignment: Mapped[Optional[str]]
+    comfortable_public_affection: Mapped[Optional[str]]
+    ideal_sexuality_vision: Mapped[Optional[str]]
 
-    # Loisirs et intérêts
-    loisirs_principaux: Mapped[Optional[str]] = mapped_column(Text)
-    interets_communs_necessaires: Mapped[Optional[bool]]
-    interets_importants_partenaire: Mapped[Optional[str]] = mapped_column(Text)
-    activites_couple: Mapped[Optional[str]] = mapped_column(Text)
+    # desired_compatibility
+    partner_similarity_preference: Mapped[Optional[str]]
+    partner_age_range: Mapped[Optional[str]]
 
-    # Social
-    frequence_sorties: Mapped[Optional[str]]
-    type_sorties_preferees: Mapped[Optional[str]] = mapped_column(Text)
-    introversion_extraversion: Mapped[Optional[str]]
-    tolerance_amis_partenaire: Mapped[Optional[str]]
+    # socio_economic_level
+    importance_financial_situation_partner: Mapped[Optional[str]]
+    ideal_partner_education_profession: Mapped[Optional[str]]
+    money_approach_in_couple: Mapped[Optional[str]]
+    ideal_partner_description: Mapped[Optional[str]]
+    ideal_couple_life_description: Mapped[Optional[str]]
 
-    # Communication et conflits
-    style_communication: Mapped[Optional[str]] = mapped_column(Text)
-    gestion_conflits: Mapped[Optional[str]] = mapped_column(Text)
-    expression_emotions: Mapped[Optional[str]] = mapped_column(Text)
-    attentes_communication_partenaire: Mapped[Optional[str]] = mapped_column(Text)
-
-    # Intimité
-    importance_intimite: Mapped[Optional[str]]
-    frequence_intimite_ideale: Mapped[Optional[str]]
-    confort_discussion_intimite: Mapped[Optional[str]]
-    niveau_affection_publique: Mapped[Optional[str]]
-
-    # Finances
-    situation_financiere_actuelle: Mapped[Optional[str]] = mapped_column(Text)
-    gestion_finances_couple: Mapped[Optional[str]] = mapped_column(Text)
-    importance_situation_financiere_partenaire: Mapped[Optional[str]]
-    objectifs_financiers: Mapped[Optional[str]] = mapped_column(Text)
-
-    # Habitation et géographie
-    situation_logement_actuelle: Mapped[Optional[str]] = mapped_column(Text)
-    preferences_habitation_future: Mapped[Optional[str]] = mapped_column(Text)
-    flexibilite_demenagement: Mapped[Optional[bool]]
-    preferences_environnement_vie: Mapped[Optional[str]] = mapped_column(Text)
-
-    # Compatibilité et attentes
-    type_compatibilite_recherchee: Mapped[Optional[str]]
-    attentes_relation: Mapped[Optional[str]] = mapped_column(Text)
-    rythme_progression_relation: Mapped[Optional[str]] = mapped_column(Text)
+    # children_and_family
+    has_children: Mapped[Optional[str]]
+    number_of_children: Mapped[Optional[str]]
+    wants_children: Mapped[Optional[str]]
+    partner_must_want_children: Mapped[Optional[str]]
+    partner_desired_number_of_children: Mapped[Optional[str]]
+    educational_approach: Mapped[Optional[str]]
+    accept_partner_with_children: Mapped[Optional[str]]
+    share_same_educational_values: Mapped[Optional[str]]
+    imagine_yourself_in10_years: Mapped[Optional[str]]
+    reason_for_registration: Mapped[Optional[str]]
 
     # Completion status
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
     # Relationships
-    user: Mapped["User"] = relationship(foreign_keys=[user_id])
+    user: Mapped["User"] = relationship(back_populates="questionnaire", foreign_keys=[user_id])
 
     def is_complete(self) -> bool:
         """Check if the questionnaire is complete"""

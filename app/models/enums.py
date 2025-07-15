@@ -18,14 +18,302 @@ class BaseStrEnum(str, Enum):
         return [(member.value, member.label) for member in cls]
 
 
+# Form Fields Options
 class Gender(BaseStrEnum):
-    MALE = "homme"
-    FEMALE = "femme"
+    HOMME = "homme", "Homme"
+    FEMME = "femme", "Femme"
 
 
-class RelationshipType(BaseStrEnum):
-    MARRIAGE = "mariage"
-    SERIOUS_RELATIONSHIP = "relation_serieuse"
+class RelationshipGoal(BaseStrEnum):
+    MARIAGE = "mariage", "Te marier"
+    RELATION_SERIEUSE = "relation_serieuse", "Une relation sérieuse mais pas forcément le mariage"
+
+
+class ProfessionalSituation(BaseStrEnum):
+    ETUDIANT = "etudiant", "Étudiant(e)"
+    SALARIE = "salarie", "Salarié(e)"
+    INDEPENDANT = "independant", "Indépendant(e)"
+    RECHERCHE_EMPLOI = "recherche_emploi", "En recherche d’emploi"
+    RETRAITE = "retraite", "Retraité(e)"
+
+
+class EducationLevel(BaseStrEnum):
+    AUCUN_DIPLOME = "aucun_diplome", "Aucun diplôme"
+    NIVEAU_LYCEE = "niveau_lycee", "Niveau lycée"
+    BAC_OU_EQUIVALENT = "bac_ou_equivalent", "Bac ou équivalent"
+    BAC_PLUS_2_3 = "bac_plus_2_3", "Bac+2 à Bac+3"
+    BAC_PLUS_4_5 = "bac_plus_4_5", "Bac+4 ou Bac+5"
+    DOCTORAT_OU_PLUS = "doctorat_ou_plus", "Doctorat ou plus"
+
+
+class ReligiousPractice(BaseStrEnum):
+    OUI = "oui", "Oui"
+    NON = "non", "Non"
+    OCCASIONNELLEMENT = "occasionnellement", "Occasionnellement"
+
+
+class PartnerMustShareReligion(BaseStrEnum):
+    OUI_ABSOLUMENT = "oui_absolument", "Oui, absolument"
+    SERAIT_UN_PLUS = "serait_un_plus", "Ce serait un plus"
+    PAS_NECESSAIRE = "pas_necessaire", "Non, ce n’est pas nécessaire"
+
+
+class FaithTransmissionToChildren(BaseStrEnum):
+    OUI = "oui", "Oui"
+    NON = "non", "Non"
+    JE_NE_SAIS_PAS_ENCORE = "je_ne_sais_pas_encore", "Je ne sais pas encore"
+
+
+class PartnerSameReligiousEducationVision(BaseStrEnum):
+    OUI = "oui", "Oui"
+    NON = "non", "Non"
+    PEU_IMPORTE = "peu_importe", "Peu importe"
+
+
+class SportFrequency(BaseStrEnum):
+    JAMAIS = "jamais", "Jamais"
+    _1_2_PAR_SEMAINE = "1_2_par_semaine", "1 à 2 fois par semaine"
+    _3_5_PAR_SEMAINE = "3_5_par_semaine", "3 à 5 fois par semaine"
+    TOUS_LES_JOURS = "tous_les_jours", "Tous les jours"
+
+
+class SpecificDietaryHabits(BaseStrEnum):
+    AUCUNE = "aucune", "Aucune"
+    VEGETARIEN = "vegetarien", "Végétarien(ne)"
+    VEGAN = "vegan", "Vegan"
+    HALAL = "halal", "Halal"
+    CASHER = "casher", "Casher"
+
+
+class HygieneTidinessApproach(BaseStrEnum):
+    TRES_IMPORTANT = "tres_important", "Très important"
+    IMPORTANT = "important", "Important"
+    FLEXIBLE = "flexible", "Flexible"
+    PAS_VRAIMENT = "pas_vraiment", "Je ne m’en préoccupe pas vraiment"
+
+
+class Smoker(BaseStrEnum):
+    OUI = "oui", "Oui"
+    NON = "non", "Non"
+    OCCASIONNELLEMENT = "occasionnellement", "Occasionnellement"
+
+
+class DrinksAlcohol(BaseStrEnum):
+    OUI = "oui", "Oui"
+    NON = "non", "Non"
+    OCCASIONNELLEMENT = "occasionnellement", "Occasionnellement"
+
+
+class PartnerSportFrequency(BaseStrEnum):
+    JAMAIS = "jamais", "Jamais"
+    _1_2_PAR_SEMAINE = "1_2_par_semaine", "1 à 2 fois par semaine"
+    _3_5_PAR_SEMAINE = "3_5_par_semaine", "3 à 5 fois par semaine"
+    TOUS_LES_JOURS = "tous_les_jours", "Tous les jours"
+    PEU_IMPORTE = "peu_importe", "Peu importe"
+
+
+class PartnerSameDietaryHabits(BaseStrEnum):
+    OUI = "oui", "Oui"
+    NON_RESPECTE_CHOIX = "non_respecte_choix", "Non, tant qu’il/elle respecte mes choix"
+    PEU_IMPORTE = "peu_importe", "Peu importe"
+
+
+class PartnerCleanlinessImportance(BaseStrEnum):
+    TRES_IMPORTANT = "tres_important", "Très important"
+    IMPORTANT = "important", "Important"
+    FLEXIBLE = "flexible", "Flexible"
+    PEU_IMPORTANT = "peu_important", "Peu important"
+
+
+class AcceptSmokerPartner(BaseStrEnum):
+    OUI = "oui", "Oui"
+    NON = "non", "Non"
+    OCCASIONNELLEMENT_SEULEMENT = "occasionnellement_seulement", "Occasionnellement seulement"
+
+
+class AcceptAlcoholConsumerPartner(BaseStrEnum):
+    OUI = "oui", "Oui"
+    NON = "non", "Non"
+    OCCASIONNELLEMENT_SEULEMENT = "occasionnellement_seulement", "Occasionnellement seulement"
+
+
+class ReadyToLiveWithPet(BaseStrEnum):
+    OUI = "oui", "Oui"
+    NON = "non", "Non"
+    CA_DEPEND = "ca_depend"
+
+
+class PersonalityType(BaseStrEnum):
+    INTROVERTI = "introverti", "Introverti(e)"
+    EXTRAVERTI = "extraverti", "Extraverti(e)"
+    MELANGE_DES_DEUX = "melange_des_deux", "Un mélange des deux"
+
+
+class PartnerPersonalityPreference(BaseStrEnum):
+    INTROVERTI = "introverti", "Introverti(e)"
+    EXTRAVERTI = "extraverti", "Extraverti(e)"
+    AMBIVERT = "ambivert"
+    PEU_IMPORTE = "peu_importe", "Peu importe"
+
+
+class PrimaryLoveLanguage(BaseStrEnum):
+    PAROLES_VALORISANTES = "paroles_valorisantes", "Paroles valorisantes"
+    CONTACT_PHYSIQUE = "contact_physique", "Contact physique"
+    TEMPS_DE_QUALITE = "temps_de_qualite", "Temps de qualité"
+    CADEAUX = "cadeaux", "Cadeaux"
+    SERVICES_RENDUS = "services_rendus", "Services rendus"
+
+
+class FriendsVisitFrequency(BaseStrEnum):
+    TRES_SOUVENT = "tres_souvent", "Très souvent"
+    REGULIEREMENT = "regulierement", "Régulièrement"
+    OCCASIONNELLEMENT = "occasionnellement", "Occasionnellement"
+    RAREMENT = "rarement", "Rarement"
+
+
+class ToleranceSocial(BaseStrEnum):
+    BESOIN_EQUILIBRE = "besoin_equilibre", "J’ai besoin d’équilibre"
+    PAS_DERANGE_EPANOUI = (
+        "pas_derange_epanoui",
+        "Ça ne me dérange pas tant qu’il/elle est épanoui(e)",
+    )
+    PREFERE_STYLE_PROCHE = "prefere_style_proche", "Je préfère un style de vie proche du mien"
+
+
+class MainDressingStyle(BaseStrEnum):
+    CLASSIQUE_ELEGANT = "classique_elegant", "Classique / Élégant"
+    DECONTRACTE_SPORTIF = "decontracte_sportif", "Décontracté / Sportif"
+    URBAIN_TENDANCE = "urbain_tendance", "Urbain / Tendance"
+    CHANGEANT_HUMEUR = "changeant_humeur", "Changeant selon l’humeur"
+
+
+class ImportanceOfAppearance(BaseStrEnum):
+    TRES_IMPORTANTE = "tres_importante", "Très importante"
+    MOYENNE = "moyenne", "Moyenne"
+    PEU_IMPORTANTE = "peu_importante", "Peu importante"
+
+
+class PartnerHygieneAppearanceImportance(BaseStrEnum):
+    TRES_IMPORTANTE = "tres_importante", "Très importante"
+    MOYENNE = "moyenne", "Moyenne"
+    FAIBLE = "faible", "Faible"
+
+
+class ImportantPhysicalAspectsPartner(BaseStrEnum):
+    TAILLE = "taille", "Taille"
+    CORPULENCE = "corpulence", "Corpulence"
+    STYLE_VESTIMENTAIRE = "style_vestimentaire", "Style vestimentaire"
+    SOIN_HYGIENE = "soin_hygiene", "Soin de soi / hygiène"
+    PEU_IMPORTE_RESSENTI = (
+        "peu_importe_ressenti",
+        "Peu importe, je me fie surtout au ressenti global",
+    )
+
+
+class ImportanceOfSexuality(BaseStrEnum):
+    TRES_IMPORTANTE = "tres_importante", "Très importante"
+    MOYENNE = "moyenne", "Moyenne"
+    PEU_IMPORTANTE = "peu_importante", "Peu importante"
+    PAS_IMPORTANTE_DU_TOUT = "pas_importante_du_tout", "Pas importante du tout"
+
+
+class IdealIntimateFrequency(BaseStrEnum):
+    PLUSIEURS_FOIS_SEMAINE = "plusieurs_fois_semaine", "Plusieurs fois par semaine"
+    _1_2_FOIS_SEMAINE = "1_2_fois_semaine", "1–2 fois par semaine"
+    QUELQUES_FOIS_MOIS = "quelques_fois_mois", "Quelques fois par mois"
+    PEU_OU_PAS_SOUVENT = "peu_ou_pas_souvent", "Peu ou pas souvent"
+
+
+class ComfortLevelTalkingSexuality(BaseStrEnum):
+    TRES_A_LAISE = "tres_a_laise", "Très à l’aise"
+    A_LAISE_SELON_PERSONNE = "a_laise_selon_personne", "À l’aise selon la personne"
+    PEU_A_LAISE = "peu_a_laise", "Peu à l’aise"
+    PAS_DU_TOUT_A_LAISE = "pas_du_tout_a_laise", "Pas du tout à l’aise"
+
+
+class PartnerSexualValuesAlignment(BaseStrEnum):
+    OUI = "oui", "Oui"
+    NON_COMMUNIQUE = "non_communique", "Non, tant qu’on communique"
+    PEU_IMPORTE = "peu_importe", "Peu importe"
+
+
+class ComfortablePublicAffection(BaseStrEnum):
+    OUI = "oui", "Oui"
+    OUI_DISCRETION = "oui_discretion", "Oui, mais avec discrétion"
+    NON = "non", "Non"
+
+
+class PartnerSimilarityPreference(BaseStrEnum):
+    TRES_SIMILAIRE = "tres_similaire", "Très similaire à toi"
+    PLUTOT_COMPLEMENTAIRE = "plutot_complementaire", "Plutôt complémentaire"
+    BON_MELANGE = "bon_melange", "Un bon mélange des deux"
+
+
+class ImportanceFinancialSituationPartner(BaseStrEnum):
+    TRES_IMPORTANTE_STABILITE = (
+        "tres_importante_stabilite",
+        "Très importante : je veux une stabilité financière claire",
+    )
+    ASSEZ_IMPORTANTE_EQUILIBRE = (
+        "assez_importante_equilibre",
+        "Assez importante : je cherche un équilibre, sans trop d’écart",
+    )
+    PEU_IMPORTANTE_VALEURS = "peu_importante_valeurs", "Peu importante : je privilégie les valeurs"
+    PAS_DU_TOUT_IMPORTANTE = "pas_du_tout_importante", "Pas du tout importante"
+
+
+class IdealPartnerEducationProfession(BaseStrEnum):
+    ETUDES_EQUIVALENTES_SUPERIEURES = (
+        "etudes_equivalentes_superieures",
+        "Un niveau d'études équivalent ou supérieur au tien",
+    )
+    PEU_IMPORTE_ETUDES_INTELLIGENT = (
+        "peu_importe_etudes_intelligent",
+        "Peu importe le niveau d’études, tant qu’il/elle est intelligent(e)",
+    )
+    AMBITION_PROFESSIONNELLE_SIMILAIRE = (
+        "ambition_professionnelle_similaire",
+        "Une ambition professionnelle similaire",
+    )
+    PEU_IMPORTE_EPANOUI = "peu_importe_epanoui", "Peu importe, s’il/elle est épanoui(e)"
+
+
+class PartnerMustWantChildren(BaseStrEnum):
+    OUI = "oui", "Oui"
+    NON = "non", "Non"
+    PAS_FORCEMENT = "pas_forcément", "Pas forcément"
+
+
+# Not used
+class PracticeLevel(BaseStrEnum):
+    NOT_PRACTICING = "non_pratiquant"
+    OCCASIONALLY = "occasionnellement"
+    REGULARLY = "regulierement"
+    STRICTLY = "strictement"
+
+
+class ComfortLevel(BaseStrEnum):
+    VERY_UNCOMFORTABLE = "tres_inconfortable"
+    UNCOMFORTABLE = "inconfortable"
+    NEUTRAL = "neutre"
+    COMFORTABLE = "confortable"
+    VERY_COMFORTABLE = "tres_confortable"
+
+
+class ImportanceLevel(BaseStrEnum):
+    NOT_IMPORTANT = "pas_important"
+    SOMEWHAT_IMPORTANT = "peu_important"
+    IMPORTANT = "important"
+    VERY_IMPORTANT = "tres_important"
+    ESSENTIAL = "essentiel"
+
+
+# others
+class MatchStatus(BaseStrEnum):
+    PENDING = "en_attente"
+    ACTIVE = "actif"
+    PAUSED = "pause"
+    ENDED = "termine"
 
 
 class SubscriptionType(BaseStrEnum):
@@ -39,269 +327,6 @@ class JourneyStep(IntEnum):
     PHOTOS_UNLOCKED = 3
     PHYSICAL_MEETING = 4
     MEETING_FEEDBACK = 5
-
-
-class MatchStatus(BaseStrEnum):
-    PENDING = "en_attente"
-    ACTIVE = "actif"
-    PAUSED = "pause"
-    ENDED = "termine"
-
-
-# Religion
-class PracticeLevel(BaseStrEnum):
-    NOT_PRACTICING = "non_pratiquant"
-    OCCASIONALLY = "occasionnellement"
-    REGULARLY = "regulierement"
-    STRICTLY = "strictement"
-
-
-class PartnerSameReligion(BaseStrEnum):
-    YES = "yes"
-    NO = "non"
-    ITS_A_PLUS = "c'est_un_plus"
-
-
-class TransFaithToChild(BaseStrEnum):
-    YES = "yes"
-    NO = "non"
-    DONT_KNOW = "sais_pas"
-
-
-class PartnerSameReligEducView(BaseStrEnum):
-    YES = "yes"
-    NO = "non"
-    DONT_CARE = "peu_importe"
-
-
-# sport, diet & hygene
-class SportFrequency(BaseStrEnum):
-    NEVER = "jamais"
-    RARELY = "rarement"
-    OCCASIONALLY = "occasionnellement"
-    REGULARLY = "regulierement"
-    DAILY = "quotidiennement"
-
-
-class DietType(BaseStrEnum):
-    OMNIVORE = "omnivore"
-    VEGETARIAN = "vegetarien"
-    VEGAN = "vegan"
-    PESCATARIAN = "pescetarien"
-    HALAL = "halal"
-    KOSHER = "casher"
-    OTHER = "autre"
-
-
-class HygieneImportance(BaseStrEnum):
-    VERY_CAREFUL = "tres_soigneux"
-    CAREFUL = "soigneux"
-    NORMAL = "normal"
-    RELAXED = "detendu"
-
-
-class SmokingFrequency(BaseStrEnum):
-    YES = "oui"
-    NO = "non"
-    OCCASIONALLY = "occasionnellement"
-
-
-class ConsumptionLevel(BaseStrEnum):
-    NEVER = "jamais"
-    RARELY = "rarement"
-    OCCASIONALLY = "occasionnellement"
-    REGULARLY = "regulierement"
-    DAILY = "quotidiennement"
-
-
-# Partner Choices
-class PartnerSportFrequency(BaseStrEnum):
-    NEVER = "jamais"
-    RARELY = "rarement"
-    OCCASIONALLY = "occasionnellement"
-    REGULARLY = "regulierement"
-    DAILY = "quotidiennement"
-    DONT_CARE = "peu_importe"
-
-
-class PartnerSameDietType(BaseStrEnum):
-    YES = "oui"
-    NO = "non"
-    DONT_CARE = "peu_importe"
-
-
-class PartnerHygieneImportance(BaseStrEnum):
-    VERY_CAREFUL = "tres_soigneux"
-    CAREFUL = "soigneux"
-    NORMAL = "normal"
-    DONT_CARE = "peu_importe"
-
-
-class AcceptPartnerSmoking(BaseStrEnum):
-    YES = "oui"
-    NO = "non"
-    OCCASIONALLY = "occasionnellement"
-
-
-class AcceptPartnerAlcohol(BaseStrEnum):
-    YES = "oui"
-    NO = "non"
-    OCCASIONALLY = "occasionnellement"
-
-
-class AcceptPartnerAnimal(BaseStrEnum):
-    YES = "oui"
-    NO = "non"
-    IT_DEPENDS = "ca_depend"
-
-
-# personality & relations
-class PersonalityType(BaseStrEnum):
-    INTROVERT = "introverti"
-    AMBIVERT = "ambivert"
-    EXTROVERT = "extraverti"
-
-
-class PartnerPersonalityType(BaseStrEnum):
-    INTROVERT = "introverti"
-    AMBIVERT = "ambivert"
-    EXTROVERT = "extraverti"
-    DONT_CARE = "peu_importe"
-
-
-class LoveLanguage(BaseStrEnum):
-    WORDS_OF_AFFIRMATION = "mots_d_affirmation"
-    QUALITY_TIME = "temps_de_qualite"
-    RECEIVING_GIFTS = "cadeaux"
-    ACTS_OF_SERVICE = "services_rendus"
-    PHYSICAL_TOUCH = "contact_physique"
-
-
-class SocialFrequency(BaseStrEnum):
-    RARELY = "rarement"
-    MONTHLY = "mensuellement"
-    WEEKLY = "hebdomadairement"
-    SEVERAL_TIMES_WEEK = "plusieurs_fois_semaine"
-    DAILY = "quotidiennement"
-
-
-class SocialTolerance(BaseStrEnum):
-    VERY_LOW = "tres_faible"
-    LOW = "faible"
-    MODERATE = "moderee"
-    HIGH = "elevee"
-    VERY_HIGH = "tres_elevee"
-
-
-# Physique
-class StyleType(BaseStrEnum):
-    CASUAL = "decontracte"
-    CLASSIC = "classique"
-    ELEGANT = "elegant"
-    SPORTY = "sportif"
-    TRENDY = "tendance"
-    ALTERNATIVE = "alternatif"
-    OTHER = "autre"
-
-
-class SelfAppearanceImportance(BaseStrEnum):
-    VERY_IMPORTANT = "tres_important"
-    AVERAGE = "moyenne"
-    DONT_CARE = "peu_importe"
-
-
-class PartnerAppearanceImportance(BaseStrEnum):
-    VERY_IMPORTANT = "tres_important"
-    AVERAGE = "moyenne"
-    NOT_SO_MUCH = "faible"
-
-
-# Intimité
-class IntimacyImportance(BaseStrEnum):
-    IMPORTANT = "tres_important"
-    AVERAGE = "moyenne"
-    DONT_CARE = "peu_importante"
-    DONT_CARE_AT_ALL = "pas_importante_de_tous"
-
-
-class IntimacyFrequency(BaseStrEnum):
-    RARELY = "rarement"
-    MONTHLY = "mensuellement"
-    WEEKLY = "hebdomadairement"
-    SEVERAL_TIMES_WEEK = "plusieurs_fois_semaine"
-    DAILY = "quotidiennement"
-    MULTIPLE_DAILY = "plusieurs_fois_jour"
-
-
-class IntimacyTalkComfort(BaseStrEnum):
-    VERY_COMFORTABLE = "tres_a_laise"
-    DEPENDS_ON_PERSON = "selon_personne"
-    BIT_COMFORTABLE = "peu_confortable"
-    UNCOMFORTABLE = "inconfortable"
-
-
-class SameIntimacyValues(BaseStrEnum):
-    YES = "oui"
-    NO = "non"
-    DONT_CARE = "peu_importe"
-
-
-class PublicAffectionLevel(BaseStrEnum):
-    NONE = "aucune"
-    MINIMAL = "minimale"
-    MODERATE = "moderee"
-    EXPRESSIVE = "expressive"
-    VERY_EXPRESSIVE = "tres_expressive"
-
-
-# compatibilité
-class CompatibilityType(BaseStrEnum):
-    COMPLEMENTARY = "complementaire"
-    SIMILAR = "similaire"
-    BALANCED = "equilibre"
-
-
-class EducationLevel(BaseStrEnum):
-    PRIMARY = "primaire"
-    SECONDARY = "secondaire"
-    HIGH_SCHOOL = "lycee"
-    ASSOCIATE = "bac_plus_2"
-    BACHELOR = "licence"
-    MASTER = "master"
-    DOCTORATE = "doctorat"
-    OTHER = "autre"
-
-
-class EducationPreference(BaseStrEnum):
-    ANY = "indifferent"
-    SIMILAR = "similaire"
-    HIGHER = "superieur"
-    LOWER = "inferieur"
-
-
-class ImportanceLevel(BaseStrEnum):
-    NOT_IMPORTANT = "pas_important"
-    SOMEWHAT_IMPORTANT = "peu_important"
-    IMPORTANT = "important"
-    VERY_IMPORTANT = "tres_important"
-    ESSENTIAL = "essentiel"
-
-
-class ComfortLevel(BaseStrEnum):
-    VERY_UNCOMFORTABLE = "tres_inconfortable"
-    UNCOMFORTABLE = "inconfortable"
-    NEUTRAL = "neutre"
-    COMFORTABLE = "confortable"
-    VERY_COMFORTABLE = "tres_confortable"
-
-
-class ProfessionalStatus(BaseStrEnum):
-    STUDENT = "etudiant"
-    EMPLOYED = "employe"
-    SELF_EMPLOYED = "independant"
-    UNEMPLOYED = "sans_emploi"
-    RETIRED = "retraite"
-    OTHER = "autre"
 
 
 class MessageType(BaseStrEnum):
@@ -320,9 +345,17 @@ class MeetingStatus(BaseStrEnum):
 
 class FieldType(BaseStrEnum):
     TEXT = "text"
+    TEXT_BOX = "text_box"
     INTEGER = "integer"
+    RANGE = "range"
     SELECT = "select"
+    NESTED_SELECT = "nested_select"
     BOOLEAN = "boolean"
+
+
+class FieldUnit(BaseStrEnum):
+    YEAR = "ans", "Ans"
+    CM = "cm", "Cm"
 
 
 def get_field_enum(field_name: str) -> BaseStrEnum | None:
@@ -330,32 +363,60 @@ def get_field_enum(field_name: str) -> BaseStrEnum | None:
 
 
 fields_enums = {
-    "est_pratiquant": PracticeLevel,
-    "partenaire_meme_religion": PartnerSameReligion,
-    "transmission_foi_enfants": TransFaithToChild,
-    "meme_vision_education_religieuse": PartnerSameReligEducView,
-    "frequence_sport": SportFrequency,
-    "habitudes_alimentaires": DietType,
-    "approche_hygiene": HygieneImportance,
-    "fume": SmokingFrequency,
-    "boit_alcool": ConsumptionLevel,
-    "sport_partenaire": PartnerSportFrequency,
-    "memes_habitudes_alimentaires": PartnerSameDietType,
-    "importance_proprete_partenaire": PartnerHygieneImportance,
-    "accepte_fumeur": AcceptPartnerSmoking,
-    "accepte_buveur": AcceptPartnerAlcohol,
-    "accepte_partenaire_avec_animal": AcceptPartnerAnimal,
-    "style_vestimentaire": StyleType,
-    "importance_apparence_soi": SelfAppearanceImportance,
-    "importance_apparence_partenaire": PartnerAppearanceImportance,
-    "personalite": PersonalityType,
-    "preference_personalite_partenaire": PartnerPersonalityType,
-    "langage_amour": LoveLanguage,
-    "frequence_voir_amis": SocialFrequency,
-    "tolerance_mode_vie_social": SocialTolerance,
-    "importance_intimite": IntimacyImportance,
-    "frequence_intimite_ideale": IntimacyFrequency,
-    "confort_discussion_intimite": IntimacyTalkComfort,
-    "niveau_affection_publique": PublicAffectionLevel,
-    "type_compatibilite_recherchee": CompatibilityType,
+    "religious_practice": ReligiousPractice,
+    "partner_must_share_religion": PartnerMustShareReligion,
+    "faith_transmission_to_children": FaithTransmissionToChildren,
+    "partner_same_religious_education_vision": PartnerSameReligiousEducationVision,
+    "sport_frequency": SportFrequency,
+    "specific_dietary_habits": SpecificDietaryHabits,
+    "hygiene_tidiness_approach": HygieneTidinessApproach,
+    "smoker": Smoker,
+    "drinks_alcohol": DrinksAlcohol,
+    "partner_sport_frequency": PartnerSportFrequency,
+    "partner_same_dietary_habits": PartnerSameDietaryHabits,
+    "partner_cleanliness_importance": PartnerCleanlinessImportance,
+    "accept_smoker_partner": AcceptSmokerPartner,
+    "accept_alcohol_consumer_partner": AcceptAlcoholConsumerPartner,
+    "ready_to_live_with_pet": ReadyToLiveWithPet,
+    "personality_type": PersonalityType,
+    "partner_personality_preference": PartnerPersonalityPreference,
+    "primary_love_language": PrimaryLoveLanguage,
+    "friends_visit_frequency": FriendsVisitFrequency,
+    "main_dressing_style": MainDressingStyle,
+    "importance_of_appearance": ImportanceOfAppearance,
+    "partner_hygiene_appearance_importance": PartnerHygieneAppearanceImportance,
+    "important_physical_aspects_partner": ImportantPhysicalAspectsPartner,
+    "importance_of_sexuality": ImportanceOfSexuality,
+    "ideal_intimate_frequency": IdealIntimateFrequency,
+    "comfort_level_talking_sexuality": ComfortLevelTalkingSexuality,
+    "partner_sexual_values_alignment": PartnerSexualValuesAlignment,
+    "comfortable_public_affection": ComfortablePublicAffection,
+    "partner_similarity_preference": PartnerSimilarityPreference,
+    "importance_financial_situation_partner": ImportanceFinancialSituationPartner,
+    "ideal_partner_education_profession": IdealPartnerEducationProfession,
+    "partner_must_want_children": PartnerMustWantChildren,
+    "tolerance_social_vs_homebody": ToleranceSocial,
 }
+
+
+"""
+these are nested options for "ImportantPhysicalAspectsPartner"
+"options": [
+    { "label": "Taille", "value": "taille", "unit": "cm" },
+    {
+    "label": "Corpulence",
+    "value": "corpulence",
+    "sub_options": ["mince", "athlétique", "avec formes", "peu importe"]
+    },
+    {
+    "label": "Style vestimentaire",
+    "value": "style_vestimentaire",
+    "sub_options": ["classique", "urbain", "tendance", "peu importe"]
+    },
+    { "label": "Soin de soi / hygiène", "value": "soin_hygiene" },
+    {
+    "label": "Peu importe, je me fie surtout au ressenti global",
+    "value": "peu_importe_ressenti"
+    }
+]
+"""

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from sqlalchemy import ForeignKey, Text
@@ -25,7 +25,10 @@ class QuestionnaireField(Base):
     description: Mapped[str] = mapped_column(Text, default="")
     order_position: Mapped[int] = mapped_column(default=0)
     field_type: Mapped[str] = mapped_column(default=FieldType.TEXT)
+    field_unit: Mapped[Optional[str]]
+    placeholder: Mapped[Optional[str]]
     required: Mapped[bool] = mapped_column(default=False)
+    allow_custom: Mapped[bool] = mapped_column(default=False)
 
     # Foreign key to category
     category_id: Mapped[UUID] = mapped_column(

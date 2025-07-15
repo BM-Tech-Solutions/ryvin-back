@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
 from uuid import UUID
 
 from sqlalchemy import ForeignKey
@@ -12,29 +12,28 @@ if TYPE_CHECKING:
     from .user import User
 
 
-class UserProfile(Base):
+class Profile(Base):
     """
     User profile model containing personal information
     """
 
-    __tablename__ = "user_profile"
+    __tablename__ = "profile"
 
     user_id: Mapped[UUID] = mapped_column(
         pgUUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), unique=True
     )
-    prenom: Mapped[str]
-    genre: Mapped[str]  # Using Gender enum values
+
+    first_name: Mapped[str]
+    gender: Mapped[str]
+    relationship_goal: Mapped[str]
     age: Mapped[int]
-    ville: Mapped[str]
-    nationalite: Mapped[str]
-    langues: Mapped[List[str]] = mapped_column(JSONB, default=list)  # List of languages as JSON
-    situation_professionnelle: Mapped[str]  # Using ProfessionalStatus enum values
-    niveau_etudes: Mapped[str]  # Using EducationLevel enum values
-    deja_marie: Mapped[bool]
-    a_des_enfants: Mapped[bool]
-    nombre_enfants: Mapped[Optional[int]]
-    type_relation_recherchee: Mapped[str]  # Using RelationshipType enum values
-    genre_recherche: Mapped[str]  # Using Gender enum values
+    city_of_residence: Mapped[str]
+    nationality_cultural_origin: Mapped[str]
+    languages_spoken: Mapped[List[str]] = mapped_column(JSONB, default=list)
+    professional_situation: Mapped[str]
+    education_level: Mapped[str]
+    previously_married: Mapped[bool]
+
     photos: Mapped[List[str]] = mapped_column(JSONB, default=list)  # List of photo URLs as JSON
     is_profile_complete: Mapped[bool] = mapped_column(default=False)
     profile_completion_step: Mapped[int] = mapped_column(default=1)
@@ -43,4 +42,4 @@ class UserProfile(Base):
     user: Mapped["User"] = relationship(back_populates="profile", foreign_keys=[user_id])
 
     def __repr__(self) -> str:
-        return f"<UserProfile {self.id}: {self.prenom}, {self.age}>"
+        return f"<Profile {self.id}: {self.first_name}, {self.age}>"
