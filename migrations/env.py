@@ -18,13 +18,12 @@ from app.models import MeetingFeedback as MeetingFeedback
 from app.models import MeetingRequest as MeetingRequest
 from app.models import Message as Message
 from app.models import Photo as Photo
+from app.models import Profile as Profile
 from app.models import Questionnaire as Questionnaire
 from app.models import QuestionnaireCategory as QuestionnaireCategory
 from app.models import QuestionnaireField as QuestionnaireField
 from app.models import RefreshToken as RefreshToken
 from app.models import User as User
-from app.models import UserProfile as UserProfile
-from app.models import UserQuestionnaire as UserQuestionnaire
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
