@@ -1,9 +1,21 @@
-# Import all schemas here for easy access
+# ruff: noqa: F401 I001
+from app.schemas.journey import Journey, JourneyCreate, JourneyInDB, JourneyUpdate
+from app.schemas.match import Match, MatchCreate, MatchInDB, MatchUpdate
+from app.schemas.meeting import (
+    MeetingFeedback,
+    MeetingFeedbackCreate,
+    MeetingFeedbackInDB,
+    MeetingRequest,
+    MeetingRequestCreate,
+    MeetingRequestInDB,
+)
+from app.schemas.message import Message, MessageCreate, MessageInDB
+from app.schemas.profile import Profile, ProfileCreate, ProfileInDB, ProfileUpdate
+from app.schemas.questionnaire import (
+    Questionnaire,
+    QuestionnaireCreate,
+    QuestionnaireInDB,
+    QuestionnaireUpdate,
+)
 from app.schemas.token import Token, TokenPayload
-from app.schemas.user import UserCreate, UserUpdate, UserInDB, User
-from app.schemas.profile import ProfileCreate, ProfileUpdate, ProfileInDB, Profile
-from app.schemas.questionnaire import QuestionnaireCreate, QuestionnaireUpdate, QuestionnaireInDB, Questionnaire
-from app.schemas.match import MatchCreate, MatchUpdate, MatchInDB, Match
-from app.schemas.journey import JourneyCreate, JourneyUpdate, JourneyInDB, Journey
-from app.schemas.message import MessageCreate, MessageInDB, Message
-from app.schemas.meeting import MeetingRequestCreate, MeetingRequestInDB, MeetingRequest, MeetingFeedbackCreate, MeetingFeedbackInDB, MeetingFeedback
+from app.schemas.user import User, UserCreate, UserInDB, UserUpdate

@@ -2,8 +2,8 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field, validator
 import phonenumbers
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.models.enums import SubscriptionType
 
@@ -12,10 +12,11 @@ class UserBase(BaseModel):
     """
     Base schema for user data
     """
+
     phone_number: str
     email: Optional[EmailStr] = None
-    
-    @validator("phone_number")
+
+    @field_validator("phone_number")
     def validate_phone_number(cls, v):
         try:
             phone_number = phonenumbers.parse(v, None)
@@ -30,6 +31,7 @@ class UserCreate(UserBase):
     """
     Schema for user creation
     """
+
     pass
 
 
@@ -37,6 +39,7 @@ class UserUpdate(BaseModel):
     """
     Schema for user update
     """
+
     email: Optional[EmailStr] = None
     is_active: Optional[bool] = None
 
@@ -45,6 +48,7 @@ class UserInDBBase(UserBase):
     """
     Base schema for user in DB
     """
+
     id: UUID
     is_verified: bool
     is_active: bool
@@ -62,6 +66,7 @@ class UserInDB(UserInDBBase):
     """
     Schema for user in DB (internal use)
     """
+
     pass
 
 
@@ -69,4 +74,5 @@ class User(UserInDBBase):
     """
     Schema for user response
     """
+
     pass
