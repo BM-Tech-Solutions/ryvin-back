@@ -3,11 +3,9 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 
-from app.core.utils import get_now
+from app.core.security import utc_now
+from app.models import Questionnaire, QuestionnaireCategory, QuestionnaireField, User
 from app.models.enums import FieldType, get_field_enum
-from app.models.questionnaire import Questionnaire
-from app.models.questionnaire_category import QuestionnaireCategory
-from app.models.questionnaire_field import QuestionnaireField
 from app.schemas.questionnaire import QuestionnaireUpdate
 
 from .base_service import BaseService
@@ -89,12 +87,12 @@ class QuestionnaireService(BaseService):
                 )
 
         # Mark questionnaire as completed
-        questionnaire.completed_at = get_now()
+        questionnaire.completed_at = utc_now()
 
-        # Update user record (commented because field don't exist yet)
-        # user = self.db.query(User).filter(User.id == user_id).first()
-        # if user:
-        #     user.has_completed_questionnaire = True
+        # Update user record
+        user = self.db.query(User).filter(User.id == user_id).first()
+        if user:
+            user.has_completed_questionnaire = True
 
         self.db.commit()
         return True
@@ -181,7 +179,7 @@ class QuestionnaireService(BaseService):
 
             # Add the category to the response
             categories[category.name] = {
-                "label": category.display_name,
+                "label": category.label,
                 "description": category.description or "",
                 "order_position": category.order_position,
                 "fields": fields,
