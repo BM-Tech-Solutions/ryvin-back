@@ -1,13 +1,12 @@
 from typing import Any, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.core.database import get_session
 from app.core.dependencies import get_current_verified_user
 from app.models.user import User
-from app.models.enums import MatchStatus
 from app.schemas.match import Match, MatchResponse
 from app.services.match_service import MatchService
 
@@ -20,7 +19,7 @@ def get_matches(
     skip: int = 0,
     limit: int = 100,
     current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_session),
 ) -> Any:
     """
     Get all matches for the current user
@@ -34,7 +33,7 @@ def get_matches(
 def discover_matches(
     limit: int = Query(10, ge=1, le=50, description="Number of potential matches to discover"),
     current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_session),
 ) -> Any:
     """
     Discover potential matches for the current user
@@ -48,7 +47,7 @@ def discover_matches(
 def get_match(
     match_id: UUID,
     current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_session),
 ) -> Any:
     """
     Get a specific match by ID
@@ -62,7 +61,7 @@ def get_match(
 def accept_match(
     match_id: UUID,
     current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_session),
 ) -> Any:
     """
     Accept a match
@@ -76,11 +75,11 @@ def accept_match(
 def decline_match(
     match_id: UUID,
     current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_session),
 ) -> Any:
     """
     Decline a match
     """
     match_service = MatchService(db)
-    result = match_service.decline_match(match_id, current_user.id)
-    return {"message": "Match declined successfully"}
+    match = match_service.decline_match(match_id, current_user.id)
+    return {"message": f"Match {match} declined successfully"}

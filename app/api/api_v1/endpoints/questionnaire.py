@@ -1,12 +1,12 @@
-from typing import Any, Dict, List
+from typing import Any, Dict
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.core.database import get_session
 from app.core.dependencies import get_current_verified_user
 from app.models.user import User
-from app.schemas.questionnaire import QuestionnaireCreate, QuestionnaireUpdate
+from app.schemas.questionnaire import QuestionnaireUpdate
 from app.services.questionnaire_service import QuestionnaireService
 
 router = APIRouter()
@@ -14,8 +14,7 @@ router = APIRouter()
 
 @router.get("/me")
 def get_questionnaire(
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_verified_user), db: Session = Depends(get_session)
 ) -> Any:
     """
     Get current user's questionnaire
@@ -29,7 +28,7 @@ def get_questionnaire(
 def update_questionnaire(
     questionnaire_in: QuestionnaireUpdate,
     current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_session),
 ) -> Any:
     """
     Update current user's questionnaire
@@ -41,25 +40,19 @@ def update_questionnaire(
 
 @router.post("/complete", status_code=status.HTTP_200_OK)
 def complete_questionnaire(
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_verified_user), db: Session = Depends(get_session)
 ) -> Any:
     """
     Mark questionnaire as completed
     """
     questionnaire_service = QuestionnaireService(db)
     result = questionnaire_service.complete_questionnaire(current_user.id)
-    
-    return {
-        "message": "Questionnaire completed successfully",
-        "completed_at": result.completed_at
-    }
+
+    return {"message": "Questionnaire completed successfully", "completed_at": result.completed_at}
 
 
 @router.get("/categories", response_model=Dict[str, Any])
-def get_questions_by_categories(
-    db: Session = Depends(get_db)
-) -> Any:
+def get_questions_by_categories(db: Session = Depends(get_session)) -> Any:
     """
     Get all questionnaire questions organized by categories from the database
     """
