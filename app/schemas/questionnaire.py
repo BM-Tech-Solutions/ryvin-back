@@ -4,250 +4,101 @@ from uuid import UUID
 
 from pydantic import BaseModel, field_validator
 
-from app.models.enums import (
-    ComfortLevel,
-    CompatibilityType,
-    ConsumptionLevel,
-    DietType,
-    EducationPreference,
-    HygieneImportance,
-    ImportanceLevel,
-    IntimacyFrequency,
-    LoveLanguage,
-    PersonalityType,
-    PracticeLevel,
-    PublicAffectionLevel,
-    SocialFrequency,
-    SocialTolerance,
-    SportFrequency,
-    StyleType,
-)
-
 
 class QuestionnaireBase(BaseModel):
     """
     Base schema for user questionnaire data
     """
 
-    # Religion et spiritualité
-    religion: Optional[str] = None
-    est_pratiquant: Optional[str] = None
-    partenaire_meme_religion: Optional[str] = None
-    accepte_autre_religion: Optional[bool] = None
-    transmission_foi_enfants: Optional[bool] = None
-    meme_vision_education_religieuse: Optional[bool] = None
+    # religious_and_spiritual_beliefs
+    religion_spirituality: str | None = None
+    religious_practice: str | None = None
+    partner_must_share_religion: str | None = None
+    accept_non_believer: str | None = None
+    faith_transmission_to_children: str | None = None
+    partner_same_religious_education_vision: str | None = None
 
-    # Mode de vie
-    frequence_sport: Optional[str] = None
-    habitudes_alimentaires: Optional[str] = None
-    approche_hygiene: Optional[str] = None
-    fume: Optional[str] = None
-    boit_alcool: Optional[str] = None
+    # political_and_societal_values
+    political_orientation: str | None = None
+    partner_share_convictions_importance: str | None = None
+    lessons_from_past_relationships: str | None = None
 
-    # Préférences partenaire
-    sport_partenaire: Optional[str] = None
-    memes_habitudes_alimentaires: Optional[bool] = None
-    importance_proprete_partenaire: Optional[str] = None
-    accepte_fumeur: Optional[bool] = None
-    accepte_buveur: Optional[bool] = None
+    # lifestyle_you
+    sport_frequency: str | None = None
+    specific_dietary_habits: str | None = None
+    hygiene_tidiness_approach: str | None = None
+    smoker: str | None = None
+    drinks_alcohol: str | None = None
 
-    # Physique
-    description_physique: Optional[str] = None
-    style_vestimentaire: Optional[str] = None
-    importance_apparence_soi: Optional[str] = None
-    importance_apparence_partenaire: Optional[str] = None
-    partenaire_ideal_physique: Optional[str] = None
-    criteres_physiques_non_negotiables: Optional[str] = None
+    # lifestyle_partner
+    partner_sport_frequency: str | None = None
+    partner_same_dietary_habits: str | None = None
+    partner_cleanliness_importance: str | None = None
+    accept_smoker_partner: str | None = None
+    accept_alcohol_consumer_partner: str | None = None
+    has_pet: str | None = None
+    type_of_pet: str | None = None
+    ready_to_live_with_pet: str | None = None
+    allergic_to_animals: str | None = None
+    which_animals_allergic: str | None = None
 
-    # Enfants et famille
-    souhaite_enfants: Optional[bool] = None
-    partenaire_doit_vouloir_enfants: Optional[bool] = None
-    nombre_enfants_souhaite: Optional[int] = None
-    approche_educative: Optional[str] = None
-    accepte_partenaire_avec_enfants: Optional[bool] = None
-    memes_valeurs_educatives: Optional[bool] = None
+    # personality_and_social_relations
+    personality_type: str | None = None
+    partner_personality_preference: str | None = None
+    primary_love_language: str | None = None
+    partner_same_love_language: str | None = None
+    friends_visit_frequency: str | None = None
+    tolerance_social_vs_homebody: str | None = None
+    conflict_management: str | None = None
+    greatest_quality_in_relationship: str | None = None
+    greatest_flaw_in_relationship: str | None = None
+    what_attracts_you: str | None = None
+    intolerable_flaw: str | None = None
 
-    # Socio-économique
-    importance_situation_financiere: Optional[str] = None
-    niveau_etudes_partenaire: Optional[str] = None
-    approche_argent_couple: Optional[str] = None
+    # physical_preferences_and_attraction
+    physical_description: str | None = None
+    main_dressing_style: str | None = None
+    importance_of_appearance: str | None = None
+    partner_hygiene_appearance_importance: str | None = None
+    important_physical_aspects_partner: str | None = None
 
-    # Personnalité
-    personalite: Optional[str] = None
-    preference_personalite_partenaire: Optional[str] = None
-    langage_amour: Optional[str] = None
-    meme_langage_amour: Optional[bool] = None
-    frequence_voir_amis: Optional[str] = None
-    tolerance_mode_vie_social: Optional[str] = None
-    gestion_conflits: Optional[str] = None
+    # sexuality_and_intimacy
+    importance_of_sexuality: str | None = None
+    ideal_intimate_frequency: str | None = None
+    comfort_level_talking_sexuality: str | None = None
+    partner_sexual_values_alignment: str | None = None
+    comfortable_public_affection: str | None = None
+    ideal_sexuality_vision: str | None = None
 
-    # Sexualité
-    importance_sexualite: Optional[str] = None
-    frequence_ideale_rapports: Optional[str] = None
-    confort_parler_sexualite: Optional[str] = None
-    valeurs_sexuelles_proches: Optional[bool] = None
-    demonstrations_publiques_affection: Optional[str] = None
-    vision_sexualite_couple: Optional[str] = None
+    # desired_compatibility
+    partner_similarity_preference: str | None = None
+    partner_age_range: str | None = None
 
-    # Valeurs politiques
-    orientation_politique: Optional[str] = None
-    importance_convictions_partenaire: Optional[str] = None
+    # socio_economic_level
+    importance_financial_situation_partner: str | None = None
+    ideal_partner_education_profession: str | None = None
+    money_approach_in_couple: str | None = None
+    ideal_partner_description: str | None = None
+    ideal_couple_life_description: str | None = None
 
-    # Animaux
-    a_animal: Optional[bool] = None
-    type_animal: Optional[str] = None
-    accepte_partenaire_avec_animal: Optional[bool] = None
-    allergies_animaux: Optional[bool] = None
-    allergies_quels_animaux: Optional[str] = None
+    # children_and_family
+    has_children: str | None = None
+    number_of_children: str | None = None
+    wants_children: str | None = None
+    partner_must_want_children: str | None = None
+    partner_desired_number_of_children: str | None = None
+    educational_approach: str | None = None
+    accept_partner_with_children: str | None = None
+    share_same_educational_values: str | None = None
+    imagine_yourself_in10_years: str | None = None
+    reason_for_registration: str | None = None
 
-    # Compatibilité
-    recherche_type: Optional[str] = None
-
-    # Questions finales
-    vie_couple_ideale: Optional[str] = None
-    ce_qui_fait_craquer: Optional[str] = None
-    defaut_intolerable: Optional[str] = None
-    plus_grande_qualite: Optional[str] = None
-    plus_grand_defaut: Optional[str] = None
-    partenaire_ideal_personnalite: Optional[str] = None
-    lecons_relations_passees: Optional[str] = None
-    vision_10_ans: Optional[str] = None
-    raison_inscription: Optional[str] = None
-
-    # Validators for enum fields
-    @field_validator("est_pratiquant")
-    def validate_est_pratiquant(cls, v):
-        if v is not None and v not in [level.value for level in PracticeLevel]:
-            raise ValueError(
-                f"Invalid practice level. Must be one of: {[level.value for level in PracticeLevel]}"
-            )
-        return v
-
-    @field_validator(
-        "partenaire_meme_religion",
-        "importance_proprete_partenaire",
-        "importance_apparence_soi",
-        "importance_apparence_partenaire",
-        "importance_situation_financiere",
-        "importance_sexualite",
-    )
-    def validate_importance_level(cls, v):
-        if v is not None and v not in [level.value for level in ImportanceLevel]:
-            raise ValueError(
-                f"Invalid importance level. Must be one of: {[level.value for level in ImportanceLevel]}"
-            )
-        return v
-
-    @field_validator("frequence_sport", "sport_partenaire")
-    def validate_sport_frequency(cls, v):
-        if v is not None and v not in [freq.value for freq in SportFrequency]:
-            raise ValueError(
-                f"Invalid sport frequency. Must be one of: {[freq.value for freq in SportFrequency]}"
-            )
-        return v
-
-    @field_validator("habitudes_alimentaires")
-    def validate_diet_type(cls, v):
-        if v is not None and v not in [diet.value for diet in DietType]:
-            raise ValueError(
-                f"Invalid diet type. Must be one of: {[diet.value for diet in DietType]}"
-            )
-        return v
-
-    @field_validator("approche_hygiene")
-    def validate_hygiene_importance(cls, v):
-        if v is not None and v not in [level.value for level in HygieneImportance]:
-            raise ValueError(
-                f"Invalid hygiene importance. Must be one of: {[level.value for level in HygieneImportance]}"
-            )
-        return v
-
-    @field_validator("fume", "boit_alcool")
-    def validate_consumption_level(cls, v):
-        if v is not None and v not in [level.value for level in ConsumptionLevel]:
-            raise ValueError(
-                f"Invalid consumption level. Must be one of: {[level.value for level in ConsumptionLevel]}"
-            )
-        return v
-
-    @field_validator("style_vestimentaire")
-    def validate_style_type(cls, v):
-        if v is not None and v not in [style.value for style in StyleType]:
-            raise ValueError(
-                f"Invalid style type. Must be one of: {[style.value for style in StyleType]}"
-            )
-        return v
-
-    @field_validator("niveau_etudes_partenaire")
-    def validate_education_preference(cls, v):
-        if v is not None and v not in [pref.value for pref in EducationPreference]:
-            raise ValueError(
-                f"Invalid education preference. Must be one of: {[pref.value for pref in EducationPreference]}"
-            )
-        return v
-
-    @field_validator("personalite", "preference_personalite_partenaire")
-    def validate_personality_type(cls, v):
-        if v is not None and v not in [ptype.value for ptype in PersonalityType]:
-            raise ValueError(
-                f"Invalid personality type. Must be one of: {[ptype.value for ptype in PersonalityType]}"
-            )
-        return v
-
-    @field_validator("langage_amour")
-    def validate_love_language(cls, v):
-        if v is not None and v not in [lang.value for lang in LoveLanguage]:
-            raise ValueError(
-                f"Invalid love language. Must be one of: {[lang.value for lang in LoveLanguage]}"
-            )
-        return v
-
-    @field_validator("frequence_voir_amis")
-    def validate_social_frequency(cls, v):
-        if v is not None and v not in [freq.value for freq in SocialFrequency]:
-            raise ValueError(
-                f"Invalid social frequency. Must be one of: {[freq.value for freq in SocialFrequency]}"
-            )
-        return v
-
-    @field_validator("tolerance_mode_vie_social")
-    def validate_social_tolerance(cls, v):
-        if v is not None and v not in [tol.value for tol in SocialTolerance]:
-            raise ValueError(
-                f"Invalid social tolerance. Must be one of: {[tol.value for tol in SocialTolerance]}"
-            )
-        return v
-
-    @field_validator("frequence_ideale_rapports")
-    def validate_intimacy_frequency(cls, v):
-        if v is not None and v not in [freq.value for freq in IntimacyFrequency]:
-            raise ValueError(
-                f"Invalid intimacy frequency. Must be one of: {[freq.value for freq in IntimacyFrequency]}"
-            )
-        return v
-
-    @field_validator("confort_parler_sexualite")
-    def validate_comfort_level(cls, v):
-        if v is not None and v not in [level.value for level in ComfortLevel]:
-            raise ValueError(
-                f"Invalid comfort level. Must be one of: {[level.value for level in ComfortLevel]}"
-            )
-        return v
-
-    @field_validator("demonstrations_publiques_affection")
-    def validate_public_affection_level(cls, v):
-        if v is not None and v not in [level.value for level in PublicAffectionLevel]:
-            raise ValueError(
-                f"Invalid public affection level. Must be one of: {[level.value for level in PublicAffectionLevel]}"
-            )
-        return v
-
-    @field_validator("recherche_type")
-    def validate_compatibility_type(cls, v):
-        if v is not None and v not in [ctype.value for ctype in CompatibilityType]:
-            raise ValueError(
-                f"Invalid compatibility type. Must be one of: {[ctype.value for ctype in CompatibilityType]}"
-            )
+    @field_validator("number_of_children")
+    def validate_number_of_children(cls, v, values):
+        if values.get("has_children") and v is None:
+            raise ValueError("Number of children is required when has_children is True")
+        if not values.get("has_children") and v is not None:
+            return None  # Reset to None if has_children is False
         return v
 
 

@@ -2,9 +2,7 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
-
-from app.models.enums import EducationLevel, Gender, ProfessionalStatus, RelationshipType
+from pydantic import BaseModel, Field
 
 
 class ProfileBase(BaseModel):
@@ -12,67 +10,16 @@ class ProfileBase(BaseModel):
     Base schema for user profile data
     """
 
-    prenom: str
-    genre: str = Field(description="Gender of the user")
+    first_name: str
+    gender: str = Field(description="Gender of the user")
+    relationship_goal: str
     age: int = Field(ge=18, description="Age of the user (must be at least 18)")
-    ville: str
-    nationalite: str
-    langues: List[str] = Field(default_factory=list)
-    situation_professionnelle: str
-    niveau_etudes: str
-    deja_marie: bool
-    a_des_enfants: bool
-    nombre_enfants: Optional[int] = None
-    type_relation_recherchee: str
-    genre_recherche: str
-
-    @field_validator("genre")
-    def validate_genre(cls, v):
-        if v not in [gender.value for gender in Gender]:
-            raise ValueError(
-                f"Invalid gender. Must be one of: {[gender.value for gender in Gender]}"
-            )
-        return v
-
-    @field_validator("situation_professionnelle")
-    def validate_situation_professionnelle(cls, v):
-        if v not in [status.value for status in ProfessionalStatus]:
-            raise ValueError(
-                f"Invalid professional status. Must be one of: {[status.value for status in ProfessionalStatus]}"
-            )
-        return v
-
-    @field_validator("niveau_etudes")
-    def validate_niveau_etudes(cls, v):
-        if v not in [level.value for level in EducationLevel]:
-            raise ValueError(
-                f"Invalid education level. Must be one of: {[level.value for level in EducationLevel]}"
-            )
-        return v
-
-    @field_validator("type_relation_recherchee")
-    def validate_type_relation_recherchee(cls, v):
-        if v not in [rel_type.value for rel_type in RelationshipType]:
-            raise ValueError(
-                f"Invalid relationship type. Must be one of: {[rel_type.value for rel_type in RelationshipType]}"
-            )
-        return v
-
-    @field_validator("genre_recherche")
-    def validate_genre_recherche(cls, v):
-        if v not in [gender.value for gender in Gender]:
-            raise ValueError(
-                f"Invalid gender preference. Must be one of: {[gender.value for gender in Gender]}"
-            )
-        return v
-
-    @field_validator("nombre_enfants")
-    def validate_nombre_enfants(cls, v, values):
-        if values.get("a_des_enfants") and v is None:
-            raise ValueError("Number of children is required when a_des_enfants is True")
-        if not values.get("a_des_enfants") and v is not None:
-            return None  # Reset to None if a_des_enfants is False
-        return v
+    city_of_residence: str
+    nationality_cultural_origin: str
+    languages_spoken: List[str]
+    professional_situation: str
+    education_level: str
+    previously_married: bool
 
 
 class ProfileCreate(ProfileBase):

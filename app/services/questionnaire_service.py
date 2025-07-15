@@ -171,7 +171,7 @@ class QuestionnaireService(BaseService):
                 }
 
                 # Add options if available
-                if field.field_type == FieldType.SELECT:
+                if field.field_type in [FieldType.SELECT, FieldType.NESTED_SELECT]:
                     field_enum = get_field_enum(field.name)
                     field_data["options"] = field_enum.options() if field_enum else []
 

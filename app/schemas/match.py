@@ -15,15 +15,7 @@ class MatchBase(BaseModel):
     user1_id: UUID
     user2_id: UUID
     compatibility_score: float = Field(ge=0.0, le=100.0)
-    status: str = Field(default=MatchStatus.PENDING)
-
-    @field_validator("status")
-    def validate_status(cls, v):
-        if v not in [status.value for status in MatchStatus]:
-            raise ValueError(
-                f"Invalid match status. Must be one of: {[status.value for status in MatchStatus]}"
-            )
-        return v
+    status: MatchStatus = Field(default=MatchStatus.PENDING)
 
     @field_validator("compatibility_score")
     def validate_compatibility_score(cls, v):
@@ -45,15 +37,7 @@ class MatchUpdate(BaseModel):
     Schema for match update
     """
 
-    status: Optional[str] = None
-
-    @field_validator("status")
-    def validate_status(cls, v):
-        if v is not None and v not in [status.value for status in MatchStatus]:
-            raise ValueError(
-                f"Invalid match status. Must be one of: {[status.value for status in MatchStatus]}"
-            )
-        return v
+    status: Optional[MatchStatus] = None
 
 
 class MatchInDBBase(MatchBase):
