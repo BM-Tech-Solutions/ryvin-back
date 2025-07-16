@@ -1,6 +1,6 @@
 from typing import Any, List, Optional
 
-from pydantic import PostgresDsn, field_validator
+from pydantic import PostgresDsn, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     DATABASE_URI: Optional[PostgresDsn] = None
 
     @field_validator("DATABASE_URI", mode="before")
-    def assemble_db_connection(cls, v: Optional[str], info) -> Any:
+    def assemble_db_connection(cls, v: Optional[str], info: ValidationInfo) -> Any:
         if isinstance(v, str):
             return v
 
@@ -68,18 +68,6 @@ class Settings(BaseSettings):
     FIREBASE_AUTH_DOMAIN: Optional[str] = None
     FIREBASE_PROJECT_ID: Optional[str] = None
     FIREBASE_SERVICE_ACCOUNT_PATH: Optional[str] = None
-
-    # Firebase Service Account Credentials (as environment variables)
-    FIREBASE_TYPE: Optional[str] = None
-    FIREBASE_PROJECT_ID_ENV: Optional[str] = None
-    FIREBASE_PRIVATE_KEY_ID: Optional[str] = None
-    FIREBASE_PRIVATE_KEY: Optional[str] = None
-    FIREBASE_CLIENT_EMAIL: Optional[str] = None
-    FIREBASE_CLIENT_ID: Optional[str] = None
-    FIREBASE_AUTH_URI: Optional[str] = None
-    FIREBASE_TOKEN_URI: Optional[str] = None
-    FIREBASE_AUTH_PROVIDER_X509_CERT_URL: Optional[str] = None
-    FIREBASE_CLIENT_X509_CERT_URL: Optional[str] = None
 
     # Google OAuth (for Social Login)
     GOOGLE_CLIENT_ID: Optional[str] = None

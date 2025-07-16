@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
@@ -5,9 +7,18 @@ from fastapi.security import APIKeyHeader
 
 from app.core.config import settings
 from app.core.middleware import APITokenMiddleware
+from firebase import init_firebase
 
 # Define API key security scheme for Swagger docs
 api_key_header = APIKeyHeader(name="API-Token", auto_error=False)
+
+
+# code to run before app startup & after app shutdown
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_firebase()
+    yield
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -15,6 +26,7 @@ app = FastAPI(
     description="API for Ryvin Dating Application",
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     swagger_ui_parameters={"persistAuthorization": True},
+    lifespan=lifespan,
 )
 
 

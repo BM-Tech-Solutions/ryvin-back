@@ -30,18 +30,17 @@ class Base(DeclarativeBase):
         pgUUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now)
-
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, onupdate=utc_now
     )
 
 
 def get_session() -> Generator[Session, None, None]:
-    db = SessionLocal()
+    session = SessionLocal()
     try:
-        yield db
+        yield session
     finally:
-        db.close()
+        session.close()
 
 
 SessionDep = Annotated[Session, Depends(get_session)]

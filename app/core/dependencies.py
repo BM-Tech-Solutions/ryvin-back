@@ -1,4 +1,7 @@
-from fastapi import Depends, HTTPException, status
+from typing import Annotated
+from uuid import UUID
+
+from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from pydantic import ValidationError
@@ -34,13 +37,28 @@ async def get_current_user(
     user = session.query(User).filter(User.id == token_data.sub).first()
     if not user:
         raise credentials_exception
-    if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+    return user
+
+
+async def get_user(
+    session: SessionDep,
+    id_header: Annotated[
+        UUID,
+        Header(description="for testing only (instead of using 'Authorization')"),
+    ] = "8131dbdf-e7a3-4197-bea8-19005ed8d520",
+):
+    user = session.query(User).filter(User.id == id_header).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Could not find user with id: {id_header}",
+        )
     return user
 
 
 async def get_current_active_user(
-    current_user: User = Depends(get_current_user),
+    # current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_user),
 ) -> User:
     """
     Get the current active user
