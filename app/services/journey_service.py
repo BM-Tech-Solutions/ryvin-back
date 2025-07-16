@@ -26,13 +26,13 @@ class JourneyService(BaseService):
         """
         Get journey by ID
         """
-        return self.db.query(Journey).filter(Journey.id == journey_id).first()
+        return self.session.query(Journey).filter(Journey.id == journey_id).first()
 
     def get_journey_by_match(self, match_id: UUID) -> Optional[Journey]:
         """
         Get journey by match ID
         """
-        return self.db.query(Journey).filter(Journey.match_id == match_id).first()
+        return self.session.query(Journey).filter(Journey.match_id == match_id).first()
 
     def get_user_journeys(
         self,
@@ -46,7 +46,7 @@ class JourneyService(BaseService):
         Get all journeys for a user
         """
         query = (
-            self.db.query(Journey)
+            self.session.query(Journey)
             .join(Match)
             .filter(or_(Match.user1_id == user_id, Match.user2_id == user_id))
         )
@@ -95,7 +95,9 @@ class JourneyService(BaseService):
         if journey.current_step == 1:
             # Pre-compatibility to Voice/Video Call
             # Check if there are enough messages exchanged
-            message_count = self.db.query(Message).filter(Message.journey_id == journey.id).count()
+            message_count = (
+                self.session.query(Message).filter(Message.journey_id == journey.id).count()
+            )
             if message_count < 5:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -111,8 +113,8 @@ class JourneyService(BaseService):
             # Photos Unlocked to Physical Meeting
             # Check if both users have photos
             match = journey.match
-            user1_photos = self.db.query(User).filter(User.id == match.user1_id).first().photos
-            user2_photos = self.db.query(User).filter(User.id == match.user2_id).first().photos
+            user1_photos = self.session.query(User).filter(User.id == match.user1_id).first().photos
+            user2_photos = self.session.query(User).filter(User.id == match.user2_id).first().photos
 
             if not user1_photos or not user2_photos:
                 raise HTTPException(
@@ -124,7 +126,7 @@ class JourneyService(BaseService):
             # Physical Meeting to Meeting Feedback
             # Check if meeting request exists and was accepted
             meeting_request = (
-                self.db.query(MeetingRequest)
+                self.session.query(MeetingRequest)
                 .filter(
                     MeetingRequest.journey_id == journey.id, MeetingRequest.status == "accepted"
                 )
@@ -141,13 +143,13 @@ class JourneyService(BaseService):
         journey.current_step += 1
         journey.updated_at = utc_now()
 
-        self.db.commit()
-        self.db.refresh(journey)
+        self.session.commit()
+        self.session.refresh(journey)
 
         # Send notifications to both users
         match = journey.match
-        user1 = self.db.query(User).filter(User.id == match.user1_id).first()
-        user2 = self.db.query(User).filter(User.id == match.user2_id).first()
+        user1 = self.session.query(User).filter(User.id == match.user1_id).first()
+        user2 = self.session.query(User).filter(User.id == match.user2_id).first()
 
         if user1 and user2:
             NotificationService().send_journey_step_advanced_notification(user1, journey)
@@ -163,8 +165,8 @@ class JourneyService(BaseService):
         journey.completed_at = utc_now()
         journey.updated_at = utc_now()
 
-        self.db.commit()
-        self.db.refresh(journey)
+        self.session.commit()
+        self.session.refresh(journey)
         return journey
 
     def end_journey(self, journey: Journey, user_id: UUID, reason: str) -> Journey:
@@ -177,13 +179,13 @@ class JourneyService(BaseService):
         journey.end_reason = reason
         journey.updated_at = utc_now()
 
-        self.db.commit()
-        self.db.refresh(journey)
+        self.session.commit()
+        self.session.refresh(journey)
 
         # Send notifications to both users
         match = journey.match
-        user1 = self.db.query(User).filter(User.id == match.user1_id).first()
-        user2 = self.db.query(User).filter(User.id == match.user2_id).first()
+        user1 = self.session.query(User).filter(User.id == match.user1_id).first()
+        user2 = self.session.query(User).filter(User.id == match.user2_id).first()
 
         if user1 and user2:
             NotificationService().send_journey_ended_notification(user1, journey, reason)
@@ -202,7 +204,7 @@ class MessageService(BaseService):
         Get messages for a journey
         """
         return (
-            self.db.query(Message)
+            self.session.query(Message)
             .filter(Message.journey_id == journey_id)
             .order_by(Message.created_at.desc())
             .offset(skip)
@@ -224,17 +226,17 @@ class MessageService(BaseService):
             message_type=message_data.message_type,
         )
 
-        self.db.add(message)
-        self.db.commit()
-        self.db.refresh(message)
+        self.session.add(message)
+        self.session.commit()
+        self.session.refresh(message)
 
         # Get journey and other user for notification
-        journey = self.db.query(Journey).filter(Journey.id == journey_id).first()
+        journey = self.session.query(Journey).filter(Journey.id == journey_id).first()
         if journey:
             match = journey.match
             other_user_id = match.user1_id if match.user1_id != sender_id else match.user2_id
-            other_user = self.db.query(User).filter(User.id == other_user_id).first()
-            sender = self.db.query(User).filter(User.id == sender_id).first()
+            other_user = self.session.query(User).filter(User.id == other_user_id).first()
+            sender = self.session.query(User).filter(User.id == sender_id).first()
 
             if other_user and sender:
                 sender_name = f"{sender.first_name}" if sender.first_name else "Your match"
@@ -255,7 +257,7 @@ class MeetingService(BaseService):
         Get meeting requests for a journey
         """
         return (
-            self.db.query(MeetingRequest)
+            self.session.query(MeetingRequest)
             .filter(MeetingRequest.journey_id == journey_id)
             .order_by(MeetingRequest.created_at.desc())
             .all()
@@ -265,7 +267,7 @@ class MeetingService(BaseService):
         """
         Get meeting request by ID
         """
-        return self.db.query(MeetingRequest).filter(MeetingRequest.id == meeting_id).first()
+        return self.session.query(MeetingRequest).filter(MeetingRequest.id == meeting_id).first()
 
     def create_meeting_request(
         self, journey_id: UUID, requester_id: UUID, meeting_data: MeetingRequestCreate
@@ -275,7 +277,7 @@ class MeetingService(BaseService):
         """
         # Check if there's already an accepted meeting request
         existing_accepted = (
-            self.db.query(MeetingRequest)
+            self.session.query(MeetingRequest)
             .filter(MeetingRequest.journey_id == journey_id, MeetingRequest.status == "accepted")
             .first()
         )
@@ -298,17 +300,17 @@ class MeetingService(BaseService):
             status="pending",
         )
 
-        self.db.add(meeting_request)
-        self.db.commit()
-        self.db.refresh(meeting_request)
+        self.session.add(meeting_request)
+        self.session.commit()
+        self.session.refresh(meeting_request)
 
         # Get journey and other user for notification
-        journey = self.db.query(Journey).filter(Journey.id == journey_id).first()
+        journey = self.session.query(Journey).filter(Journey.id == journey_id).first()
         if journey:
             match = journey.match
             other_user_id = match.user1_id if match.user1_id != requester_id else match.user2_id
-            other_user = self.db.query(User).filter(User.id == other_user_id).first()
-            requester = self.db.query(User).filter(User.id == requester_id).first()
+            other_user = self.session.query(User).filter(User.id == other_user_id).first()
+            requester = self.session.query(User).filter(User.id == requester_id).first()
 
             if other_user and requester:
                 requester_name = f"{requester.first_name}" if requester.first_name else "Your match"
@@ -336,11 +338,11 @@ class MeetingService(BaseService):
         meeting_request.responded_at = utc_now()
         meeting_request.responder_id = user_id
 
-        self.db.commit()
-        self.db.refresh(meeting_request)
+        self.session.commit()
+        self.session.refresh(meeting_request)
 
         # Send notification to requester
-        requester = self.db.query(User).filter(User.id == meeting_request.requester_id).first()
+        requester = self.session.query(User).filter(User.id == meeting_request.requester_id).first()
         if requester:
             NotificationService().send_meeting_response_notification(
                 requester, meeting_request, accept
@@ -353,7 +355,7 @@ class MeetingService(BaseService):
         Get feedback for a meeting
         """
         return (
-            self.db.query(MeetingFeedback)
+            self.session.query(MeetingFeedback)
             .filter(MeetingFeedback.meeting_request_id == meeting_request_id)
             .all()
         )
@@ -366,7 +368,7 @@ class MeetingService(BaseService):
         """
         # Check if user has already provided feedback
         existing_feedback = (
-            self.db.query(MeetingFeedback)
+            self.session.query(MeetingFeedback)
             .filter(
                 MeetingFeedback.meeting_request_id == feedback_data.meeting_request_id,
                 MeetingFeedback.user_id == user_id,
@@ -389,9 +391,9 @@ class MeetingService(BaseService):
             want_to_continue=feedback_data.want_to_continue,
         )
 
-        self.db.add(feedback)
-        self.db.commit()
-        self.db.refresh(feedback)
+        self.session.add(feedback)
+        self.session.commit()
+        self.session.refresh(feedback)
 
         return feedback
 
@@ -400,13 +402,17 @@ class MeetingService(BaseService):
         Check if both users have provided feedback for a meeting
         """
         meeting_request = (
-            self.db.query(MeetingRequest).filter(MeetingRequest.id == meeting_request_id).first()
+            self.session.query(MeetingRequest)
+            .filter(MeetingRequest.id == meeting_request_id)
+            .first()
         )
 
         if not meeting_request:
             return False
 
-        journey = self.db.query(Journey).filter(Journey.id == meeting_request.journey_id).first()
+        journey = (
+            self.session.query(Journey).filter(Journey.id == meeting_request.journey_id).first()
+        )
         if not journey:
             return False
 
@@ -414,7 +420,7 @@ class MeetingService(BaseService):
 
         # Count feedback from both users
         feedback_count = (
-            self.db.query(MeetingFeedback)
+            self.session.query(MeetingFeedback)
             .filter(
                 MeetingFeedback.meeting_request_id == meeting_request_id,
                 MeetingFeedback.user_id.in_([match.user1_id, match.user2_id]),
@@ -429,7 +435,7 @@ class MeetingService(BaseService):
         Check if both users want to continue after meeting
         """
         feedbacks = (
-            self.db.query(MeetingFeedback)
+            self.session.query(MeetingFeedback)
             .filter(MeetingFeedback.meeting_request_id == meeting_request_id)
             .all()
         )

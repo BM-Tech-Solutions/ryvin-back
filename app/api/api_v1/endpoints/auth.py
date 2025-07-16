@@ -6,22 +6,18 @@ Endpoints for Firebase phone authentication and Google OAuth.
 
 from typing import Any, Dict, Optional
 
-# Firebase Admin SDK
-import firebase_admin
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from firebase_admin import auth as firebase_auth
 from pydantic import BaseModel, EmailStr, Field
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.database import get_session
 from app.main import api_key_header
 from app.models.user import User
+from app.schemas.user import TestUserCreate, UserOut
 from app.services.auth_service import AuthService
-
-# Initialize Firebase Admin if not already initialized
-if not firebase_admin._apps:
-    firebase_admin.initialize_app()
 
 
 # Request models
@@ -265,9 +261,9 @@ def get_user_data(
         # Convert user object to dictionary
         user_data = {
             "id": str(user.id),
-            "phone": user.phone,
+            "phone_number": user.phone_number,
             "email": user.email,
-            "name": user.name,
+            "name": "test_name",
             "is_verified": user.is_verified,
             "created_at": user.created_at.isoformat(),
             "last_login": user.last_login.isoformat() if user.last_login else None,
@@ -279,3 +275,27 @@ def get_user_data(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving user data: {str(e)}",
         )
+
+
+@router.post("/create-user/", tags=["test"])
+def create_user(user_in: TestUserCreate, session: Session = Depends(get_session)) -> UserOut:
+    """
+    Testing endpoint for creating a new user.
+    """
+    user = session.query(User).filter(User.phone_number == user_in.phone_number).first()
+    if user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"User with phone number: '{user_in.phone_number}' already exists",
+        )
+    try:
+        user = User(**user_in.model_dump(exclude_unset=True))
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+    except IntegrityError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"args": e.args},
+        )
+    return user

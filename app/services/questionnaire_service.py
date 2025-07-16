@@ -1,12 +1,10 @@
 from typing import Any, Dict, Optional
 from uuid import UUID
 
-from fastapi import HTTPException, status
-
 from app.core.security import utc_now
 from app.models import Questionnaire, QuestionnaireCategory, QuestionnaireField, User
 from app.models.enums import FieldType, get_field_enum
-from app.schemas.questionnaire import QuestionnaireUpdate
+from app.schemas.questionnaire import QuestionnaireCreate, QuestionnaireUpdate
 
 from .base_service import BaseService
 
@@ -20,16 +18,17 @@ class QuestionnaireService(BaseService):
         """
         Get user questionnaire by user ID
         """
-        return self.db.query(Questionnaire).filter(Questionnaire.user_id == user_id).first()
+        return self.session.query(Questionnaire).filter(Questionnaire.user_id == user_id).first()
 
-    def create_questionnaire(self, user_id: UUID) -> Questionnaire:
+    def create_questionnaire(self, user_id: UUID, quest_in: QuestionnaireCreate) -> Questionnaire:
         """
         Create an empty questionnaire for a user
         """
-        questionnaire = Questionnaire(user_id=user_id)
-        self.db.add(questionnaire)
-        self.db.commit()
-        self.db.refresh(questionnaire)
+        quest_data = quest_in.model_dump(exclude_unset=True)
+        questionnaire = Questionnaire(**quest_data, user_id=user_id)
+        self.session.add(questionnaire)
+        self.session.commit()
+        self.session.refresh(questionnaire)
         return questionnaire
 
     def get_or_create_questionnaire(self, user_id: UUID) -> Questionnaire:
@@ -53,49 +52,32 @@ class QuestionnaireService(BaseService):
         for field, value in update_data.items():
             setattr(questionnaire, field, value)
 
-        self.db.commit()
-        self.db.refresh(questionnaire)
+        self.session.commit()
+        self.session.refresh(questionnaire)
         return questionnaire
 
-    def complete_questionnaire(self, user_id: UUID) -> bool:
+    def complete_questionnaire(self, user_id: UUID) -> Optional[Questionnaire]:
         """
         Mark questionnaire as completed and update user record
         """
         questionnaire = self.get_questionnaire(user_id)
         if not questionnaire:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Questionnaire not found"
-            )
+            return None
 
         # Check if all required fields are filled
-        required_fields = [
-            "relationship_goals",
-            "communication_style",
-            "conflict_resolution",
-            "love_language",
-            "lifestyle_preferences",
-            "values_and_beliefs",
-            "future_plans",
-            "deal_breakers",
-        ]
-
-        for field in required_fields:
-            if getattr(questionnaire, field) is None or getattr(questionnaire, field) == "":
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Questionnaire is incomplete. Missing field: {field}",
-                )
+        completed = not questionnaire.get_missing_fields()
 
         # Mark questionnaire as completed
-        questionnaire.completed_at = utc_now()
+        questionnaire.completed_at = utc_now() if completed else None
 
         # Update user record
-        user = self.db.query(User).filter(User.id == user_id).first()
+        user = self.session.query(User).filter(User.id == user_id).first()
         if user:
-            user.has_completed_questionnaire = True
+            user.has_completed_questionnaire = completed
 
-        self.db.commit()
-        return True
+        self.session.commit()
+        self.session.refresh(questionnaire)
+        return questionnaire
 
     def get_compatibility_score(self, user1_id: UUID, user2_id: UUID) -> int:
         """
@@ -104,7 +86,7 @@ class QuestionnaireService(BaseService):
         q1 = self.get_questionnaire(user1_id)
         q2 = self.get_questionnaire(user2_id)
 
-        if not q1 or not q2 or not q1.is_completed or not q2.is_completed:
+        if not q1 or not q2 or not q1.is_complete() or not q2.is_complete():
             return 0
 
         # In a real app, we would implement a sophisticated algorithm
@@ -141,7 +123,7 @@ class QuestionnaireService(BaseService):
         """
         # Query all categories ordered by their order_position field
         categories_db = (
-            self.db.query(QuestionnaireCategory)
+            self.session.query(QuestionnaireCategory)
             .order_by(QuestionnaireCategory.order_position)
             .all()
         )
@@ -152,7 +134,7 @@ class QuestionnaireService(BaseService):
         for category in categories_db:
             # Query all fields for this category ordered by their order_position field
             fields_db = (
-                self.db.query(QuestionnaireField)
+                self.session.query(QuestionnaireField)
                 .filter(QuestionnaireField.category_id == category.id)
                 .order_by(QuestionnaireField.order_position)
                 .all()

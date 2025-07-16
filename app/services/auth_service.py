@@ -13,67 +13,12 @@ from uuid import UUID
 import requests
 from fastapi import HTTPException, status
 from firebase_admin import auth as firebase_auth
-from firebase_admin import credentials, initialize_app
 from jose import JWTError, jwt
 
 from app.core.config import settings
 from app.core.security import create_access_token, create_refresh_token, utc_now
-from app.models.token import RefreshToken
-from app.models.user import User
+from app.models import Profile, Questionnaire, RefreshToken, User
 from app.services.base_service import BaseService
-
-# Initialize Firebase Admin SDK
-firebase_app = None
-
-# Try to initialize Firebase with environment variables first
-if (
-    settings.FIREBASE_TYPE
-    and settings.FIREBASE_PROJECT_ID_ENV
-    and settings.FIREBASE_PRIVATE_KEY
-    and settings.FIREBASE_CLIENT_EMAIL
-):
-    try:
-        # Create credentials dictionary from environment variables
-        firebase_cred_dict = {
-            "type": settings.FIREBASE_TYPE,
-            "project_id": settings.FIREBASE_PROJECT_ID_ENV,
-            "private_key_id": settings.FIREBASE_PRIVATE_KEY_ID,
-            "private_key": settings.FIREBASE_PRIVATE_KEY.replace(
-                "\\n", "\n"
-            ),  # Fix newlines in private key
-            "client_email": settings.FIREBASE_CLIENT_EMAIL,
-            "client_id": settings.FIREBASE_CLIENT_ID,
-            "auth_uri": settings.FIREBASE_AUTH_URI,
-            "token_uri": settings.FIREBASE_TOKEN_URI,
-            "auth_provider_x509_cert_url": settings.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
-            "client_x509_cert_url": settings.FIREBASE_CLIENT_X509_CERT_URL,
-        }
-        firebase_cred = credentials.Certificate(firebase_cred_dict)
-        firebase_app = initialize_app(firebase_cred)
-        print("Firebase Admin SDK initialized successfully from environment variables")
-    except Exception as e:
-        print(f"Failed to initialize Firebase from environment variables: {e}")
-
-# Fall back to file-based credentials if environment variables are not available
-if firebase_app is None and settings.FIREBASE_SERVICE_ACCOUNT_PATH:
-    try:
-        import os
-
-        # Check if file exists
-        if os.path.exists(settings.FIREBASE_SERVICE_ACCOUNT_PATH):
-            firebase_cred = credentials.Certificate(settings.FIREBASE_SERVICE_ACCOUNT_PATH)
-            firebase_app = initialize_app(firebase_cred)
-            print("Firebase Admin SDK initialized successfully from credentials file")
-        else:
-            print(
-                f"Firebase credentials file not found at: {settings.FIREBASE_SERVICE_ACCOUNT_PATH}"
-            )
-    except Exception as e:
-        print(f"Firebase initialization error: {str(e)}")
-        # Continue without Firebase initialization for development environments
-else:
-    print("FIREBASE_SERVICE_ACCOUNT_PATH not set in environment variables")
-    # Continue without Firebase initialization
 
 
 class AuthService(BaseService):
@@ -94,7 +39,7 @@ class AuthService(BaseService):
                 firebase_exists = False
 
             # Check if user exists in our database
-            user = self.db.query(User).filter(User.phone == phone_number).first()
+            user = self.session.query(User).filter(User.phone_number == phone_number).first()
 
             response = {"exists": firebase_exists or user is not None, "phone_number": phone_number}
 
@@ -152,7 +97,7 @@ class AuthService(BaseService):
                 )
 
             # Check if user already exists
-            user = self.db.query(User).filter(User.phone == phone_number).first()
+            user = self.session.query(User).filter(User.phone_number == phone_number).first()
             if user:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -161,7 +106,7 @@ class AuthService(BaseService):
 
             # Create new user with null profile fields
             user = User(
-                phone=phone_number,
+                phone_number=phone_number,
                 is_verified=True,
                 last_login=utc_now(),
                 name=None,
@@ -177,9 +122,9 @@ class AuthService(BaseService):
                 if "platform" in device_info:
                     user.platform = device_info.get("platform")
 
-            self.db.add(user)
-            self.db.commit()
-            self.db.refresh(user)
+            self.session.add(user)
+            self.session.commit()
+            self.session.refresh(user)
 
             # Generate tokens
             access_token = create_access_token(subject=str(user.id))
@@ -194,8 +139,8 @@ class AuthService(BaseService):
                 expires_at=expires_at,
                 is_revoked=False,
             )
-            self.db.add(db_refresh_token)
-            self.db.commit()
+            self.session.add(db_refresh_token)
+            self.session.commit()
 
             return {
                 "user_id": str(user.id),
@@ -232,7 +177,7 @@ class AuthService(BaseService):
                 )
 
             # Check if user exists in our database
-            user = self.db.query(User).filter(User.phone == phone_number).first()
+            user = self.session.query(User).filter(User.phone_number == phone_number).first()
 
             if not user:
                 raise HTTPException(
@@ -249,11 +194,13 @@ class AuthService(BaseService):
                 if "platform" in device_info:
                     user.platform = device_info.get("platform")
 
-            self.db.commit()
-            self.db.refresh(user)
+            self.session.commit()
+            self.session.refresh(user)
 
             # Check if profile is complete
-            profile_complete = user.name is not None and user.email is not None
+            profile_complete = (
+                user.profile and user.profile.first_name is not None and user.email is not None
+            )
 
             # Generate tokens
             access_token = create_access_token(subject=str(user.id))
@@ -264,7 +211,7 @@ class AuthService(BaseService):
 
             # Check if a refresh token already exists for this user
             existing_token = (
-                self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
+                self.session.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
             )
 
             if existing_token:
@@ -281,16 +228,16 @@ class AuthService(BaseService):
                     expires_at=expires_at,
                     is_revoked=False,
                 )
-                self.db.add(db_refresh_token)
+                self.session.add(db_refresh_token)
 
-            self.db.commit()
+            self.session.commit()
 
             return {
                 "user_id": str(user.id),
-                "phone_number": user.phone,
-                "name": user.name,
+                "phone_number": user.phone_number,
+                "name": user.profile.first_name,
                 "email": user.email,
-                "profile_image": user.profile_image,
+                # "profile_image": user.profile_image,
                 "profile_complete": profile_complete,
                 "access_token": access_token,
                 "refresh_token": refresh_token,
@@ -324,7 +271,7 @@ class AuthService(BaseService):
                 )
 
             # Check if user exists in our database
-            user = self.db.query(User).filter(User.phone == phone_number).first()
+            user = self.session.query(User).filter(User.phone == phone_number).first()
 
             user_exists = user is not None
             profile_complete = user is not None and user.name is not None and user.email is not None
@@ -347,9 +294,9 @@ class AuthService(BaseService):
                     if "platform" in device_info:
                         user.platform = device_info.get("platform")
 
-                self.db.add(user)
-                self.db.commit()
-                self.db.refresh(user)
+                self.session.add(user)
+                self.session.commit()
+                self.session.refresh(user)
             else:
                 # Update existing user
                 user.is_verified = True
@@ -362,8 +309,8 @@ class AuthService(BaseService):
                     if "platform" in device_info:
                         user.platform = device_info.get("platform")
 
-                self.db.commit()
-                self.db.refresh(user)
+                self.session.commit()
+                self.session.refresh(user)
 
             # Generate tokens
             access_token = create_access_token(subject=str(user.id))
@@ -374,7 +321,7 @@ class AuthService(BaseService):
 
             # Check if a refresh token already exists for this user
             existing_token = (
-                self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
+                self.session.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
             )
 
             if existing_token:
@@ -391,9 +338,9 @@ class AuthService(BaseService):
                     expires_at=expires_at,
                     is_revoked=False,
                 )
-                self.db.add(db_refresh_token)
+                self.session.add(db_refresh_token)
 
-            self.db.commit()
+            self.session.commit()
 
             response = {
                 "user_exists": user_exists,
@@ -455,7 +402,7 @@ class AuthService(BaseService):
                 )
 
             # Get user by ID
-            user = self.db.query(User).filter(User.id == user_id).first()
+            user = self.session.query(User).filter(User.id == user_id).first()
 
             if not user:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -467,7 +414,7 @@ class AuthService(BaseService):
 
             # Check if email is already in use
             existing_email_user = (
-                self.db.query(User).filter(User.email == email, User.id != user.id).first()
+                self.session.query(User).filter(User.email == email, User.id != user.id).first()
             )
 
             if existing_email_user:
@@ -476,13 +423,13 @@ class AuthService(BaseService):
                 )
 
             # Update user information
-            user.name = name
+            # user.name = name
             user.email = email
-            if profile_image:
-                user.profile_image = profile_image
+            # if profile_image:
+            #     user.profile_image = profile_image
 
-            self.db.commit()
-            self.db.refresh(user)
+            self.session.commit()
+            self.session.refresh(user)
 
             # Generate new tokens
             access_token = create_access_token(subject=str(user.id))
@@ -493,7 +440,7 @@ class AuthService(BaseService):
 
             # Check if a refresh token already exists for this user
             existing_token = (
-                self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
+                self.session.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
             )
 
             if existing_token:
@@ -510,15 +457,15 @@ class AuthService(BaseService):
                     expires_at=expires_at,
                     is_revoked=False,
                 )
-                self.db.add(db_refresh_token)
+                self.session.add(db_refresh_token)
 
-            self.db.commit()
+            self.session.commit()
 
             return {
                 "user_id": str(user.id),
-                "name": user.name,
+                # "name": user.name,
                 "email": user.email,
-                "profile_image": user.profile_image,
+                # "profile_image": user.profile_image,
                 "access_token": access_token,
                 "refresh_token": refresh_token,
                 "token_type": "bearer",
@@ -538,7 +485,7 @@ class AuthService(BaseService):
         try:
             # Find the refresh token in the database
             db_refresh_token = (
-                self.db.query(RefreshToken)
+                self.session.query(RefreshToken)
                 .filter(
                     RefreshToken.token == refresh_token,
                     RefreshToken.is_revoked.is_(False),
@@ -561,7 +508,7 @@ class AuthService(BaseService):
             db_refresh_token.token = new_refresh_token
             db_refresh_token.expires_at = utc_now() + timedelta(days=30)
 
-            self.db.commit()
+            self.session.commit()
 
             return {
                 "access_token": access_token,
@@ -595,13 +542,13 @@ class AuthService(BaseService):
                 )
 
             # Check if user exists in our database
-            user = self.db.query(User).filter(User.phone == phone_number).first()
+            user = self.session.query(User).filter(User.phone_number == phone_number).first()
             is_new_user = user is None
 
             if is_new_user:
                 # Create new user with null profile fields
                 user = User(
-                    phone=phone_number,
+                    phone_number=phone_number,
                     is_verified=True,
                     last_login=utc_now(),
                     name=None,
@@ -622,12 +569,39 @@ class AuthService(BaseService):
 
             # Save user to database
             if is_new_user:
-                self.db.add(user)
-            self.db.commit()
-            self.db.refresh(user)
+                self.session.add(user)
+            self.session.commit()
+            self.session.refresh(user)
+
+            # create profile & questionnaire for user if not created already
+            if not user.profile:
+                profile = Profile(
+                    user_id=user.id,
+                    first_name="",
+                    gender="",
+                    relationship_goal="",
+                    age=0,
+                    city_of_residence="",
+                    nationality_cultural_origin="",
+                    professional_situation="",
+                    education_level="",
+                    previously_married=False,
+                )
+                self.session.add(profile)
+                self.session.refresh(profile)
+
+            if not user.questionnaire:
+                quest = Questionnaire(user_id=user.id)
+                self.session.add(quest)
+                self.session.refresh(quest)
+
+            self.session.commit()
+            self.session.refresh(user)
 
             # Check if profile is complete
-            is_profile_complete = user.name is not None and user.email is not None
+            is_profile_complete = (
+                user.profile and user.profile.first_name is not None and user.email is not None
+            )
 
             # Generate tokens
             access_token = create_access_token(subject=str(user.id))
@@ -638,7 +612,7 @@ class AuthService(BaseService):
 
             # Check if a refresh token already exists for this user
             existing_token = (
-                self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
+                self.session.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
             )
 
             if existing_token:
@@ -655,9 +629,9 @@ class AuthService(BaseService):
                     expires_at=expires_at,
                     is_revoked=False,
                 )
-                self.db.add(db_refresh_token)
+                self.session.add(db_refresh_token)
 
-            self.db.commit()
+            self.session.commit()
 
             return {
                 "user_id": str(user.id),
@@ -730,7 +704,7 @@ class AuthService(BaseService):
                 )
 
             # Check if user exists by email
-            user = self.db.query(User).filter(User.email == email).first()
+            user = self.session.query(User).filter(User.email == email).first()
             is_new_user = user is None
 
             if is_new_user:
@@ -761,9 +735,34 @@ class AuthService(BaseService):
 
             # Save user to database
             if is_new_user:
-                self.db.add(user)
-            self.db.commit()
-            self.db.refresh(user)
+                self.session.add(user)
+            self.session.commit()
+            self.session.refresh(user)
+
+            # create profile & questionnaire for user if not created already
+            if not user.profile:
+                profile = Profile(
+                    user_id=user.id,
+                    first_name="",
+                    gender="",
+                    relationship_goal="",
+                    age=0,
+                    city_of_residence="",
+                    nationality_cultural_origin="",
+                    professional_situation="",
+                    education_level="",
+                    previously_married=False,
+                )
+                self.session.add(profile)
+                self.session.refresh(profile)
+
+            if not user.questionnaire:
+                quest = Questionnaire(user_id=user.id)
+                self.session.add(quest)
+                self.session.refresh(quest)
+
+            self.session.commit()
+            self.session.refresh(user)
 
             # For Google auth, profile is complete by default
             is_profile_complete = True
@@ -777,7 +776,7 @@ class AuthService(BaseService):
 
             # Check if a refresh token already exists for this user
             existing_token = (
-                self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
+                self.session.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
             )
 
             if existing_token:
@@ -794,13 +793,13 @@ class AuthService(BaseService):
                     expires_at=expires_at,
                     is_revoked=False,
                 )
-                self.db.add(db_refresh_token)
+                self.session.add(db_refresh_token)
 
-            self.db.commit()
+            self.session.commit()
 
             return {
                 "user_id": str(user.id),
-                "phone_number": user.phone,
+                "phone_number": user.phone_number,
                 "email": email,
                 "name": name,
                 "profile_image": profile_image,
@@ -844,7 +843,7 @@ class AuthService(BaseService):
         try:
             # Find the refresh token in the database
             db_refresh_token = (
-                self.db.query(RefreshToken).filter(RefreshToken.token == refresh_token).first()
+                self.session.query(RefreshToken).filter(RefreshToken.token == refresh_token).first()
             )
 
             if not db_refresh_token:
@@ -852,7 +851,7 @@ class AuthService(BaseService):
 
             # Revoke the token
             db_refresh_token.is_revoked = True
-            self.db.commit()
+            self.session.commit()
 
             return {"message": "Successfully logged out"}
 

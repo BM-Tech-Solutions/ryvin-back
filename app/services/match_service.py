@@ -23,14 +23,14 @@ class MatchService(BaseService):
         """
         Get match by ID
         """
-        return self.db.query(Match).filter(Match.id == match_id).first()
+        return self.session.query(Match).filter(Match.id == match_id).first()
 
     def get_match_by_users(self, user1_id: UUID, user2_id: UUID) -> Optional[Match]:
         """
         Get match between two users if it exists
         """
         return (
-            self.db.query(Match)
+            self.session.query(Match)
             .filter(
                 or_(
                     and_(Match.user1_id == user1_id, Match.user2_id == user2_id),
@@ -46,7 +46,7 @@ class MatchService(BaseService):
         """
         Get all matches for a user
         """
-        query = self.db.query(Match).filter(
+        query = self.session.query(Match).filter(
             or_(Match.user1_id == user_id, Match.user2_id == user_id)
         )
 
@@ -74,12 +74,12 @@ class MatchService(BaseService):
             user2_accepted=False,
         )
 
-        self.db.add(match)
-        self.db.commit()
-        self.db.refresh(match)
+        self.session.add(match)
+        self.session.commit()
+        self.session.refresh(match)
 
         # Send notification to user2
-        user2 = self.db.query(User).filter(User.id == user2_id).first()
+        user2 = self.session.query(User).filter(User.id == user2_id).first()
         if user2:
             NotificationService().send_new_match_notification(user2, match)
 
@@ -91,7 +91,7 @@ class MatchService(BaseService):
         """
         Discover potential matches for a user
         """
-        user = self.db.query(User).filter(User.id == user_id).first()
+        user = self.session.query(User).filter(User.id == user_id).first()
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
@@ -105,7 +105,7 @@ class MatchService(BaseService):
                 existing_match_users.append(match.user1_id)
 
         # Query for potential matches
-        potential_matches_query = self.db.query(User).filter(
+        potential_matches_query = self.session.query(User).filter(
             User.id != user_id,
             User.is_active.is_(True),
             User.is_verified.is_(True),
@@ -128,7 +128,7 @@ class MatchService(BaseService):
         potential_matches = potential_matches_query.offset(skip).limit(limit).all()
 
         # Calculate compatibility scores
-        questionnaire_service = QuestionnaireService(self.db)
+        questionnaire_service = QuestionnaireService(self.session)
         result = []
 
         for potential_match in potential_matches:
@@ -174,18 +174,18 @@ class MatchService(BaseService):
                 current_step=1,  # First step: pre-compatibility
                 status="active",
             )
-            self.db.add(journey)
+            self.session.add(journey)
 
             # Send notifications to both users
-            user1 = self.db.query(User).filter(User.id == match.user1_id).first()
-            user2 = self.db.query(User).filter(User.id == match.user2_id).first()
+            user1 = self.session.query(User).filter(User.id == match.user1_id).first()
+            user2 = self.session.query(User).filter(User.id == match.user2_id).first()
 
             if user1 and user2:
                 NotificationService().send_match_confirmed_notification(user1, match)
                 NotificationService().send_match_confirmed_notification(user2, match)
 
-        self.db.commit()
-        self.db.refresh(match)
+        self.session.commit()
+        self.session.refresh(match)
         return match
 
     def decline_match(self, match_id: UUID, user_id: UUID) -> Match:
@@ -211,6 +211,6 @@ class MatchService(BaseService):
         else:
             match.user2_accepted = False
 
-        self.db.commit()
-        self.db.refresh(match)
+        self.session.commit()
+        self.session.refresh(match)
         return match

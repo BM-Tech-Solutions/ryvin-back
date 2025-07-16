@@ -10,7 +10,7 @@ from app.schemas.meeting import (
     MeetingRequestInDB,
 )
 from app.schemas.message import Message, MessageCreate, MessageInDB
-from app.schemas.profile import Profile, ProfileCreate, ProfileInDB, ProfileUpdate
+from app.schemas.profile import ProfileOut, ProfileCreate, ProfileInDB, ProfileUpdate
 from app.schemas.questionnaire import (
     Questionnaire,
     QuestionnaireCreate,
@@ -18,4 +18,4 @@ from app.schemas.questionnaire import (
     QuestionnaireUpdate,
 )
 from app.schemas.token import Token, TokenPayload
-from app.schemas.user import User, UserCreate, UserInDB, UserUpdate
+from app.schemas.user import UserOut, UserCreate, UserInDB, UserUpdate

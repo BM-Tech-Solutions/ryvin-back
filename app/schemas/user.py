@@ -3,8 +3,9 @@ from typing import Optional
 from uuid import UUID
 
 import phonenumbers
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
+from app.core.security import utc_now
 from app.models.enums import SubscriptionType
 
 
@@ -12,6 +13,8 @@ class UserBase(BaseModel):
     """
     Base schema for user data
     """
+
+    model_config = ConfigDict(from_attributes=True)
 
     phone_number: str
     email: Optional[EmailStr] = None
@@ -52,14 +55,13 @@ class UserInDBBase(UserBase):
     id: UUID
     is_verified: bool
     is_active: bool
+    has_completed_questionnaire: bool
+    # is_admin: bool
     created_at: datetime
     updated_at: datetime
     last_login: Optional[datetime] = None
     subscription_type: str = Field(default=SubscriptionType.FREE.value)
     subscription_expires_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
 
 
 class UserInDB(UserInDBBase):
@@ -70,9 +72,33 @@ class UserInDB(UserInDBBase):
     pass
 
 
-class User(UserInDBBase):
+class UserOut(UserInDBBase):
     """
     Schema for user response
     """
 
-    pass
+    @field_validator("phone_number")
+    def validate_phone_number(cls, v):
+        return v
+
+
+class TestUserCreate(BaseModel):
+    phone_number: str = Field(default="+442083661177")
+    email: Optional[EmailStr] = None
+    is_verified: bool = True
+    has_completed_questionnaire: bool = False
+    is_active: bool = True
+    #: str
+    last_login: datetime = Field(default_factory=utc_now)
+    subscription_type: str
+    subscription_expires_at: Optional[datetime] = None
+
+    @field_validator("phone_number")
+    def validate_phone_number(cls, v):
+        try:
+            phone_number = phonenumbers.parse(v, None)
+            if not phonenumbers.is_valid_number(phone_number):
+                raise ValueError("Invalid phone number")
+            return v
+        except Exception:
+            raise ValueError("Invalid phone number format")

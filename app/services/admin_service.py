@@ -24,7 +24,7 @@ class AdminService(BaseService):
         """
         Get all users with optional search
         """
-        query = self.db.query(User)
+        query = self.session.query(User)
 
         if search:
             search_term = f"%{search}%"
@@ -41,7 +41,7 @@ class AdminService(BaseService):
         """
         Get user by ID
         """
-        return self.db.query(User).filter(User.id == user_id).first()
+        return self.session.query(User).filter(User.id == user_id).first()
 
     def ban_user(self, user_id: UUID, reason: str = None) -> User:
         """
@@ -56,8 +56,8 @@ class AdminService(BaseService):
         user.banned_at = utc_now()
         user.ban_reason = reason
 
-        self.db.commit()
-        self.db.refresh(user)
+        self.session.commit()
+        self.session.refresh(user)
         return user
 
     def unban_user(self, user_id: UUID) -> User:
@@ -78,15 +78,15 @@ class AdminService(BaseService):
         user.banned_at = None
         user.ban_reason = None
 
-        self.db.commit()
-        self.db.refresh(user)
+        self.session.commit()
+        self.session.refresh(user)
         return user
 
     def get_matches(self, status: str = None, skip: int = 0, limit: int = 100) -> List[Match]:
         """
         Get all matches with optional status filter
         """
-        query = self.db.query(Match)
+        query = self.session.query(Match)
 
         if status:
             query = query.filter(Match.status == status)
@@ -99,7 +99,7 @@ class AdminService(BaseService):
         """
         Get all journeys with optional filters
         """
-        query = self.db.query(Journey)
+        query = self.session.query(Journey)
 
         if status:
             query = query.filter(Journey.status == status)
@@ -114,56 +114,62 @@ class AdminService(BaseService):
         Get system statistics
         """
         # User stats
-        total_users = self.db.query(func.count(User.id)).scalar()
-        active_users = self.db.query(func.count(User.id)).filter(User.is_active.is_(True)).scalar()
-        verified_users = (
-            self.db.query(func.count(User.id)).filter(User.is_verified.is_(True)).scalar()
+        total_users = self.session.query(func.count(User.id)).scalar()
+        active_users = (
+            self.session.query(func.count(User.id)).filter(User.is_active.is_(True)).scalar()
         )
-        banned_users = self.db.query(func.count(User.id)).filter(User.is_banned.is_(True)).scalar()
+        verified_users = (
+            self.session.query(func.count(User.id)).filter(User.is_verified.is_(True)).scalar()
+        )
+        banned_users = (
+            self.session.query(func.count(User.id)).filter(User.is_banned.is_(True)).scalar()
+        )
 
         # New users in last 7 days
         new_users_last_week = (
-            self.db.query(func.count(User.id))
+            self.session.query(func.count(User.id))
             .filter(User.created_at >= utc_now() - timedelta(days=7))
             .scalar()
         )
 
         # Match stats
-        total_matches = self.db.query(func.count(Match.id)).scalar()
+        total_matches = self.session.query(func.count(Match.id)).scalar()
         pending_matches = (
-            self.db.query(func.count(Match.id)).filter(Match.status == "pending").scalar()
+            self.session.query(func.count(Match.id)).filter(Match.status == "pending").scalar()
         )
         confirmed_matches = (
-            self.db.query(func.count(Match.id)).filter(Match.status == "matched").scalar()
+            self.session.query(func.count(Match.id)).filter(Match.status == "matched").scalar()
         )
         declined_matches = (
-            self.db.query(func.count(Match.id)).filter(Match.status == "declined").scalar()
+            self.session.query(func.count(Match.id)).filter(Match.status == "declined").scalar()
         )
 
         # Journey stats
-        total_journeys = self.db.query(func.count(Journey.id)).scalar()
+        total_journeys = self.session.query(func.count(Journey.id)).scalar()
         active_journeys = (
-            self.db.query(func.count(Journey.id)).filter(Journey.status == "active").scalar()
+            self.session.query(func.count(Journey.id)).filter(Journey.status == "active").scalar()
         )
         completed_journeys = (
-            self.db.query(func.count(Journey.id)).filter(Journey.status == "completed").scalar()
+            self.session.query(func.count(Journey.id))
+            .filter(Journey.status == "completed")
+            .scalar()
         )
         ended_journeys = (
-            self.db.query(func.count(Journey.id)).filter(Journey.status == "ended").scalar()
+            self.session.query(func.count(Journey.id)).filter(Journey.status == "ended").scalar()
         )
 
         # Message stats
-        total_messages = self.db.query(func.count(Message.id)).scalar()
+        total_messages = self.session.query(func.count(Message.id)).scalar()
         messages_last_week = (
-            self.db.query(func.count(Message.id))
+            self.session.query(func.count(Message.id))
             .filter(Message.created_at >= utc_now() - timedelta(days=7))
             .scalar()
         )
 
         # Meeting stats
-        total_meetings = self.db.query(func.count(MeetingRequest.id)).scalar()
+        total_meetings = self.session.query(func.count(MeetingRequest.id)).scalar()
         accepted_meetings = (
-            self.db.query(func.count(MeetingRequest.id))
+            self.session.query(func.count(MeetingRequest.id))
             .filter(MeetingRequest.status == "accepted")
             .scalar()
         )
@@ -197,7 +203,7 @@ class AdminService(BaseService):
         Get messages flagged for moderation
         """
         return (
-            self.db.query(Message)
+            self.session.query(Message)
             .filter(Message.is_flagged.is_(True))
             .order_by(Message.created_at.desc())
             .offset(skip)
@@ -209,7 +215,7 @@ class AdminService(BaseService):
         """
         Moderate a flagged message
         """
-        message = self.db.query(Message).filter(Message.id == message_id).first()
+        message = self.session.query(Message).filter(Message.id == message_id).first()
         if not message:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
 
@@ -225,6 +231,6 @@ class AdminService(BaseService):
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid moderation action"
             )
 
-        self.db.commit()
-        self.db.refresh(message)
+        self.session.commit()
+        self.session.refresh(message)
         return message

@@ -2,13 +2,15 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ProfileBase(BaseModel):
     """
     Base schema for user profile data
     """
+
+    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
 
     first_name: str
     gender: str = Field(description="Gender of the user")
@@ -30,24 +32,11 @@ class ProfileCreate(ProfileBase):
     pass
 
 
-class ProfileUpdate(BaseModel):
+class ProfileUpdate(ProfileBase):
     """
     Schema for profile update
     """
 
-    prenom: Optional[str] = None
-    genre: Optional[str] = None
-    age: Optional[int] = Field(None, ge=18)
-    ville: Optional[str] = None
-    nationalite: Optional[str] = None
-    langues: Optional[List[str]] = None
-    situation_professionnelle: Optional[str] = None
-    niveau_etudes: Optional[str] = None
-    deja_marie: Optional[bool] = None
-    a_des_enfants: Optional[bool] = None
-    nombre_enfants: Optional[int] = None
-    type_relation_recherchee: Optional[str] = None
-    genre_recherche: Optional[str] = None
     is_profile_complete: Optional[bool] = None
     profile_completion_step: Optional[int] = None
 
@@ -65,9 +54,6 @@ class ProfileInDBBase(ProfileBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class ProfileInDB(ProfileInDBBase):
     """
@@ -77,7 +63,7 @@ class ProfileInDB(ProfileInDBBase):
     pass
 
 
-class Profile(ProfileInDBBase):
+class ProfileOut(ProfileInDBBase):
     """
     Schema for profile response
     """
@@ -91,7 +77,8 @@ class ProfileCompletion(BaseModel):
     """
 
     completion_percentage: int = Field(..., ge=0, le=100)
-    missing_fields: List[str] = Field(default_factory=list)
+    missing_profile_fields: List[str] = Field(default_factory=list)
+    missing_questionnaire_fields: List[str] = Field(default_factory=list)
     has_photos: bool = False
     photo_count: int = 0
     has_primary_photo: bool = False

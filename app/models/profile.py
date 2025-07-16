@@ -43,3 +43,18 @@ class Profile(Base):
 
     def __repr__(self) -> str:
         return f"<Profile {self.id}: {self.first_name}, {self.age}>"
+
+    @classmethod
+    def get_required_fields(cls):
+        return [
+            "first_name",
+            "gender",
+            "relationship_goal",
+            "age",
+            "city_of_residence",
+            "nationality_cultural_origin",
+            "languages_spoken",
+            "professional_situation",
+            "education_level",
+            "previously_married",
+        ]
