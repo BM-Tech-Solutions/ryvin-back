@@ -2,20 +2,14 @@ services:
   web:
     build: .
     # Use the entrypoint script with web service
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    entrypoint: ["/docker-entrypoint.sh"]
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     volumes:
       - .:/app
     ports:
       - "8001:8000"
     environment:
-      - POSTGRES_SERVER=db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=ryvin
-      - POSTGRES_PORT=5432
-      - SECRET_KEY=${SECRET_KEY:-supersecretkey}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=11520
-      - REFRESH_TOKEN_EXPIRE_MINUTES=43200
+      - ACCESS_TOKEN_EXPIRE_MINUTES=11520  # 8 days for testing
     depends_on:
       - migrations
     networks:
@@ -25,17 +19,14 @@ services:
   migrations:
     build: .
     # Use the entrypoint script with migrations parameter
-    command: sh /app/docker-entrypoint.sh migrations
+    entrypoint: ["/docker-entrypoint.sh"]
+    command: ["migrations"]
     volumes:
       - .:/app
-    environment:
-      - POSTGRES_SERVER=db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=ryvin
-      - POSTGRES_PORT=5432
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+        restart: true
     networks:
       - ryvin-network
 
@@ -43,14 +34,19 @@ services:
     image: postgres:15-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data/
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=ryvin
+    env_file:
+      - .env
     ports:
       - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
     networks:
       - ryvin-network
+    restart: on-failure
 
 networks:
   ryvin-network:

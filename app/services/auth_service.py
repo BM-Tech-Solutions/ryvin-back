@@ -385,7 +385,9 @@ class AuthService(BaseService):
         try:
             # Verify access token
             try:
-                payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=["HS256"])
+                payload = jwt.decode(
+                    access_token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
+                )
 
                 # Check token type
                 if payload.get("type") != "access":

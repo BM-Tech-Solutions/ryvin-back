@@ -13,6 +13,7 @@ class Settings(BaseSettings):
 
     # SECURITY
     SECRET_KEY: str
+    JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  # Default to 30 minutes if not specified
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # Default to 7 days if not specified
 
@@ -20,11 +21,11 @@ class Settings(BaseSettings):
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
 
     # DATABASE
-    POSTGRES_SERVER: str
+    POSTGRES_SERVER: str = "localhost"
+    POSTGRES_PORT: str = "5432"
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
-    POSTGRES_PORT: str = "5432"
     DATABASE_URI: Optional[PostgresDsn] = None
 
     @field_validator("DATABASE_URI", mode="before")
@@ -72,12 +73,6 @@ class Settings(BaseSettings):
     # Google OAuth (for Social Login)
     GOOGLE_CLIENT_ID: Optional[str] = None
     GOOGLE_CLIENT_SECRET: Optional[str] = None
-
-    # JWT Authentication
-    JWT_SECRET_KEY: Optional[str] = None
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # RATE LIMITING
     RATE_LIMIT_PER_MINUTE: int = 100

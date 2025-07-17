@@ -80,3 +80,6 @@ coverage.xml
 .env.production.local
 .cache
 node_modules/
+
+# others
+notes.ipynb

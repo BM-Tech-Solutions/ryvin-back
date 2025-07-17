@@ -9,4 +9,4 @@ from app.core.config import settings
 @lru_cache()
 def init_firebase():
     cred = credentials.Certificate(settings.FIREBASE_SERVICE_ACCOUNT_PATH)
-    firebase_admin.initialize_app(cred)
+    return firebase_admin.initialize_app(cred)
