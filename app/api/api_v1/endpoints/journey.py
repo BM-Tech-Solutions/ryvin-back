@@ -19,7 +19,7 @@ router = APIRouter()
 
 @router.get("", response_model=List[JourneyResponse])
 def get_journeys(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     current_step: int = Query(None, description="Filter by current step"),
     is_completed: bool = Query(None, description="Filter by completion status"),
@@ -29,7 +29,7 @@ def get_journeys(
     """
     Get all journeys for the current user
     """
-    journey_service = JourneyService(db)
+    journey_service = JourneyService(session)
     journeys = journey_service.get_user_journeys(
         current_user.id, current_step, is_completed, skip, limit
     )
@@ -38,28 +38,28 @@ def get_journeys(
 
 @router.get("/{journey_id}", response_model=JourneyResponse)
 def get_journey(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
 ) -> Any:
     """
     Get a specific journey by ID
     """
-    journey_service = JourneyService(db)
+    journey_service = JourneyService(session)
     journey = journey_service.get_journey(journey_id, current_user.id)
     return journey
 
 
 @router.post("/{journey_id}/advance", status_code=status.HTTP_200_OK)
 def advance_journey(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
 ) -> Any:
     """
     Advance to the next step in the journey
     """
-    journey_service = JourneyService(db)
+    journey_service = JourneyService(session)
     journey = journey_service.advance_journey(journey_id, current_user.id)
 
     return {
@@ -71,7 +71,7 @@ def advance_journey(
 
 @router.post("/{journey_id}/end", status_code=status.HTTP_200_OK)
 def end_journey(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
     reason: str,
@@ -79,7 +79,7 @@ def end_journey(
     """
     End the journey
     """
-    journey_service = JourneyService(db)
+    journey_service = JourneyService(session)
     journey_service.end_journey(journey_id, current_user.id, reason)
 
     return {"message": "Journey ended successfully"}
@@ -87,7 +87,7 @@ def end_journey(
 
 @router.get("/{journey_id}/messages", response_model=List[MessageResponse])
 def get_messages(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
     skip: int = 0,
@@ -96,7 +96,7 @@ def get_messages(
     """
     Get all messages for a journey
     """
-    message_service = MessageService(db)
+    message_service = MessageService(session)
     messages = message_service.get_messages(journey_id, current_user.id, skip, limit)
     return messages
 
@@ -105,7 +105,7 @@ def get_messages(
     "/{journey_id}/messages", response_model=MessageResponse, status_code=status.HTTP_201_CREATED
 )
 def create_message(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
     message_in: MessageCreate,
@@ -113,7 +113,7 @@ def create_message(
     """
     Create a new message in a journey
     """
-    message_service = MessageService(db)
+    message_service = MessageService(session)
     message = message_service.create_message(journey_id, current_user.id, message_in)
     return message
 
@@ -124,7 +124,7 @@ def create_message(
     status_code=status.HTTP_201_CREATED,
 )
 def create_meeting_request(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
     meeting_request_in: MeetingRequestCreate,
@@ -132,7 +132,7 @@ def create_meeting_request(
     """
     Create a new meeting request in a journey
     """
-    meeting_service = MeetingService(db)
+    meeting_service = MeetingService(session)
     meeting_request = meeting_service.create_meeting_request(
         journey_id, current_user.id, meeting_request_in
     )
@@ -141,14 +141,14 @@ def create_meeting_request(
 
 @router.get("/{journey_id}/meeting-requests", response_model=List[MeetingRequest])
 def get_meeting_requests(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
 ) -> Any:
     """
     Get all meeting requests for a journey
     """
-    meeting_service = MeetingService(db)
+    meeting_service = MeetingService(session)
     meeting_requests = meeting_service.get_meeting_requests(journey_id, current_user.id)
     return meeting_requests
 
@@ -157,7 +157,7 @@ def get_meeting_requests(
     "/{journey_id}/meeting-requests/{meeting_request_id}/accept", status_code=status.HTTP_200_OK
 )
 def accept_meeting_request(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
     meeting_request_id: UUID,
@@ -165,7 +165,7 @@ def accept_meeting_request(
     """
     Accept a meeting request
     """
-    meeting_service = MeetingService(db)
+    meeting_service = MeetingService(session)
     meeting_service.accept_meeting_request(journey_id, meeting_request_id, current_user.id)
 
     return {"message": "Meeting request accepted successfully"}
@@ -175,7 +175,7 @@ def accept_meeting_request(
     "/{journey_id}/meeting-requests/{meeting_request_id}/decline", status_code=status.HTTP_200_OK
 )
 def decline_meeting_request(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
     meeting_request_id: UUID,
@@ -183,7 +183,7 @@ def decline_meeting_request(
     """
     Decline a meeting request
     """
-    meeting_service = MeetingService(db)
+    meeting_service = MeetingService(session)
     meeting_service.decline_meeting_request(journey_id, meeting_request_id, current_user.id)
 
     return {"message": "Meeting request declined successfully"}
@@ -195,7 +195,7 @@ def decline_meeting_request(
     status_code=status.HTTP_201_CREATED,
 )
 def create_meeting_feedback(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
     feedback_in: MeetingFeedbackCreate,
@@ -203,6 +203,6 @@ def create_meeting_feedback(
     """
     Create feedback for a meeting
     """
-    meeting_service = MeetingService(db)
+    meeting_service = MeetingService(session)
     feedback = meeting_service.create_meeting_feedback(journey_id, current_user.id, feedback_in)
     return feedback

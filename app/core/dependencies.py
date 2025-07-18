@@ -14,7 +14,7 @@ from app.schemas.token import TokenPayload
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
 
 
-# this is for testing only, we'll remove this later
+# this dependency is for testing only, we'll remove this later
 async def test_get_user(
     session: SessionDep,
     id_header: Annotated[
@@ -32,7 +32,6 @@ async def test_get_user(
 
 
 TestGetUserDep = Annotated[User, Depends(test_get_user)]
-#
 
 
 async def get_current_user(

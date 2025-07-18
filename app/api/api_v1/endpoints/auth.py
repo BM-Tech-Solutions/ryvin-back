@@ -81,7 +81,7 @@ router = APIRouter()
 
 @router.post("/phone-auth", response_model=AuthResponse)
 def phone_auth(
-    db: SessionDep,
+    session: SessionDep,
     request: PhoneAuthRequest,
     api_key: str = Security(api_key_header),
 ) -> Any:
@@ -94,7 +94,7 @@ def phone_auth(
     2. Creates account if user doesn't exist
     3. Returns login info in both cases
     """
-    auth_service = AuthService(db)
+    auth_service = AuthService(session)
     return auth_service.phone_auth(
         phone_number=request.phone_number, device_info=request.device_info
     )
@@ -102,7 +102,7 @@ def phone_auth(
 
 @router.post("/google-auth", response_model=AuthResponse)
 def google_auth(
-    db: SessionDep,
+    session: SessionDep,
     request: GoogleAuthRequest,
     api_key: str = Security(api_key_header),
 ) -> Any:
@@ -116,7 +116,7 @@ def google_auth(
     4. Creates account if user doesn't exist
     5. Returns login info in both cases
     """
-    auth_service = AuthService(db)
+    auth_service = AuthService(session)
     return auth_service.google_auth(
         google_token=request.google_token, device_info=request.device_info
     )
@@ -125,13 +125,13 @@ def google_auth(
 @router.post("/complete-profile", response_model=CompleteProfileResponse)
 def complete_profile(
     request: CompleteProfileRequest,
-    db: SessionDep,
+    session: SessionDep,
     api_key: str = Security(api_key_header),
 ) -> Any:
     """
     Complete user profile after authentication
     """
-    auth_service = AuthService(db)
+    auth_service = AuthService(session)
     return auth_service.complete_profile(
         access_token=request.access_token,
         name=request.name,
@@ -141,20 +141,20 @@ def complete_profile(
 
 
 @router.post("/refresh-token", response_model=TokenResponse)
-def refresh_token(request: RefreshTokenRequest, db: SessionDep) -> Any:
+def refresh_token(request: RefreshTokenRequest, session: SessionDep) -> Any:
     """
     Refresh access token
     """
-    auth_service = AuthService(db)
+    auth_service = AuthService(session)
     return auth_service.refresh_tokens(request.refresh_token)
 
 
 @router.post("/logout", response_model=LogoutResponse)
-def logout(request: RefreshTokenRequest, db: SessionDep) -> Any:
+def logout(request: RefreshTokenRequest, session: SessionDep) -> Any:
     """
     Logout user by revoking refresh token
     """
-    auth_service = AuthService(db)
+    auth_service = AuthService(session)
     return auth_service.logout(request.refresh_token)
 
 
@@ -245,13 +245,13 @@ async def exchange_custom_token_for_id_token(custom_token: str) -> str:
 
 @router.get("/test-user/{user_id}")
 def get_user_data(
-    db: SessionDep, user_id: UUID, api_key: str = Security(api_key_header)
+    session: SessionDep, user_id: UUID, api_key: str = Security(api_key_header)
 ) -> Dict[str, Any]:
     """
     Get user data by ID for testing purposes.
     """
     try:
-        user = db.query(User).filter(User.id == user_id).first()
+        user = session.query(User).filter(User.id == user_id).first()
 
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")

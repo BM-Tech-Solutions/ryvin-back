@@ -11,14 +11,14 @@ router = APIRouter()
 
 @router.get("/me")
 def get_questionnaire(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     exclude_null: bool = False,
 ):
     """
     Get current user's questionnaire
     """
-    questionnaire_service = QuestionnaireService(db)
+    questionnaire_service = QuestionnaireService(session)
     questionnaire = questionnaire_service.get_questionnaire(current_user.id)
     if not questionnaire:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Questionnaire not found")
@@ -27,28 +27,28 @@ def get_questionnaire(
 
 @router.put("/me")
 def update_questionnaire(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     questionnaire_in: QuestionnaireUpdate,
 ) -> QuestionnaireInDB:
     """
     Update current user's questionnaire
     """
-    questionnaire_service = QuestionnaireService(db)
+    questionnaire_service = QuestionnaireService(session)
     questionnaire = questionnaire_service.update_questionnaire(current_user.id, questionnaire_in)
     return questionnaire
 
 
 @router.post("/me")
 def create_questionnaire(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     questionnaire_in: QuestionnaireCreate,
 ) -> QuestionnaireInDB:
     """
     Create new Questionnaire for the current user
     """
-    questionnaire_service = QuestionnaireService(db)
+    questionnaire_service = QuestionnaireService(session)
     quest = questionnaire_service.get_questionnaire(current_user.id)
     if quest:
         raise HTTPException(
@@ -60,13 +60,13 @@ def create_questionnaire(
 
 @router.post("/complete", status_code=status.HTTP_200_OK)
 def complete_questionnaire(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
 ) -> Any:
     """
     Mark questionnaire as completed
     """
-    quest_service = QuestionnaireService(db)
+    quest_service = QuestionnaireService(session)
     quest = quest_service.complete_questionnaire(current_user.id)
 
     if not quest:
@@ -85,10 +85,10 @@ def complete_questionnaire(
 
 
 @router.get("/categories", response_model=Dict[str, Any])
-def get_questions_by_categories(db: SessionDep) -> Any:
+def get_questions_by_categories(session: SessionDep) -> Any:
     """
     Get all questionnaire questions organized by categories from the database
     """
-    questionnaire_service = QuestionnaireService(db)
+    questionnaire_service = QuestionnaireService(session)
     categories = questionnaire_service.get_questions_by_categories()
     return {"categories": categories}

@@ -13,13 +13,13 @@ router = APIRouter()
 
 @router.get("/me")
 def get_profile(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
 ) -> ProfileOut:
     """
     Get current user's profile
     """
-    profile = ProfileService(db).get_profile(current_user.id)
+    profile = ProfileService(session).get_profile(current_user.id)
     if not profile:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
 
@@ -28,14 +28,14 @@ def get_profile(
 
 @router.put("/me")
 def update_profile(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     profile_in: ProfileUpdate,
 ) -> ProfileOut:
     """
     Update current user's profile
     """
-    profile_service = ProfileService(db)
+    profile_service = ProfileService(session)
     profile = profile_service.get_profile(current_user.id)
     if not profile:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
@@ -45,14 +45,14 @@ def update_profile(
 
 @router.post("/me")
 def create_profile(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     profile_in: ProfileCreate,
 ) -> ProfileOut:
     """
     create profile for current user
     """
-    profile_service = ProfileService(db)
+    profile_service = ProfileService(session)
     profile = profile_service.get_profile(current_user.id)
     if profile:
         raise HTTPException(
@@ -64,14 +64,14 @@ def create_profile(
 
 @router.post("/photos", status_code=status.HTTP_201_CREATED)
 def upload_photo(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     file: UploadFile = File(...),
 ) -> Any:
     """
     Upload a photo to user's profile
     """
-    photo_service = PhotoService(db)
+    photo_service = PhotoService(session)
     photo = photo_service.upload_photo(current_user, file)
 
     return {
@@ -84,14 +84,14 @@ def upload_photo(
 
 @router.post("/photos/set-primary/{photo_id}", status_code=status.HTTP_200_OK)
 def set_primary_photo(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     photo_id: UUID,
 ) -> Any:
     """
     Set a photo as primary for user's profile
     """
-    photo_service = PhotoService(db)
+    photo_service = PhotoService(session)
     photo = photo_service.set_primary_photo(current_user.id, photo_id)
 
     if photo:
@@ -105,14 +105,14 @@ def set_primary_photo(
 
 @router.delete("/photos/{photo_id}", status_code=status.HTTP_200_OK)
 def delete_photo(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
     photo_id: UUID,
 ) -> Any:
     """
     Delete a photo from user's profile
     """
-    photo_service = PhotoService(db)
+    photo_service = PhotoService(session)
     success = photo_service.delete_photo(current_user.id, photo_id)
 
     if success:
@@ -126,13 +126,13 @@ def delete_photo(
 
 @router.get("/completion-status", response_model=ProfileCompletion, status_code=status.HTTP_200_OK)
 def get_profile_completion_status(
-    db: SessionDep,
+    session: SessionDep,
     current_user: VerifiedUserDep,
 ) -> Any:
     """
     Get profile completion status
     """
-    profile_service = ProfileService(db)
+    profile_service = ProfileService(session)
     completion_info = profile_service.get_profile_completion(current_user.id)
     if not completion_info:
         raise HTTPException(
