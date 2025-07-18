@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 
-from app.models import Photo, Profile, Questionnaire
+from app.models import Photo, Profile
 from app.schemas.profile import ProfileCompletion, ProfileCreate, ProfileUpdate
 
 from .base_service import BaseService
@@ -60,23 +60,11 @@ class ProfileService(BaseService):
         has_photos = self.session.query(Photo).filter(Photo.user_id == user_id).count() > 0
 
         # check profile fields & count completed fields
-        completed_fields = 0
-        missing_profile_fields = []
-        for field in Profile.get_required_fields():
-            if getattr(profile, field) not in (None, ""):
-                completed_fields += 1
-            else:
-                missing_profile_fields.append(field)
-
-        # check questionnaire fields
-        missing_questionnaire_fields = []
-        for field in Questionnaire.get_required_fields():
-            if getattr(questionnaire, field) in (None, ""):
-                missing_questionnaire_fields.append(field)
+        completed_fields = len(self.get_required_fields()) - len(self.get_missing_fields(profile))
 
         # Calculate completion percentage
         # Profile fields (60%), Photos (20%), Questionnaire (20%)
-        profile_completion = (completed_fields / len(Profile.get_required_fields())) * 60
+        profile_completion = (completed_fields / len(self.get_required_fields())) * 60
         photo_completion = 20 if has_photos else 0
         questionnaire_completion = 20 if questionnaire.is_complete() else 0
 
@@ -84,8 +72,29 @@ class ProfileService(BaseService):
 
         return ProfileCompletion(
             completion_percentage=total_completion,
-            missing_profile_fields=missing_profile_fields,
-            missing_questionnaire_fields=missing_questionnaire_fields,
+            missing_profile_fields=self.get_missing_fields(profile),
+            missing_questionnaire_fields=quest_service.get_missing_fields(questionnaire),
             has_photos=has_photos,
             has_completed_questionnaire=questionnaire.is_complete(),
         )
+
+    def get_required_fields(self):
+        return [
+            "first_name",
+            "gender",
+            "relationship_goal",
+            "age",
+            "city_of_residence",
+            "nationality_cultural_origin",
+            "languages_spoken",
+            "professional_situation",
+            "education_level",
+            "previously_married",
+        ]
+
+    def get_missing_fields(self, profile: Profile):
+        return [
+            field_name
+            for field_name in self.get_required_fields()
+            if getattr(profile, field_name) in (None, "")
+        ]

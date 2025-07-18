@@ -1,11 +1,10 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import DateTime
+from sqlalchemy import DateTime, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.core.security import utc_now
 from app.models.enums import SubscriptionType
 
 if TYPE_CHECKING:
@@ -27,14 +26,14 @@ class User(Base):
 
     phone_number: Mapped[str] = mapped_column(unique=True, index=True)
     email: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
-    is_verified: Mapped[bool] = mapped_column(default=False)
     has_completed_questionnaire: Mapped[bool] = mapped_column(default=False)
-    is_active: Mapped[bool] = mapped_column(default=True)
-    # is_admin: Mapped[bool] = mapped_column(default=False)
-    last_login: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     subscription_type: Mapped[str] = mapped_column(default=SubscriptionType.FREE)
     subscription_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    # verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    last_login: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    is_active: Mapped[bool] = mapped_column(default=True)
+    is_admin: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
+    is_verified: Mapped[bool] = mapped_column(default=False)
+    verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
     # Relationships
     profile: Mapped[Optional["Profile"]] = relationship(
@@ -66,11 +65,3 @@ class User(Base):
 
     def __repr__(self) -> str:
         return f"<User {self.id}: {self.phone_number}>"
-
-    @property
-    def is_admin(self) -> bool:
-        return False
-
-    @property
-    def verified_at(self) -> datetime:
-        return utc_now()

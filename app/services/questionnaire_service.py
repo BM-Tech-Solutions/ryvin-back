@@ -60,15 +60,15 @@ class QuestionnaireService(BaseService):
         """
         Mark questionnaire as completed and update user record
         """
-        questionnaire = self.get_questionnaire(user_id)
-        if not questionnaire:
+        quest = self.get_questionnaire(user_id)
+        if not quest:
             return None
 
         # Check if all required fields are filled
-        completed = not questionnaire.get_missing_fields()
+        completed = not self.get_missing_fields(quest)
 
         # Mark questionnaire as completed
-        questionnaire.completed_at = utc_now() if completed else None
+        quest.completed_at = utc_now() if completed else None
 
         # Update user record
         user = self.session.query(User).filter(User.id == user_id).first()
@@ -76,8 +76,8 @@ class QuestionnaireService(BaseService):
             user.has_completed_questionnaire = completed
 
         self.session.commit()
-        self.session.refresh(questionnaire)
-        return questionnaire
+        self.session.refresh(quest)
+        return quest
 
     def get_compatibility_score(self, user1_id: UUID, user2_id: UUID) -> int:
         """
@@ -168,3 +168,17 @@ class QuestionnaireService(BaseService):
             }
 
         return categories
+
+    def get_required_fields(self) -> list[QuestionnaireField]:
+        return (
+            self.session.query(QuestionnaireField)
+            .filter(QuestionnaireField.required.is_(True))
+            .all()
+        )
+
+    def get_missing_fields(self, quest: Questionnaire):
+        return [
+            field.name
+            for field in self.get_required_fields()
+            if getattr(quest, field.name) in (None, "")
+        ]

@@ -69,21 +69,21 @@ def complete_questionnaire(
     """
     Mark questionnaire as completed
     """
-    questionnaire_service = QuestionnaireService(db)
-    questionnaire = questionnaire_service.complete_questionnaire(current_user.id)
+    quest_service = QuestionnaireService(db)
+    quest = quest_service.complete_questionnaire(current_user.id)
 
-    if not questionnaire:
+    if not quest:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Questionnaire not found")
 
-    if not questionnaire.is_complete():
+    if not quest.is_complete():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Questionnaire is incomplete. Missing field: {questionnaire.get_missing_fields()}",
+            detail=f"Questionnaire is incomplete. Missing field: {quest_service.get_missing_fields(quest)}",
         )
 
     return {
         "message": "Questionnaire completed successfully",
-        "completed_at": questionnaire.completed_at,
+        "completed_at": quest.completed_at,
     }
 
 
