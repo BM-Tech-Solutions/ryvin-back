@@ -12,7 +12,7 @@
         "description": "",
         "order_position": 1,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "gender",
@@ -20,7 +20,7 @@
         "description": "",
         "order_position": 2,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "relationship_goal",
@@ -28,7 +28,7 @@
         "description": "",
         "order_position": 3,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "age",
@@ -36,7 +36,7 @@
         "description": "",
         "order_position": 4,
         "field_type": "range",
-        "required": false,
+        "required": true,
         "field_unit": "années"
       },
       {
@@ -45,7 +45,7 @@
         "description": "",
         "order_position": 5,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "nationality_cultural_origin",
@@ -53,7 +53,7 @@
         "description": "",
         "order_position": 6,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "languages_spoken",
@@ -61,7 +61,7 @@
         "description": "",
         "order_position": 7,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "professional_situation",
@@ -69,7 +69,7 @@
         "description": "",
         "order_position": 8,
         "field_type": "select",
-        "required": false,
+        "required": true,
         "allow_custom": true
       },
       {
@@ -78,7 +78,7 @@
         "description": "",
         "order_position": 9,
         "field_type": "select",
-        "required": false,
+        "required": true,
         "allow_custom": true
       },
       {
@@ -87,7 +87,7 @@
         "description": "",
         "order_position": 10,
         "field_type": "boolean",
-        "required": false
+        "required": true
       }
     ]
   },
@@ -104,7 +104,7 @@
         "description": "",
         "order_position": 1,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "religious_practice",
@@ -112,7 +112,7 @@
         "description": "",
         "order_position": 2,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "partner_must_share_religion",
@@ -120,7 +120,7 @@
         "description": "",
         "order_position": 3,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "accept_non_believer",
@@ -128,7 +128,7 @@
         "description": "",
         "order_position": 4,
         "field_type": "boolean",
-        "required": false
+        "required": true
       },
       {
         "name": "faith_transmission_to_children",
@@ -136,7 +136,7 @@
         "description": "",
         "order_position": 5,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "partner_same_religious_education_vision",
@@ -144,7 +144,7 @@
         "description": "",
         "order_position": 6,
         "field_type": "select",
-        "required": false
+        "required": true
       }
     ]
   },
@@ -161,7 +161,7 @@
         "description": "",
         "order_position": 7,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "partner_share_convictions_importance",
@@ -169,7 +169,7 @@
         "description": "",
         "order_position": 8,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "lessons_from_past_relationships",
@@ -177,7 +177,7 @@
         "description": "",
         "order_position": 9,
         "field_type": "text",
-        "required": false
+        "required": true
       }
     ]
   },
@@ -194,7 +194,7 @@
         "description": "",
         "order_position": 1,
         "field_type": "select",
-        "required": false,
+        "required": true,
         "allow_custom": true
       },
       {
@@ -203,7 +203,7 @@
         "description": "",
         "order_position": 2,
         "field_type": "select",
-        "required": false,
+        "required": true,
         "allow_custom": true
       },
       {
@@ -212,7 +212,7 @@
         "description": "",
         "order_position": 3,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "smoker",
@@ -220,7 +220,7 @@
         "description": "",
         "order_position": 4,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "drinks_alcohol",
@@ -228,7 +228,7 @@
         "description": "",
         "order_position": 5,
         "field_type": "select",
-        "required": false
+        "required": true
       }
     ]
   },
@@ -245,7 +245,7 @@
         "description": "",
         "order_position": 6,
         "field_type": "select",
-        "required": false,
+        "required": true,
         "allow_custom": true
       },
       {
@@ -254,7 +254,7 @@
         "description": "",
         "order_position": 7,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "partner_cleanliness_importance",
@@ -262,7 +262,7 @@
         "description": "",
         "order_position": 8,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "accept_smoker_partner",
@@ -270,7 +270,7 @@
         "description": "",
         "order_position": 9,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "accept_alcohol_consumer_partner",
@@ -278,7 +278,7 @@
         "description": "",
         "order_position": 10,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "has_pet",
@@ -286,7 +286,7 @@
         "description": "",
         "order_position": 11,
         "field_type": "boolean",
-        "required": false
+        "required": true
       },
       {
         "name": "type_of_pet",
@@ -294,7 +294,7 @@
         "description": "",
         "order_position": 12,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "ready_to_live_with_pet",
@@ -302,7 +302,7 @@
         "description": "",
         "order_position": 13,
         "field_type": "select",
-        "required": false,
+        "required": true,
         "allow_custom": true
       },
       {
@@ -311,7 +311,7 @@
         "description": "",
         "order_position": 14,
         "field_type": "boolean",
-        "required": false
+        "required": true
       },
       {
         "name": "which_animals_allergic",
@@ -319,7 +319,7 @@
         "description": "",
         "order_position": 15,
         "field_type": "text",
-        "required": false
+        "required": true
       }
     ]
   },
@@ -336,7 +336,7 @@
         "description": "",
         "order_position": 1,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "partner_personality_preference",
@@ -344,7 +344,7 @@
         "description": "",
         "order_position": 2,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "primary_love_language",
@@ -352,7 +352,7 @@
         "description": "",
         "order_position": 3,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "partner_same_love_language",
@@ -360,7 +360,7 @@
         "description": "",
         "order_position": 4,
         "field_type": "boolean",
-        "required": false
+        "required": true
       },
       {
         "name": "friends_visit_frequency",
@@ -368,7 +368,7 @@
         "description": "",
         "order_position": 5,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "tolerance_social_vs_homebody",
@@ -376,7 +376,7 @@
         "description": "",
         "order_position": 6,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "conflict_management",
@@ -384,7 +384,7 @@
         "description": "",
         "order_position": 7,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "greatest_quality_in_relationship",
@@ -392,7 +392,7 @@
         "description": "",
         "order_position": 8,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "greatest_flaw_in_relationship",
@@ -400,7 +400,7 @@
         "description": "",
         "order_position": 9,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "what_attracts_you",
@@ -408,7 +408,7 @@
         "description": "",
         "order_position": 10,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "intolerable_flaw",
@@ -416,7 +416,7 @@
         "description": "",
         "order_position": 11,
         "field_type": "text",
-        "required": false
+        "required": true
       }
     ]
   },
@@ -433,7 +433,7 @@
         "description": "",
         "order_position": 1,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "main_dressing_style",
@@ -441,7 +441,7 @@
         "description": "",
         "order_position": 2,
         "field_type": "select",
-        "required": false,
+        "required": true,
         "allow_custom": true
       },
       {
@@ -450,7 +450,7 @@
         "description": "",
         "order_position": 3,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "partner_hygiene_appearance_importance",
@@ -458,7 +458,7 @@
         "description": "",
         "order_position": 4,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "important_physical_aspects_partner",
@@ -466,7 +466,7 @@
         "description": "(plusieurs choix possibles)",
         "order_position": 5,
         "field_type": "nested_select",
-        "required": false
+        "required": true
       }
     ]
   },
@@ -483,7 +483,7 @@
         "description": "",
         "order_position": 6,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "ideal_intimate_frequency",
@@ -491,7 +491,7 @@
         "description": "",
         "order_position": 7,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "comfort_level_talking_sexuality",
@@ -499,7 +499,7 @@
         "description": "",
         "order_position": 8,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "partner_sexual_values_alignment",
@@ -507,7 +507,7 @@
         "description": "",
         "order_position": 9,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "comfortable_public_affection",
@@ -515,7 +515,7 @@
         "description": "",
         "order_position": 10,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "ideal_sexuality_vision",
@@ -523,7 +523,7 @@
         "description": "",
         "order_position": 11,
         "field_type": "text",
-        "required": false
+        "required": true
       }
     ]
   },
@@ -540,7 +540,7 @@
         "description": "",
         "order_position": 12,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "partner_age_range",
@@ -548,7 +548,7 @@
         "description": "",
         "order_position": 13,
         "field_type": "range",
-        "required": false,
+        "required": true,
         "field_unit": "ans"
       }
     ]
@@ -566,7 +566,7 @@
         "description": "",
         "order_position": 14,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "ideal_partner_education_profession",
@@ -574,7 +574,7 @@
         "description": "",
         "order_position": 15,
         "field_type": "select",
-        "required": false,
+        "required": true,
         "allow_custom": true
       },
       {
@@ -583,7 +583,7 @@
         "description": "",
         "order_position": 16,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "ideal_partner_description",
@@ -591,7 +591,7 @@
         "description": "",
         "order_position": 17,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "ideal_couple_life_description",
@@ -599,7 +599,7 @@
         "description": "",
         "order_position": 18,
         "field_type": "text",
-        "required": false
+        "required": true
       }
     ]
   },
@@ -616,7 +616,7 @@
         "description": "",
         "order_position": 1,
         "field_type": "boolean",
-        "required": false
+        "required": true
       },
       {
         "name": "number_of_children",
@@ -624,7 +624,7 @@
         "description": "",
         "order_position": 2,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "wants_children",
@@ -632,7 +632,7 @@
         "description": "",
         "order_position": 3,
         "field_type": "boolean",
-        "required": false
+        "required": true
       },
       {
         "name": "partner_must_want_children",
@@ -640,7 +640,7 @@
         "description": "",
         "order_position": 4,
         "field_type": "select",
-        "required": false
+        "required": true
       },
       {
         "name": "partner_desired_number_of_children",
@@ -648,7 +648,7 @@
         "description": "",
         "order_position": 5,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "educational_approach",
@@ -656,7 +656,7 @@
         "description": "",
         "order_position": 6,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "accept_partner_with_children",
@@ -664,7 +664,7 @@
         "description": "",
         "order_position": 7,
         "field_type": "boolean",
-        "required": false
+        "required": true
       },
       {
         "name": "share_same_educational_values",
@@ -672,7 +672,7 @@
         "description": "",
         "order_position": 8,
         "field_type": "boolean",
-        "required": false
+        "required": true
       },
       {
         "name": "imagine_yourself_in10_years",
@@ -680,7 +680,7 @@
         "description": "",
         "order_position": 9,
         "field_type": "text",
-        "required": false
+        "required": true
       },
       {
         "name": "reason_for_registration",
@@ -688,7 +688,7 @@
         "description": "",
         "order_position": 10,
         "field_type": "text",
-        "required": false
+        "required": true
       }
     ]
   }

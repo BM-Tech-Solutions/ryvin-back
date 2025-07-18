@@ -180,5 +180,5 @@ class QuestionnaireService(BaseService):
         return [
             field.name
             for field in self.get_required_fields()
-            if getattr(quest, field.name) in (None, "")
+            if getattr(quest, field.name, None) in (None, "")
         ]
