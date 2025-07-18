@@ -1,12 +1,10 @@
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
-from app.core.database import get_session
-from app.core.dependencies import get_current_verified_user
-from app.models.user import User
+from app.core.database import SessionDep
+from app.core.dependencies import VerifiedUserDep
 from app.schemas.profile import ProfileCompletion, ProfileCreate, ProfileOut, ProfileUpdate
 from app.services.photo_service import PhotoService
 from app.services.profile_service import ProfileService
@@ -16,8 +14,8 @@ router = APIRouter()
 
 @router.get("/me")
 def get_profile(
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_session),
+    db: SessionDep,
+    current_user: VerifiedUserDep,
 ) -> ProfileOut:
     """
     Get current user's profile
@@ -31,9 +29,9 @@ def get_profile(
 
 @router.put("/me")
 def update_profile(
+    db: SessionDep,
+    current_user: VerifiedUserDep,
     profile_in: ProfileUpdate,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_session),
 ) -> ProfileOut:
     """
     Update current user's profile
@@ -48,9 +46,9 @@ def update_profile(
 
 @router.post("/me")
 def create_profile(
+    db: SessionDep,
+    current_user: VerifiedUserDep,
     profile_in: ProfileCreate,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_session),
 ) -> ProfileOut:
     """
     create profile for current user
@@ -67,9 +65,9 @@ def create_profile(
 
 @router.post("/photos", status_code=status.HTTP_201_CREATED)
 def upload_photo(
+    db: SessionDep,
+    current_user: VerifiedUserDep,
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_session),
 ) -> Any:
     """
     Upload a photo to user's profile
@@ -87,9 +85,9 @@ def upload_photo(
 
 @router.post("/photos/set-primary/{photo_id}", status_code=status.HTTP_200_OK)
 def set_primary_photo(
+    db: SessionDep,
+    current_user: VerifiedUserDep,
     photo_id: UUID,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_session),
 ) -> Any:
     """
     Set a photo as primary for user's profile
@@ -108,9 +106,9 @@ def set_primary_photo(
 
 @router.delete("/photos/{photo_id}", status_code=status.HTTP_200_OK)
 def delete_photo(
+    db: SessionDep,
+    current_user: VerifiedUserDep,
     photo_id: UUID,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_session),
 ) -> Any:
     """
     Delete a photo from user's profile
@@ -129,8 +127,8 @@ def delete_photo(
 
 @router.get("/completion-status", response_model=ProfileCompletion, status_code=status.HTTP_200_OK)
 def get_profile_completion_status(
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_session),
+    db: SessionDep,
+    current_user: VerifiedUserDep,
 ) -> Any:
     """
     Get profile completion status

@@ -1,12 +1,10 @@
 from typing import Any, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Query, status
 
-from app.core.database import get_session
-from app.core.dependencies import get_current_admin_user
-from app.models.user import User
+from app.core.database import SessionDep
+from app.core.dependencies import AdminUserDep
 from app.schemas.journey import Journey
 from app.schemas.match import Match
 from app.schemas.user import UserInDB
@@ -17,12 +15,12 @@ router = APIRouter()
 
 @router.get("/users", response_model=List[UserInDB])
 def get_users(
+    db: SessionDep,
+    current_user: AdminUserDep,
     is_active: bool = Query(None, description="Filter by active status"),
     is_verified: bool = Query(None, description="Filter by verification status"),
     skip: int = 0,
     limit: int = 100,
-    current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_session),
 ) -> Any:
     """
     Get all users (admin only)
@@ -33,9 +31,9 @@ def get_users(
 
 @router.get("/users/{user_id}", response_model=UserInDB)
 def get_user(
+    db: SessionDep,
+    current_user: AdminUserDep,
     user_id: UUID,
-    current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_session),
 ) -> Any:
     """
     Get a specific user by ID (admin only)
@@ -47,10 +45,10 @@ def get_user(
 
 @router.post("/users/{user_id}/ban", status_code=status.HTTP_200_OK)
 def ban_user(
+    db: SessionDep,
+    current_user: AdminUserDep,
     user_id: UUID,
     reason: str,
-    current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_session),
 ) -> Any:
     """
     Ban a user (admin only)
@@ -63,9 +61,9 @@ def ban_user(
 
 @router.post("/users/{user_id}/unban", status_code=status.HTTP_200_OK)
 def unban_user(
+    db: SessionDep,
+    current_user: AdminUserDep,
     user_id: UUID,
-    current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_session),
 ) -> Any:
     """
     Unban a user (admin only)
@@ -78,14 +76,14 @@ def unban_user(
 
 @router.get("/matches", response_model=List[Match])
 def get_matches(
+    db: SessionDep,
+    current_user: AdminUserDep,
     status: str = Query(None, description="Filter by match status"),
     min_compatibility: float = Query(
         None, ge=0, le=100, description="Filter by minimum compatibility score"
     ),
     skip: int = 0,
     limit: int = 100,
-    current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_session),
 ) -> Any:
     """
     Get all matches (admin only)
@@ -96,12 +94,12 @@ def get_matches(
 
 @router.get("/journeys", response_model=List[Journey])
 def get_journeys(
+    db: SessionDep,
+    current_user: AdminUserDep,
     current_step: int = Query(None, description="Filter by current step"),
     is_completed: bool = Query(None, description="Filter by completion status"),
     skip: int = 0,
     limit: int = 100,
-    current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_session),
 ) -> Any:
     """
     Get all journeys (admin only)
@@ -111,9 +109,7 @@ def get_journeys(
 
 
 @router.get("/stats", status_code=status.HTTP_200_OK)
-def get_stats(
-    current_user: User = Depends(get_current_admin_user), db: Session = Depends(get_session)
-) -> Any:
+def get_stats(db: SessionDep, current_user: AdminUserDep) -> Any:
     """
     Get system statistics (admin only)
     """
@@ -123,11 +119,11 @@ def get_stats(
 
 @router.post("/moderate/message/{message_id}", status_code=status.HTTP_200_OK)
 def moderate_message(
+    db: SessionDep,
+    current_user: AdminUserDep,
     message_id: UUID,
     action: str,
     reason: str = None,
-    current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_session),
 ) -> Any:
     """
     Moderate a message (admin only)
@@ -140,11 +136,11 @@ def moderate_message(
 
 @router.post("/moderate/profile/{profile_id}", status_code=status.HTTP_200_OK)
 def moderate_profile(
+    db: SessionDep,
+    current_user: AdminUserDep,
     profile_id: UUID,
     action: str,
     reason: str = None,
-    current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_session),
 ) -> Any:
     """
     Moderate a profile (admin only)

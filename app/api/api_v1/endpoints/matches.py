@@ -1,12 +1,10 @@
 from typing import Any, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Query, status
 
-from app.core.database import get_session
-from app.core.dependencies import get_current_verified_user
-from app.models.user import User
+from app.core.database import SessionDep
+from app.core.dependencies import VerifiedUserDep
 from app.schemas.match import Match, MatchResponse
 from app.services.match_service import MatchService
 
@@ -15,11 +13,11 @@ router = APIRouter()
 
 @router.get("", response_model=List[Match])
 def get_matches(
+    db: SessionDep,
+    current_user: VerifiedUserDep,
     status: str = Query(None, description="Filter by match status"),
     skip: int = 0,
     limit: int = 100,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_session),
 ) -> Any:
     """
     Get all matches for the current user
@@ -31,38 +29,30 @@ def get_matches(
 
 @router.post("/discover", response_model=List[MatchResponse])
 def discover_matches(
+    db: SessionDep,
+    current_user: VerifiedUserDep,
     limit: int = Query(10, ge=1, le=50, description="Number of potential matches to discover"),
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_session),
 ) -> Any:
     """
     Discover potential matches for the current user
     """
     match_service = MatchService(db)
-    potential_matches = match_service.discover_matches(current_user.id, limit)
+    potential_matches = match_service.discover_potential_matches(current_user.id, limit=limit)
     return potential_matches
 
 
 @router.get("/{match_id}", response_model=Match)
-def get_match(
-    match_id: UUID,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_session),
-) -> Any:
+def get_match(db: SessionDep, current_user: VerifiedUserDep, match_id: UUID) -> Any:
     """
     Get a specific match by ID
     """
     match_service = MatchService(db)
-    match = match_service.get_match(match_id, current_user.id)
+    match = match_service.get_match_by_id(match_id)
     return match
 
 
 @router.post("/{match_id}/accept", status_code=status.HTTP_200_OK)
-def accept_match(
-    match_id: UUID,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_session),
-) -> Any:
+def accept_match(db: SessionDep, current_user: VerifiedUserDep, match_id: UUID) -> Any:
     """
     Accept a match
     """
@@ -72,11 +62,7 @@ def accept_match(
 
 
 @router.post("/{match_id}/decline", status_code=status.HTTP_200_OK)
-def decline_match(
-    match_id: UUID,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_session),
-) -> Any:
+def decline_match(db: SessionDep, current_user: VerifiedUserDep, match_id: UUID) -> Any:
     """
     Decline a match
     """

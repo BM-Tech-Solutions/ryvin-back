@@ -5,15 +5,15 @@ Endpoints for Firebase phone authentication and Google OAuth.
 """
 
 from typing import Any, Dict, Optional
+from uuid import UUID
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Security, status
+from fastapi import APIRouter, HTTPException, Security, status
 from firebase_admin import auth as firebase_auth
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 
-from app.core.database import get_session
+from app.core.database import SessionDep
 from app.main import api_key_header
 from app.models.user import User
 from app.schemas.user import TestUserCreate, UserOut
@@ -81,8 +81,8 @@ router = APIRouter()
 
 @router.post("/phone-auth", response_model=AuthResponse)
 def phone_auth(
+    db: SessionDep,
     request: PhoneAuthRequest,
-    db: Session = Depends(get_session),
     api_key: str = Security(api_key_header),
 ) -> Any:
     """
@@ -102,8 +102,8 @@ def phone_auth(
 
 @router.post("/google-auth", response_model=AuthResponse)
 def google_auth(
+    db: SessionDep,
     request: GoogleAuthRequest,
-    db: Session = Depends(get_session),
     api_key: str = Security(api_key_header),
 ) -> Any:
     """
@@ -125,7 +125,7 @@ def google_auth(
 @router.post("/complete-profile", response_model=CompleteProfileResponse)
 def complete_profile(
     request: CompleteProfileRequest,
-    db: Session = Depends(get_session),
+    db: SessionDep,
     api_key: str = Security(api_key_header),
 ) -> Any:
     """
@@ -141,7 +141,7 @@ def complete_profile(
 
 
 @router.post("/refresh-token", response_model=TokenResponse)
-def refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_session)) -> Any:
+def refresh_token(request: RefreshTokenRequest, db: SessionDep) -> Any:
     """
     Refresh access token
     """
@@ -150,7 +150,7 @@ def refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_sessio
 
 
 @router.post("/logout", response_model=LogoutResponse)
-def logout(request: RefreshTokenRequest, db: Session = Depends(get_session)) -> Any:
+def logout(request: RefreshTokenRequest, db: SessionDep) -> Any:
     """
     Logout user by revoking refresh token
     """
@@ -159,9 +159,7 @@ def logout(request: RefreshTokenRequest, db: Session = Depends(get_session)) -> 
 
 
 @router.get("/test-token/{phone_number}")
-def get_test_token(
-    phone_number: str, db: Session = Depends(get_session), api_key: str = Security(api_key_header)
-) -> Dict[str, str]:
+def get_test_token(phone_number: str, api_key: str = Security(api_key_header)) -> Dict[str, str]:
     """
     Generate a test token for a given phone number.
     This endpoint is for testing purposes only.
@@ -180,7 +178,7 @@ def get_test_token(
 
 @router.get("/test-google-token/{email}")
 async def get_test_google_token(
-    email: str, db: Session = Depends(get_session), api_key: str = Security(api_key_header)
+    email: str, api_key: str = Security(api_key_header)
 ) -> Dict[str, Any]:
     """
     Generate a test Firebase ID token for a given email.
@@ -247,7 +245,7 @@ async def exchange_custom_token_for_id_token(custom_token: str) -> str:
 
 @router.get("/test-user/{user_id}")
 def get_user_data(
-    user_id: str, db: Session = Depends(get_session), api_key: str = Security(api_key_header)
+    db: SessionDep, user_id: UUID, api_key: str = Security(api_key_header)
 ) -> Dict[str, Any]:
     """
     Get user data by ID for testing purposes.
@@ -278,7 +276,7 @@ def get_user_data(
 
 
 @router.post("/create-user/", tags=["test"])
-def create_user(user_in: TestUserCreate, session: Session = Depends(get_session)) -> UserOut:
+def create_user(session: SessionDep, user_in: TestUserCreate) -> UserOut:
     """
     Testing endpoint for creating a new user.
     """

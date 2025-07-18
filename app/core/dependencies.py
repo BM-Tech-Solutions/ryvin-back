@@ -14,6 +14,27 @@ from app.schemas.token import TokenPayload
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
 
 
+# this is for testing only, we'll remove this later
+async def test_get_user(
+    session: SessionDep,
+    id_header: Annotated[
+        UUID,
+        Header(description="for testing only (instead of using 'Authorization')"),
+    ] = "8131dbdf-e7a3-4197-bea8-19005ed8d520",
+):
+    user = session.query(User).filter(User.id == id_header).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Could not find user with id: {id_header}",
+        )
+    return user
+
+
+TestGetUserDep = Annotated[User, Depends(test_get_user)]
+#
+
+
 async def get_current_user(
     session: SessionDep,
     token: str = Depends(oauth2_scheme),
@@ -40,26 +61,11 @@ async def get_current_user(
     return user
 
 
-async def get_user(
-    session: SessionDep,
-    id_header: Annotated[
-        UUID,
-        Header(description="for testing only (instead of using 'Authorization')"),
-    ] = "8131dbdf-e7a3-4197-bea8-19005ed8d520",
-):
-    user = session.query(User).filter(User.id == id_header).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Could not find user with id: {id_header}",
-        )
-    return user
+CurrUserDep = Annotated[User, Depends(get_current_user)]
 
 
-async def get_current_active_user(
-    # current_user: User = Depends(get_current_user),
-    current_user: User = Depends(get_user),
-) -> User:
+# this should be "current_user: CurrUserDep" not "current_user: TestGetUserDep"
+async def get_current_active_user(current_user: TestGetUserDep) -> User:
     """
     Get the current active user
     """
@@ -68,9 +74,10 @@ async def get_current_active_user(
     return current_user
 
 
-async def get_current_verified_user(
-    current_user: User = Depends(get_current_active_user),
-) -> User:
+ActiveUserDep = Annotated[User, Depends(get_current_active_user)]
+
+
+async def get_current_verified_user(current_user: ActiveUserDep) -> User:
     """
     Get the current verified user
     """
@@ -82,9 +89,10 @@ async def get_current_verified_user(
     return current_user
 
 
-async def get_current_admin_user(
-    current_user: User = Depends(get_current_verified_user),
-) -> User:
+VerifiedUserDep = Annotated[User, Depends(get_current_verified_user)]
+
+
+async def get_current_admin_user(current_user: VerifiedUserDep) -> User:
     """
     Get the current admin user
     """
@@ -94,3 +102,6 @@ async def get_current_admin_user(
             detail="Admin privileges required",
         )
     return current_user
+
+
+AdminUserDep = Annotated[User, Depends(get_current_admin_user)]
