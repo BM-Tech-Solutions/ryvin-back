@@ -3,8 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 
-from app.core.database import SessionDep
-from app.core.dependencies import VerifiedUserDep
+from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.schemas.match import Match, MatchResponse
 from app.services.match_service import MatchService
 

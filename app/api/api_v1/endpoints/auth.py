@@ -13,7 +13,7 @@ from firebase_admin import auth as firebase_auth
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.exc import IntegrityError
 
-from app.core.database import SessionDep
+from app.core.dependencies import SessionDep
 from app.main import api_key_header
 from app.models.user import User
 from app.schemas.user import TestUserCreate, UserOut

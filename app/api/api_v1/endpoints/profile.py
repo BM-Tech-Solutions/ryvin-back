@@ -3,8 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
-from app.core.database import SessionDep
-from app.core.dependencies import VerifiedUserDep
+from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.schemas.profile import ProfileCompletion, ProfileCreate, ProfileOut, ProfileUpdate
 from app.services.photo_service import PhotoService
 from app.services.profile_service import ProfileService

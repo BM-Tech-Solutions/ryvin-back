@@ -2,8 +2,7 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.core.database import SessionDep
-from app.core.dependencies import VerifiedUserDep
+from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.schemas.questionnaire import QuestionnaireCreate, QuestionnaireInDB, QuestionnaireUpdate
 from app.services.questionnaire_service import QuestionnaireService
 
