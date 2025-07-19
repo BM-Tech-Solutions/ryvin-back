@@ -3,7 +3,8 @@ import uuid
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import HTTPException, UploadFile, status
+from fastapi import HTTPException, UploadFile
+from fastapi import status as http_status
 
 from app.models import Photo
 
@@ -29,7 +30,7 @@ class PhotoService(BaseService):
         photo_count = self.session.query(Photo).filter(Photo.user_id == user_id).count()
         if photo_count >= 6:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail="Maximum number of photos (6) reached",
             )
 
@@ -38,7 +39,7 @@ class PhotoService(BaseService):
         file_ext = os.path.splitext(file.filename)[1].lower()
         if file_ext not in allowed_extensions:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail=f"File type not allowed. Allowed types: {', '.join(allowed_extensions)}",
             )
 

@@ -5,7 +5,7 @@ from app.schemas.meeting import (
     MeetingFeedback,
     MeetingFeedbackCreate,
     MeetingFeedbackInDB,
-    MeetingRequest,
+    MeetingRequestOut,
     MeetingRequestCreate,
     MeetingRequestInDB,
 )

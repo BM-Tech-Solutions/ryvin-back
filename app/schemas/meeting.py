@@ -88,7 +88,7 @@ class MeetingRequestInDB(MeetingRequestInDBBase):
     pass
 
 
-class MeetingRequest(MeetingRequestInDBBase):
+class MeetingRequestOut(MeetingRequestInDBBase):
     """
     Schema for meeting request response
     """

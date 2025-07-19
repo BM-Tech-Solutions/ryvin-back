@@ -90,7 +90,7 @@ class TestUserCreate(BaseModel):
     is_active: bool = True
     #: str
     last_login: datetime = Field(default_factory=utc_now)
-    subscription_type: str
+    subscription_type: SubscriptionType
     subscription_expires_at: Optional[datetime] = None
 
     @field_validator("phone_number")

@@ -2,10 +2,12 @@ from datetime import timedelta
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException
+from fastapi import status as http_status
 from sqlalchemy import func
 
 from app.core.security import utc_now
+from app.models.enums import JourneyStatus, MatchStatus
 from app.models.journey import Journey
 from app.models.match import Match
 from app.models.meeting import MeetingRequest
@@ -20,19 +22,31 @@ class AdminService(BaseService):
     Service for admin-related operations
     """
 
-    def get_users(self, skip: int = 0, limit: int = 100, search: str = None) -> List[User]:
+    def get_users(
+        self,
+        search: str = None,
+        is_active: bool = None,
+        is_verified: bool = None,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[User]:
         """
         Get all users with optional search
         """
         query = self.session.query(User)
 
+        if is_active is not None:
+            query = query.filter(User.is_active == is_active)
+
+        if is_verified is not None:
+            query = query.filter(User.is_verified == is_verified)
+
         if search:
             search_term = f"%{search}%"
             query = query.filter(
-                User.phone.ilike(search_term)
-                | User.email.ilike(search_term)
-                | User.first_name.ilike(search_term)
-                | User.last_name.ilike(search_term)
+                User.phone_number.ilike(search_term) | User.email.ilike(search_term)
+                # | User.first_name.ilike(search_term)
+                # | User.last_name.ilike(search_term)
             )
 
         return query.offset(skip).limit(limit).all()
@@ -49,7 +63,7 @@ class AdminService(BaseService):
         """
         user = self.get_user_by_id(user_id)
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="User not found")
 
         user.is_active = False
         user.is_banned = True
@@ -66,11 +80,11 @@ class AdminService(BaseService):
         """
         user = self.get_user_by_id(user_id)
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="User not found")
 
         if not user.is_banned:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="User is not banned"
+                status_code=http_status.HTTP_400_BAD_REQUEST, detail="User is not banned"
             )
 
         user.is_active = True
@@ -94,15 +108,15 @@ class AdminService(BaseService):
         return query.order_by(Match.created_at.desc()).offset(skip).limit(limit).all()
 
     def get_journeys(
-        self, status: str = None, current_step: int = None, skip: int = 0, limit: int = 100
+        self, is_completed: bool = None, current_step: int = None, skip: int = 0, limit: int = 100
     ) -> List[Journey]:
         """
         Get all journeys with optional filters
         """
         query = self.session.query(Journey)
 
-        if status:
-            query = query.filter(Journey.status == status)
+        if is_completed is not None:
+            query = query.filter(Journey.is_completed == is_completed)
 
         if current_step:
             query = query.filter(Journey.current_step == current_step)
@@ -121,42 +135,33 @@ class AdminService(BaseService):
         verified_users = (
             self.session.query(func.count(User.id)).filter(User.is_verified.is_(True)).scalar()
         )
-        banned_users = (
-            self.session.query(func.count(User.id)).filter(User.is_banned.is_(True)).scalar()
-        )
+        # banned_users = (
+        #     self.session.query(func.count(User.id)).filter(User.is_banned.is_(True)).scalar()
+        # )
+        banned_users = 0
 
         # New users in last 7 days
         new_users_last_week = (
             self.session.query(func.count(User.id))
-            .filter(User.created_at >= utc_now() - timedelta(days=7))
+            .filter(User.created_at >= (utc_now() - timedelta(days=7)))
             .scalar()
         )
 
         # Match stats
-        total_matches = self.session.query(func.count(Match.id)).scalar()
-        pending_matches = (
-            self.session.query(func.count(Match.id)).filter(Match.status == "pending").scalar()
-        )
-        confirmed_matches = (
-            self.session.query(func.count(Match.id)).filter(Match.status == "matched").scalar()
-        )
-        declined_matches = (
-            self.session.query(func.count(Match.id)).filter(Match.status == "declined").scalar()
-        )
+        matches_query = self.session.query(func.count(Match.id))
+        total_matches = matches_query.scalar()
+        pending_matches = matches_query.filter(Match.status == MatchStatus.PENDING).scalar()
+        confirmed_matches = matches_query.filter(Match.status == MatchStatus.ACTIVE).scalar()
+        declined_matches = matches_query.filter(Match.status == MatchStatus.DECLINED).scalar()
 
         # Journey stats
-        total_journeys = self.session.query(func.count(Journey.id)).scalar()
-        active_journeys = (
-            self.session.query(func.count(Journey.id)).filter(Journey.status == "active").scalar()
-        )
-        completed_journeys = (
-            self.session.query(func.count(Journey.id))
-            .filter(Journey.status == "completed")
-            .scalar()
-        )
-        ended_journeys = (
-            self.session.query(func.count(Journey.id)).filter(Journey.status == "ended").scalar()
-        )
+        journey_query = self.session.query(func.count(Journey.id))
+        total_journeys = journey_query.scalar()
+        active_journeys = journey_query.filter(Journey.status == JourneyStatus.ACTIVE).scalar()
+        completed_journeys = journey_query.filter(
+            Journey.status == JourneyStatus.COMPLETED
+        ).scalar()
+        ended_journeys = journey_query.filter(Journey.status == JourneyStatus.ENDED).scalar()
 
         # Message stats
         total_messages = self.session.query(func.count(Message.id)).scalar()
@@ -217,7 +222,9 @@ class AdminService(BaseService):
         """
         message = self.session.query(Message).filter(Message.id == message_id).first()
         if not message:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND, detail="Message not found"
+            )
 
         if action == "approve":
             message.is_flagged = False
@@ -228,7 +235,7 @@ class AdminService(BaseService):
             message.moderated_at = utc_now()
         else:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid moderation action"
+                status_code=http_status.HTTP_400_BAD_REQUEST, detail="Invalid moderation action"
             )
 
         self.session.commit()

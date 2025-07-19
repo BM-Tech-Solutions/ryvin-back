@@ -1,7 +1,8 @@
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException
+from fastapi import status as http_status
 from sqlalchemy import and_, or_
 
 from app.core.security import utc_now
@@ -93,7 +94,7 @@ class MatchService(BaseService):
         """
         user = self.session.query(User).filter(User.id == user_id).first()
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="User not found")
 
         # Get existing matches to exclude
         existing_match_users = []
@@ -149,12 +150,14 @@ class MatchService(BaseService):
         """
         match = self.get_match_by_id(match_id)
         if not match:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND, detail="Match not found"
+            )
 
         # Check if user is part of the match
         if match.user1_id != user_id and match.user2_id != user_id:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="User is not part of this match"
+                status_code=http_status.HTTP_403_FORBIDDEN, detail="User is not part of this match"
             )
 
         # Update match acceptance status
@@ -194,12 +197,14 @@ class MatchService(BaseService):
         """
         match = self.get_match_by_id(match_id)
         if not match:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND, detail="Match not found"
+            )
 
         # Check if user is part of the match
         if match.user1_id != user_id and match.user2_id != user_id:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="User is not part of this match"
+                status_code=http_status.HTTP_403_FORBIDDEN, detail="User is not part of this match"
             )
 
         # Update match status

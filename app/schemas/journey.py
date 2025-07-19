@@ -93,7 +93,7 @@ class Journey(JourneyInDBBase):
     pass
 
 
-class JourneyResponse(BaseModel):
+class JourneyOut(BaseModel):
     """
     Schema for detailed journey response with additional data
     """

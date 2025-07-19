@@ -1,10 +1,12 @@
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException
+from fastapi import status as http_status
 from sqlalchemy import or_
 
 from app.core.security import utc_now
+from app.models.enums import JourneyStatus, MeetingStatus
 from app.models.journey import Journey
 from app.models.match import Match
 from app.models.meeting import MeetingFeedback, MeetingRequest
@@ -34,28 +36,26 @@ class JourneyService(BaseService):
         """
         return self.session.query(Journey).filter(Journey.match_id == match_id).first()
 
-    def get_user_journeys(
+    def get_journeys(
         self,
-        user_id: UUID,
-        status: str = None,
+        user_id: UUID = None,
         current_step: int = None,
+        is_completed: bool = None,
         skip: int = 0,
         limit: int = 100,
     ) -> List[Journey]:
         """
         Get all journeys for a user
         """
-        query = (
-            self.session.query(Journey)
-            .join(Match)
-            .filter(or_(Match.user1_id == user_id, Match.user2_id == user_id))
-        )
-
-        if status:
-            query = query.filter(Journey.status == status)
-
+        query = self.session.query(Journey)
+        if user_id:
+            query = query.join(Match).filter(
+                or_(Match.user1_id == user_id, Match.user2_id == user_id)
+            )
         if current_step:
             query = query.filter(Journey.current_step == current_step)
+        if is_completed:
+            query = query.filter(Journey.is_completed == is_completed)
 
         return query.offset(skip).limit(limit).all()
 
@@ -73,22 +73,22 @@ class JourneyService(BaseService):
             return journey.match.user2_id
         return journey.match.user1_id
 
-    def advance_journey(self, journey: Journey, user_id: UUID) -> Journey:
+    def advance_journey(self, journey_id: UUID) -> Journey:
         """
         Advance journey to the next step
         """
-        # Check if journey is active
-        if journey.status != "active":
+        journey = self.get_journey_by_id(journey_id)
+        if not journey:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Cannot advance journey with status '{journey.status}'",
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"No Journey with id: '{journey_id}'",
             )
 
-        # Check if journey is already at the final step
-        if journey.current_step >= 5:
+        # Check if journey is active
+        if journey.status != JourneyStatus.ACTIVE:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Journey is already at the final step",
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot advance journey with status '{journey.status}'",
             )
 
         # Check step-specific requirements
@@ -100,7 +100,7 @@ class JourneyService(BaseService):
             )
             if message_count < 5:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
+                    status_code=http_status.HTTP_400_BAD_REQUEST,
                     detail="At least 5 messages must be exchanged before advancing",
                 )
 
@@ -118,7 +118,7 @@ class JourneyService(BaseService):
 
             if not user1_photos or not user2_photos:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
+                    status_code=http_status.HTTP_400_BAD_REQUEST,
                     detail="Both users must upload photos before advancing",
                 )
 
@@ -128,16 +128,24 @@ class JourneyService(BaseService):
             meeting_request = (
                 self.session.query(MeetingRequest)
                 .filter(
-                    MeetingRequest.journey_id == journey.id, MeetingRequest.status == "accepted"
+                    MeetingRequest.journey_id == journey.id,
+                    MeetingRequest.status == MeetingStatus.ACCEPTED,
                 )
                 .first()
             )
 
             if not meeting_request:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
+                    status_code=http_status.HTTP_400_BAD_REQUEST,
                     detail="An accepted meeting request is required before advancing",
                 )
+
+        # Check if journey is already at the final step
+        if journey.current_step >= 5:
+            raise HTTPException(
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail="Journey is already at the final step",
+            )
 
         # Advance to next step
         journey.current_step += 1
@@ -161,7 +169,7 @@ class JourneyService(BaseService):
         """
         Complete a journey (final step completed successfully)
         """
-        journey.status = "completed"
+        journey.status = JourneyStatus.COMPLETED
         journey.completed_at = utc_now()
         journey.updated_at = utc_now()
 
@@ -173,9 +181,9 @@ class JourneyService(BaseService):
         """
         End a journey prematurely
         """
-        journey.status = "ended"
+        journey.status = JourneyStatus.ENDED
         journey.ended_at = utc_now()
-        journey.ended_by_user_id = user_id
+        journey.ended_by = user_id
         journey.end_reason = reason
         journey.updated_at = utc_now()
 
@@ -239,7 +247,9 @@ class MessageService(BaseService):
             sender = self.session.query(User).filter(User.id == sender_id).first()
 
             if other_user and sender:
-                sender_name = f"{sender.first_name}" if sender.first_name else "Your match"
+                sender_name = (
+                    f"{sender.profile.first_name}" if sender.profile.first_name else "Your match"
+                )
                 NotificationService().send_new_message_notification(
                     other_user, message, sender_name
                 )
@@ -284,7 +294,7 @@ class MeetingService(BaseService):
 
         if existing_accepted:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail="A meeting has already been accepted for this journey",
             )
 
@@ -329,7 +339,7 @@ class MeetingService(BaseService):
         # Check if meeting request is still pending
         if meeting_request.status != "pending":
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail=f"Meeting request is already {meeting_request.status}",
             )
 
@@ -378,7 +388,7 @@ class MeetingService(BaseService):
 
         if existing_feedback:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail="You have already provided feedback for this meeting",
             )
 

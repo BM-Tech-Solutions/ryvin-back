@@ -11,7 +11,8 @@ from typing import Any, Dict, Optional
 from uuid import UUID
 
 import requests
-from fastapi import HTTPException, status
+from fastapi import HTTPException
+from fastapi import status as http_status
 from firebase_admin import auth as firebase_auth
 from jose import JWTError, jwt
 
@@ -51,7 +52,7 @@ class AuthService(BaseService):
         except Exception as e:
             print(f"Error in verify_user_exists: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to verify user: {str(e)}",
             )
 
@@ -65,7 +66,7 @@ class AuthService(BaseService):
         try:
             if not phone_number:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
+                    status_code=http_status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
                 )
 
             return {"phone_number": phone_number, "is_verified": True}
@@ -73,12 +74,13 @@ class AuthService(BaseService):
         except firebase_auth.InvalidIdTokenError as e:
             print(f"Invalid Firebase token: {e}")
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Firebase token: {str(e)}"
+                status_code=http_status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid Firebase token: {str(e)}",
             )
         except Exception as e:
             print(f"Error in verify_phone_token: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to verify phone token: {str(e)}",
             )
 
@@ -93,14 +95,14 @@ class AuthService(BaseService):
         try:
             if not phone_number:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
+                    status_code=http_status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
                 )
 
             # Check if user already exists
             user = self.session.query(User).filter(User.phone_number == phone_number).first()
             if user:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
+                    status_code=http_status.HTTP_400_BAD_REQUEST,
                     detail="User with this phone number already exists",
                 )
 
@@ -153,12 +155,13 @@ class AuthService(BaseService):
         except firebase_auth.InvalidIdTokenError as e:
             print(f"Invalid Firebase token: {e}")
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Firebase token: {str(e)}"
+                status_code=http_status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid Firebase token: {str(e)}",
             )
         except Exception as e:
             print(f"Error in register_user: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to register user: {str(e)}",
             )
 
@@ -173,7 +176,7 @@ class AuthService(BaseService):
         try:
             if not phone_number:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
+                    status_code=http_status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
                 )
 
             # Check if user exists in our database
@@ -181,7 +184,7 @@ class AuthService(BaseService):
 
             if not user:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
+                    status_code=http_status.HTTP_404_NOT_FOUND,
                     detail="User not found. Please register first.",
                 )
 
@@ -247,12 +250,13 @@ class AuthService(BaseService):
         except firebase_auth.InvalidIdTokenError as e:
             print(f"Invalid Firebase token: {e}")
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Firebase token: {str(e)}"
+                status_code=http_status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid Firebase token: {str(e)}",
             )
         except Exception as e:
             print(f"Error in login_user: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to login user: {str(e)}",
             )
 
@@ -267,7 +271,7 @@ class AuthService(BaseService):
         try:
             if not phone_number:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
+                    status_code=http_status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
                 )
 
             # Check if user exists in our database
@@ -367,12 +371,13 @@ class AuthService(BaseService):
 
         except firebase_auth.InvalidIdTokenError as e:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Firebase token: {str(e)}"
+                status_code=http_status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid Firebase token: {str(e)}",
             )
         except Exception as e:
             print(f"Error in verify_phone: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to verify phone: {str(e)}",
             )
 
@@ -392,14 +397,14 @@ class AuthService(BaseService):
                 # Check token type
                 if payload.get("type") != "access":
                     raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token type"
+                        status_code=http_status.HTTP_400_BAD_REQUEST, detail="Invalid token type"
                     )
 
                 user_id = UUID(payload.get("sub"))
 
             except (JWTError, ValueError) as e:
                 raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    status_code=http_status.HTTP_401_UNAUTHORIZED,
                     detail=f"Invalid or expired token: {str(e)}",
                 )
 
@@ -407,11 +412,13 @@ class AuthService(BaseService):
             user = self.session.query(User).filter(User.id == user_id).first()
 
             if not user:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+                raise HTTPException(
+                    status_code=http_status.HTTP_404_NOT_FOUND, detail="User not found"
+                )
 
             if not user.is_verified:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number not verified"
+                    status_code=http_status.HTTP_400_BAD_REQUEST, detail="Phone number not verified"
                 )
 
             # Check if email is already in use
@@ -421,7 +428,7 @@ class AuthService(BaseService):
 
             if existing_email_user:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Email already in use"
+                    status_code=http_status.HTTP_400_BAD_REQUEST, detail="Email already in use"
                 )
 
             # Update user information
@@ -476,7 +483,7 @@ class AuthService(BaseService):
         except Exception as e:
             print(f"Error in complete_profile: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to complete profile: {str(e)}",
             )
 
@@ -498,7 +505,7 @@ class AuthService(BaseService):
 
             if not db_refresh_token:
                 raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    status_code=http_status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid or expired refresh token",
                 )
 
@@ -521,7 +528,7 @@ class AuthService(BaseService):
         except Exception as e:
             print(f"Error in refresh_tokens: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to refresh tokens: {str(e)}",
             )
 
@@ -540,7 +547,7 @@ class AuthService(BaseService):
         try:
             if not phone_number:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
+                    status_code=http_status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
                 )
 
             # Check if user exists in our database
@@ -651,12 +658,13 @@ class AuthService(BaseService):
         except firebase_auth.InvalidIdTokenError as e:
             print(f"Invalid Firebase token: {e}")
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Firebase token: {str(e)}"
+                status_code=http_status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid Firebase token: {str(e)}",
             )
         except Exception as e:
             print(f"Error in phone_auth: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to authenticate user: {str(e)}",
             )
 
@@ -685,24 +693,25 @@ class AuthService(BaseService):
 
                 if not email:
                     raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
+                        status_code=http_status.HTTP_400_BAD_REQUEST,
                         detail="Email not found in the Google token",
                     )
 
             except (ValueError, firebase_auth.InvalidIdTokenError) as e:
                 raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    status_code=http_status.HTTP_401_UNAUTHORIZED,
                     detail=f"Invalid Google token: {str(e)}",
                 )
             except Exception as e:
                 raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"Error verifying Google token: {str(e)}",
                 )
 
             if not email:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Email not provided by Google"
+                    status_code=http_status.HTTP_400_BAD_REQUEST,
+                    detail="Email not provided by Google",
                 )
 
             # Check if user exists by email
@@ -815,7 +824,7 @@ class AuthService(BaseService):
         except Exception as e:
             print(f"Error in google_auth: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to authenticate with Google: {str(e)}",
             )
 
@@ -849,7 +858,9 @@ class AuthService(BaseService):
             )
 
             if not db_refresh_token:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Token not found")
+                raise HTTPException(
+                    status_code=http_status.HTTP_404_NOT_FOUND, detail="Token not found"
+                )
 
             # Revoke the token
             db_refresh_token.is_revoked = True
@@ -860,7 +871,7 @@ class AuthService(BaseService):
         except Exception as e:
             print(f"Error in logout: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to logout: {str(e)}",
             )
 
