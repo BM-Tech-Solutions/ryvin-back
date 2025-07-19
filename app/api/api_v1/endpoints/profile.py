@@ -1,7 +1,8 @@
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import status as http_status
 
 from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.schemas.profile import ProfileCompletion, ProfileCreate, ProfileOut, ProfileUpdate
@@ -21,7 +22,7 @@ def get_profile(
     """
     profile = ProfileService(session).get_profile(current_user.id)
     if not profile:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Profile not found")
 
     return profile
 
@@ -38,7 +39,7 @@ def update_profile(
     profile_service = ProfileService(session)
     profile = profile_service.get_profile(current_user.id)
     if not profile:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Profile not found")
     updated_profile = profile_service.update_profile(profile, profile_in)
     return updated_profile
 
@@ -56,13 +57,13 @@ def create_profile(
     profile = profile_service.get_profile(current_user.id)
     if profile:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="User already has a Profile"
+            status_code=http_status.HTTP_400_BAD_REQUEST, detail="User already has a Profile"
         )
     new_profile = profile_service.create_profile(current_user.id, profile_in)
     return new_profile
 
 
-@router.post("/photos", status_code=status.HTTP_201_CREATED)
+@router.post("/photos", status_code=http_status.HTTP_201_CREATED)
 def upload_photo(
     session: SessionDep,
     current_user: VerifiedUserDep,
@@ -82,7 +83,7 @@ def upload_photo(
     }
 
 
-@router.post("/photos/set-primary/{photo_id}", status_code=status.HTTP_200_OK)
+@router.post("/photos/set-primary/{photo_id}", status_code=http_status.HTTP_200_OK)
 def set_primary_photo(
     session: SessionDep,
     current_user: VerifiedUserDep,
@@ -98,12 +99,12 @@ def set_primary_photo(
         return {"message": "Primary photo set successfully"}
     else:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Photo not found in profile",
         )
 
 
-@router.delete("/photos/{photo_id}", status_code=status.HTTP_200_OK)
+@router.delete("/photos/{photo_id}", status_code=http_status.HTTP_200_OK)
 def delete_photo(
     session: SessionDep,
     current_user: VerifiedUserDep,
@@ -119,12 +120,14 @@ def delete_photo(
         return {"message": "Photo deleted successfully"}
     else:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Photo not found in profile",
         )
 
 
-@router.get("/completion-status", response_model=ProfileCompletion, status_code=status.HTTP_200_OK)
+@router.get(
+    "/completion-status", response_model=ProfileCompletion, status_code=http_status.HTTP_200_OK
+)
 def get_profile_completion_status(
     session: SessionDep,
     current_user: VerifiedUserDep,
@@ -136,7 +139,7 @@ def get_profile_completion_status(
     completion_info = profile_service.get_profile_completion(current_user.id)
     if not completion_info:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Profile or Questionnaire not found",
         )
     return completion_info

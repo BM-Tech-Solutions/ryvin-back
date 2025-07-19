@@ -1,39 +1,41 @@
-from typing import Any, List
+from typing import Any, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Query
+from fastapi import status as http_status
 
 from app.core.dependencies import AdminUserDep, SessionDep
 from app.schemas.journey import Journey
 from app.schemas.match import Match
-from app.schemas.user import UserInDB
+from app.schemas.user import UserOut
 from app.services.admin_service import AdminService
 
 router = APIRouter()
 
 
-@router.get("/users", response_model=List[UserInDB])
+@router.get("/users", response_model=list[UserOut])
 def get_users(
     session: SessionDep,
     current_user: AdminUserDep,
-    is_active: bool = Query(None, description="Filter by active status"),
-    is_verified: bool = Query(None, description="Filter by verification status"),
+    search: str | None = Query(None, description="Search Query"),
+    is_active: bool | None = Query(None, description="Filter by active status"),
+    is_verified: bool | None = Query(None, description="Filter by verification status"),
     skip: int = 0,
     limit: int = 100,
-) -> Any:
+) -> list[UserOut]:
     """
     Get all users (admin only)
     """
-    users = AdminService(session).get_users(is_active, is_verified, skip, limit)
+    users = AdminService(session).get_users(search, is_active, is_verified, skip, limit)
     return users
 
 
-@router.get("/users/{user_id}", response_model=UserInDB)
+@router.get("/users/{user_id}", response_model=Optional[UserOut])
 def get_user(
     session: SessionDep,
     current_user: AdminUserDep,
     user_id: UUID,
-) -> Any:
+) -> Optional[UserOut]:
     """
     Get a specific user by ID (admin only)
     """
@@ -42,7 +44,7 @@ def get_user(
     return user
 
 
-@router.post("/users/{user_id}/ban", status_code=status.HTTP_200_OK)
+@router.post("/users/{user_id}/ban", status_code=http_status.HTTP_200_OK)
 def ban_user(
     session: SessionDep,
     current_user: AdminUserDep,
@@ -53,12 +55,12 @@ def ban_user(
     Ban a user (admin only)
     """
     admin_service = AdminService(session)
-    admin_service.ban_user(user_id, current_user.id, reason)
+    admin_service.ban_user(user_id, reason)
 
     return {"message": "User banned successfully"}
 
 
-@router.post("/users/{user_id}/unban", status_code=status.HTTP_200_OK)
+@router.post("/users/{user_id}/unban", status_code=http_status.HTTP_200_OK)
 def unban_user(
     session: SessionDep,
     current_user: AdminUserDep,
@@ -73,7 +75,7 @@ def unban_user(
     return {"message": "User unbanned successfully"}
 
 
-@router.get("/matches", response_model=List[Match])
+@router.get("/matches/", response_model=List[Match])
 def get_matches(
     session: SessionDep,
     current_user: AdminUserDep,
@@ -87,7 +89,7 @@ def get_matches(
     """
     Get all matches (admin only)
     """
-    matches = AdminService(session).get_matches(status, min_compatibility, skip, limit)
+    matches = AdminService(session).get_matches(status, skip, limit)
     return matches
 
 
@@ -103,20 +105,22 @@ def get_journeys(
     """
     Get all journeys (admin only)
     """
-    journeys = AdminService(session).get_journeys(current_step, is_completed, skip, limit)
+    journeys = AdminService(session).get_journeys(
+        is_completed=is_completed, current_step=current_step, skip=skip, limit=limit
+    )
     return journeys
 
 
-@router.get("/stats", status_code=status.HTTP_200_OK)
+@router.get("/stats", status_code=http_status.HTTP_200_OK)
 def get_stats(session: SessionDep, current_user: AdminUserDep) -> Any:
     """
     Get system statistics (admin only)
     """
-    stats = AdminService(session).get_stats()
+    stats = AdminService(session).get_system_stats()
     return stats
 
 
-@router.post("/moderate/message/{message_id}", status_code=status.HTTP_200_OK)
+@router.post("/moderate/message/{message_id}", status_code=http_status.HTTP_200_OK)
 def moderate_message(
     session: SessionDep,
     current_user: AdminUserDep,
@@ -133,7 +137,7 @@ def moderate_message(
     return {"message": f"Message {action}d successfully"}
 
 
-@router.post("/moderate/profile/{profile_id}", status_code=status.HTTP_200_OK)
+@router.post("/moderate/profile/{profile_id}", status_code=http_status.HTTP_200_OK)
 def moderate_profile(
     session: SessionDep,
     current_user: AdminUserDep,

@@ -1,6 +1,7 @@
 from typing import Any, Dict
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException
+from fastapi import status as http_status
 
 from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.schemas.questionnaire import QuestionnaireCreate, QuestionnaireInDB, QuestionnaireUpdate
@@ -21,7 +22,9 @@ def get_questionnaire(
     questionnaire_service = QuestionnaireService(session)
     questionnaire = questionnaire_service.get_questionnaire(current_user.id)
     if not questionnaire:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Questionnaire not found")
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND, detail="Questionnaire not found"
+        )
     return QuestionnaireInDB.model_validate(questionnaire).model_dump(exclude_none=exclude_null)
 
 
@@ -52,13 +55,13 @@ def create_questionnaire(
     quest = questionnaire_service.get_questionnaire(current_user.id)
     if quest:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="User already has a Questionnaire"
+            status_code=http_status.HTTP_400_BAD_REQUEST, detail="User already has a Questionnaire"
         )
     quest = questionnaire_service.create_questionnaire(current_user.id, questionnaire_in)
     return quest
 
 
-@router.post("/complete", status_code=status.HTTP_200_OK)
+@router.post("/complete", status_code=http_status.HTTP_200_OK)
 def complete_questionnaire(
     session: SessionDep,
     current_user: VerifiedUserDep,
@@ -70,11 +73,13 @@ def complete_questionnaire(
     quest = quest_service.complete_questionnaire(current_user.id)
 
     if not quest:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Questionnaire not found")
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND, detail="Questionnaire not found"
+        )
 
     if not quest.is_complete():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=f"Questionnaire is incomplete. Missing field: {quest_service.get_missing_fields(quest)}",
         )
 

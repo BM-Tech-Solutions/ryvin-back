@@ -1,7 +1,8 @@
 from typing import Any, List
 from uuid import UUID
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Query
+from fastapi import status as http_status
 
 from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.schemas.match import Match, MatchResponse
@@ -50,7 +51,7 @@ def get_match(session: SessionDep, current_user: VerifiedUserDep, match_id: UUID
     return match
 
 
-@router.post("/{match_id}/accept", status_code=status.HTTP_200_OK)
+@router.post("/{match_id}/accept", status_code=http_status.HTTP_200_OK)
 def accept_match(session: SessionDep, current_user: VerifiedUserDep, match_id: UUID) -> Any:
     """
     Accept a match
@@ -60,7 +61,7 @@ def accept_match(session: SessionDep, current_user: VerifiedUserDep, match_id: U
     return result
 
 
-@router.post("/{match_id}/decline", status_code=status.HTTP_200_OK)
+@router.post("/{match_id}/decline", status_code=http_status.HTTP_200_OK)
 def decline_match(session: SessionDep, current_user: VerifiedUserDep, match_id: UUID) -> Any:
     """
     Decline a match

@@ -8,7 +8,8 @@ from typing import Any, Dict, Optional
 from uuid import UUID
 
 import httpx
-from fastapi import APIRouter, HTTPException, Security, status
+from fastapi import APIRouter, HTTPException, Security
+from fastapi import status as http_status
 from firebase_admin import auth as firebase_auth
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.exc import IntegrityError
@@ -221,7 +222,7 @@ async def get_test_google_token(
 
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error generating test token: {str(e)}",
         )
 
@@ -254,7 +255,7 @@ def get_user_data(
         user = session.query(User).filter(User.id == user_id).first()
 
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="User not found")
 
         # Convert user object to dictionary
         user_data = {
@@ -270,7 +271,7 @@ def get_user_data(
         return {"user": user_data}
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving user data: {str(e)}",
         )
 
@@ -283,7 +284,7 @@ def create_user(session: SessionDep, user_in: TestUserCreate) -> UserOut:
     user = session.query(User).filter(User.phone_number == user_in.phone_number).first()
     if user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=f"User with phone number: '{user_in.phone_number}' already exists",
         )
     try:
@@ -293,7 +294,7 @@ def create_user(session: SessionDep, user_in: TestUserCreate) -> UserOut:
         session.refresh(user)
     except IntegrityError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail={"args": e.args},
         )
     return user

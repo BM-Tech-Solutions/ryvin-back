@@ -1,7 +1,8 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException
+from fastapi import status as http_status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from pydantic import ValidationError
@@ -25,7 +26,7 @@ async def test_get_user(
     user = session.query(User).filter(User.id == id_header).first()
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
             detail=f"Could not find user with id: {id_header}",
         )
     return user
@@ -42,7 +43,7 @@ async def get_current_user(
     Get the current user from the token
     """
     credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
+        status_code=http_status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
@@ -82,7 +83,7 @@ async def get_current_verified_user(current_user: ActiveUserDep) -> User:
     """
     if not current_user.is_verified:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=http_status.HTTP_403_FORBIDDEN,
             detail="User not verified",
         )
     return current_user
@@ -97,7 +98,7 @@ async def get_current_admin_user(current_user: VerifiedUserDep) -> User:
     """
     if not current_user.is_admin:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=http_status.HTTP_403_FORBIDDEN,
             detail="Admin privileges required",
         )
     return current_user
