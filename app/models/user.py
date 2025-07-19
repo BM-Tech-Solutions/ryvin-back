@@ -34,6 +34,9 @@ class User(Base):
     is_admin: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
     is_verified: Mapped[bool] = mapped_column(default=False)
     verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    is_banned: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
+    ban_reason: Mapped[Optional[str]]
+    banned_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
     # Relationships
     profile: Mapped[Optional["Profile"]] = relationship(

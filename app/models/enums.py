@@ -309,11 +309,18 @@ class ImportanceLevel(BaseStrEnum):
 
 
 # others
+class JourneyStatus(BaseStrEnum):
+    ACTIVE = "active", "actif"
+    ENDED = "ended", "termine"
+    COMPLETED = "completed", "completé"
+
+
 class MatchStatus(BaseStrEnum):
-    PENDING = "en_attente"
-    ACTIVE = "actif"
-    PAUSED = "pause"
-    ENDED = "termine"
+    PENDING = "pending", "En Attente"
+    ACTIVE = "active", "actif"
+    DECLINED = "declined", "rejeté"
+    PAUSED = "paused", "pause"
+    ENDED = "ended", "termine"
 
 
 class SubscriptionType(BaseStrEnum):

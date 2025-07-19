@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import UUID as pgUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.models.enums import JourneyStep
+from app.models.enums import JourneyStatus, JourneyStep
 
 if TYPE_CHECKING:
     from .match import Match
@@ -25,7 +25,6 @@ class Journey(Base):
     match_id: Mapped[UUID] = mapped_column(
         pgUUID(as_uuid=True), ForeignKey("match.id"), unique=True
     )
-    ended_by: Mapped[UUID | None] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"))
     current_step: Mapped[int] = mapped_column(default=JourneyStep.PRE_COMPATIBILITY)
     # Pré-compatibilité
     step1_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -38,8 +37,14 @@ class Journey(Base):
     # Bilan rencontre
     step5_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+    status: Mapped[str] = mapped_column(
+        default=JourneyStatus.ACTIVE, server_default=JourneyStatus.ACTIVE
+    )
     is_completed: Mapped[bool] = mapped_column(default=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ended_by: Mapped[UUID | None] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"))
     end_reason: Mapped[str | None]
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     # Relationships
     match: Mapped["Match"] = relationship(back_populates="journey", foreign_keys=[match_id])
