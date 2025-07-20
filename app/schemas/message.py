@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.enums import MessageType
 
@@ -11,6 +11,8 @@ class MessageBase(BaseModel):
     """
     Base schema for message data
     """
+
+    model_config = ConfigDict(from_attributes=True, strict=False, validate_by_name=True)
 
     journey_id: UUID
     sender_id: UUID

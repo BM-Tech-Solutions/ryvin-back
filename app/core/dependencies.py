@@ -20,8 +20,11 @@ async def test_get_user(
     session: SessionDep,
     id_header: Annotated[
         UUID,
-        Header(description="for testing only (instead of using 'Authorization')"),
-    ] = "8131dbdf-e7a3-4197-bea8-19005ed8d520",
+        Header(
+            description="for testing only (instead of using 'Authorization')",
+            example="8131dbdf-e7a3-4197-bea8-19005ed8d520",
+        ),
+    ],
 ):
     user = session.query(User).filter(User.id == id_header).first()
     if not user:

@@ -75,7 +75,7 @@ def unban_user(
     return {"message": "User unbanned successfully"}
 
 
-@router.get("/matches/", response_model=List[Match])
+@router.get("/matches", response_model=List[Match])
 def get_matches(
     session: SessionDep,
     current_user: AdminUserDep,
@@ -89,7 +89,7 @@ def get_matches(
     """
     Get all matches (admin only)
     """
-    matches = AdminService(session).get_matches(status, skip, limit)
+    matches = AdminService(session).get_matches(status, min_compatibility, skip, limit)
     return matches
 
 

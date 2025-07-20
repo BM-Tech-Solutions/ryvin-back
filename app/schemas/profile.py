@@ -10,7 +10,7 @@ class ProfileBase(BaseModel):
     Base schema for user profile data
     """
 
-    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
+    model_config = ConfigDict(from_attributes=True, strict=False, validate_by_name=True)
 
     first_name: str
     gender: str = Field(description="Gender of the user")

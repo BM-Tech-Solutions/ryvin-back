@@ -96,7 +96,13 @@ class AdminService(BaseService):
         self.session.refresh(user)
         return user
 
-    def get_matches(self, status: str = None, skip: int = 0, limit: int = 100) -> List[Match]:
+    def get_matches(
+        self,
+        status: str = None,
+        min_compatibility_score: float = None,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[Match]:
         """
         Get all matches with optional status filter
         """
@@ -104,6 +110,9 @@ class AdminService(BaseService):
 
         if status:
             query = query.filter(Match.status == status)
+
+        if min_compatibility_score is not None:
+            query = query.filter(Match.compatibility_score >= min_compatibility_score)
 
         return query.order_by(Match.created_at.desc()).offset(skip).limit(limit).all()
 

@@ -19,8 +19,8 @@ def get_questionnaire(
     """
     Get current user's questionnaire
     """
-    questionnaire_service = QuestionnaireService(session)
-    questionnaire = questionnaire_service.get_questionnaire(current_user.id)
+    quest_service = QuestionnaireService(session)
+    questionnaire = quest_service.get_questionnaire(current_user.id)
     if not questionnaire:
         raise HTTPException(
             status_code=http_status.HTTP_404_NOT_FOUND, detail="Questionnaire not found"
@@ -37,9 +37,9 @@ def update_questionnaire(
     """
     Update current user's questionnaire
     """
-    questionnaire_service = QuestionnaireService(session)
-    questionnaire = questionnaire_service.update_questionnaire(current_user.id, questionnaire_in)
-    return questionnaire
+    quest_service = QuestionnaireService(session)
+    quest = quest_service.update_questionnaire(current_user.id, questionnaire_in)
+    return quest
 
 
 @router.post("/me")
@@ -51,13 +51,13 @@ def create_questionnaire(
     """
     Create new Questionnaire for the current user
     """
-    questionnaire_service = QuestionnaireService(session)
-    quest = questionnaire_service.get_questionnaire(current_user.id)
+    quest_service = QuestionnaireService(session)
+    quest = quest_service.get_questionnaire(current_user.id)
     if quest:
         raise HTTPException(
             status_code=http_status.HTTP_400_BAD_REQUEST, detail="User already has a Questionnaire"
         )
-    quest = questionnaire_service.create_questionnaire(current_user.id, questionnaire_in)
+    quest = quest_service.create_questionnaire(current_user.id, questionnaire_in)
     return quest
 
 
@@ -94,6 +94,6 @@ def get_questions_by_categories(session: SessionDep) -> Any:
     """
     Get all questionnaire questions organized by categories from the database
     """
-    questionnaire_service = QuestionnaireService(session)
-    categories = questionnaire_service.get_questions_by_categories()
+    quest_service = QuestionnaireService(session)
+    categories = quest_service.get_questions_by_categories()
     return {"categories": categories}

@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.security import utc_now
 from app.models.enums import MeetingStatus
@@ -12,6 +12,8 @@ class MeetingRequestBase(BaseModel):
     """
     Base schema for meeting request data
     """
+
+    model_config = ConfigDict(from_attributes=True, strict=False, validate_by_name=True)
 
     journey_id: UUID
     requested_by: UUID

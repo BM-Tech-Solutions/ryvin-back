@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.enums import MatchStatus
 
@@ -11,6 +11,8 @@ class MatchBase(BaseModel):
     """
     Base schema for match data
     """
+
+    model_config = ConfigDict(from_attributes=True, strict=False, validate_by_name=True)
 
     user1_id: UUID
     user2_id: UUID
