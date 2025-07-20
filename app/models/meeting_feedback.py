@@ -20,9 +20,9 @@ class MeetingFeedback(Base):
     __tablename__ = "meeting_feedback"
 
     meeting_request_id: Mapped[UUID] = mapped_column(
-        pgUUID(as_uuid=True), ForeignKey("meeting_request.id")
+        pgUUID(as_uuid=True), ForeignKey("meeting_request.id"), index=True
     )
-    user_id: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"))
+    user_id: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"), index=True)
 
     rating: Mapped[int]  # 1-5 rating
     feedback: Mapped[str | None] = mapped_column(Text)

@@ -23,7 +23,7 @@ class Journey(Base):
     __tablename__ = "journey"
 
     match_id: Mapped[UUID] = mapped_column(
-        pgUUID(as_uuid=True), ForeignKey("match.id"), unique=True
+        pgUUID(as_uuid=True), ForeignKey("match.id"), unique=True, index=True
     )
     current_step: Mapped[int] = mapped_column(default=JourneyStep.PRE_COMPATIBILITY)
     # Pré-compatibilité

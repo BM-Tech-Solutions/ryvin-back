@@ -22,7 +22,9 @@ class Message(Base):
 
     __tablename__ = "message"
 
-    journey_id: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("journey.id"))
+    journey_id: Mapped[UUID] = mapped_column(
+        pgUUID(as_uuid=True), ForeignKey("journey.id"), index=True
+    )
 
     sender_id: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"))
 

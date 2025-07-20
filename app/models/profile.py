@@ -20,7 +20,7 @@ class Profile(Base):
     __tablename__ = "profile"
 
     user_id: Mapped[UUID] = mapped_column(
-        pgUUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), unique=True
+        pgUUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), unique=True, index=True
     )
 
     first_name: Mapped[str]

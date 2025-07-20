@@ -20,7 +20,10 @@ class Questionnaire(Base):
     __tablename__ = "questionnaire"
 
     user_id: Mapped[UUID] = mapped_column(
-        pgUUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), unique=True
+        pgUUID(as_uuid=True),
+        ForeignKey("user.id", ondelete="CASCADE"),
+        unique=True,
+        index=True,
     )
 
     # religious_and_spiritual_beliefs

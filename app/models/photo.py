@@ -19,7 +19,7 @@ class Photo(Base):
     __tablename__ = "photo"
 
     user_id: Mapped[UUID] = mapped_column(
-        pgUUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE")
+        pgUUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), index=True
     )
     file_path: Mapped[str]
     is_primary: Mapped[bool] = mapped_column(default=False)

@@ -21,8 +21,8 @@ class Match(Base):
     __tablename__ = "match"
     __table_args__ = (UniqueConstraint("user1_id", "user2_id", name="unique_match"),)
 
-    user1_id: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"))
-    user2_id: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"))
+    user1_id: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"), index=True)
+    user2_id: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"), index=True)
     compatibility_score: Mapped[float]
     status: Mapped[str] = mapped_column(default=MatchStatus.PENDING)
 

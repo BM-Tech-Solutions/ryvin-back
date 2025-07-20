@@ -16,7 +16,9 @@ class RefreshToken(Base):
     __tablename__ = "refresh_token"
 
     user_id: Mapped[UUID] = mapped_column(
-        pgUUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE")
+        pgUUID(as_uuid=True),
+        ForeignKey("user.id", ondelete="CASCADE"),
+        index=True,
     )
     token: Mapped[str] = mapped_column(unique=True, index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

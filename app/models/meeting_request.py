@@ -22,7 +22,9 @@ class MeetingRequest(Base):
 
     __tablename__ = "meeting_request"
 
-    journey_id: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("journey.id"))
+    journey_id: Mapped[UUID] = mapped_column(
+        pgUUID(as_uuid=True), ForeignKey("journey.id"), index=True
+    )
     requested_by: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"))
 
     proposed_date: Mapped[datetime] = mapped_column(DateTime(timezone=True))

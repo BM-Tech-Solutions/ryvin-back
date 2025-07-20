@@ -32,7 +32,9 @@ class QuestionnaireField(Base):
 
     # Foreign key to category
     category_id: Mapped[UUID] = mapped_column(
-        pgUUID(as_uuid=True), ForeignKey("questionnaire_category.id")
+        pgUUID(as_uuid=True),
+        ForeignKey("questionnaire_category.id"),
+        index=True,
     )
 
     # Define relationship with QuestionnaireCategory
