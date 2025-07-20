@@ -275,10 +275,12 @@ class AuthService(BaseService):
                 )
 
             # Check if user exists in our database
-            user = self.session.query(User).filter(User.phone == phone_number).first()
+            user = self.session.query(User).filter(User.phone_number == phone_number).first()
 
             user_exists = user is not None
-            profile_complete = user is not None and user.name is not None and user.email is not None
+            profile_complete = (
+                user_exists and user.email and user.profile and user.profile.first_name
+            )
 
             if not user:
                 # Create new user
@@ -409,7 +411,7 @@ class AuthService(BaseService):
                 )
 
             # Get user by ID
-            user = self.session.query(User).filter(User.id == user_id).first()
+            user = self.session.get(User, user_id)
 
             if not user:
                 raise HTTPException(

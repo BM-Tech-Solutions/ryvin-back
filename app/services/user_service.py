@@ -18,7 +18,7 @@ class UserService(BaseService):
         """
         Get user by ID
         """
-        return self.session.query(User).filter(User.id == user_id).first()
+        return self.session.get(User, user_id)
 
     def get_user_by_phone(self, phone_number: str) -> Optional[User]:
         """

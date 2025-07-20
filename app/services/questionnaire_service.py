@@ -71,7 +71,7 @@ class QuestionnaireService(BaseService):
         quest.completed_at = utc_now() if completed else None
 
         # Update user record
-        user = self.session.query(User).filter(User.id == user_id).first()
+        user = self.session.get(User, user_id)
         if user:
             user.has_completed_questionnaire = completed
 
@@ -93,7 +93,6 @@ class QuestionnaireService(BaseService):
         # For now, we'll use a simple scoring system
 
         score = 0
-        max_score = 100
 
         # Example scoring logic (simplified)
         if q1.relationship_goals == q2.relationship_goals:
@@ -115,7 +114,7 @@ class QuestionnaireService(BaseService):
                 score -= 30
 
         # Ensure score is between 0 and 100
-        return max(0, min(score, max_score))
+        return max(0, min(score, 100))
 
     def get_questions_by_categories(self) -> Dict[str, Any]:
         """

@@ -26,7 +26,7 @@ async def test_get_user(
         ),
     ],
 ):
-    user = session.query(User).filter(User.id == id_header).first()
+    user = session.get(User, id_header)
     if not user:
         raise HTTPException(
             status_code=http_status.HTTP_401_UNAUTHORIZED,
@@ -58,7 +58,7 @@ async def get_current_user(
     except (JWTError, ValidationError):
         raise credentials_exception
 
-    user = session.query(User).filter(User.id == token_data.sub).first()
+    user = session.get(User, token_data.sub)
     if not user:
         raise credentials_exception
     return user

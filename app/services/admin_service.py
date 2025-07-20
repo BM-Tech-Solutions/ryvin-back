@@ -7,7 +7,7 @@ from fastapi import status as http_status
 from sqlalchemy import func
 
 from app.core.security import utc_now
-from app.models.enums import JourneyStatus, MatchStatus
+from app.models.enums import JourneyStatus, MatchStatus, MeetingStatus
 from app.models.journey import Journey
 from app.models.match import Match
 from app.models.meeting import MeetingRequest
@@ -55,7 +55,7 @@ class AdminService(BaseService):
         """
         Get user by ID
         """
-        return self.session.query(User).filter(User.id == user_id).first()
+        return self.session.get(User, user_id)
 
     def ban_user(self, user_id: UUID, reason: str = None) -> User:
         """
@@ -137,24 +137,16 @@ class AdminService(BaseService):
         Get system statistics
         """
         # User stats
-        total_users = self.session.query(func.count(User.id)).scalar()
-        active_users = (
-            self.session.query(func.count(User.id)).filter(User.is_active.is_(True)).scalar()
-        )
-        verified_users = (
-            self.session.query(func.count(User.id)).filter(User.is_verified.is_(True)).scalar()
-        )
-        # banned_users = (
-        #     self.session.query(func.count(User.id)).filter(User.is_banned.is_(True)).scalar()
-        # )
-        banned_users = 0
+        users_query = self.session.query(func.count(User.id))
+        total_users = users_query.scalar()
+        active_users = users_query.filter(User.is_active.is_(True)).scalar()
+        verified_users = users_query.filter(User.is_verified.is_(True)).scalar()
+        banned_users = users_query.filter(User.is_banned.is_(True)).scalar()
 
         # New users in last 7 days
-        new_users_last_week = (
-            self.session.query(func.count(User.id))
-            .filter(User.created_at >= (utc_now() - timedelta(days=7)))
-            .scalar()
-        )
+        new_users_last_week = users_query.filter(
+            User.created_at >= (utc_now() - timedelta(days=7))
+        ).scalar()
 
         # Match stats
         matches_query = self.session.query(func.count(Match.id))
@@ -173,20 +165,18 @@ class AdminService(BaseService):
         ended_journeys = journey_query.filter(Journey.status == JourneyStatus.ENDED).scalar()
 
         # Message stats
-        total_messages = self.session.query(func.count(Message.id)).scalar()
-        messages_last_week = (
-            self.session.query(func.count(Message.id))
-            .filter(Message.created_at >= utc_now() - timedelta(days=7))
-            .scalar()
-        )
+        msgs_query = self.session.query(func.count(Message.id))
+        total_messages = msgs_query.scalar()
+        messages_last_week = msgs_query.filter(
+            Message.created_at >= utc_now() - timedelta(days=7)
+        ).scalar()
 
         # Meeting stats
-        total_meetings = self.session.query(func.count(MeetingRequest.id)).scalar()
-        accepted_meetings = (
-            self.session.query(func.count(MeetingRequest.id))
-            .filter(MeetingRequest.status == "accepted")
-            .scalar()
-        )
+        meetings_query = self.session.query(func.count(MeetingRequest.id))
+        total_meetings = meetings_query.scalar()
+        accepted_meetings = meetings_query.filter(
+            MeetingRequest.status == MeetingStatus.ACCEPTED
+        ).scalar()
 
         return {
             "users": {
@@ -229,7 +219,7 @@ class AdminService(BaseService):
         """
         Moderate a flagged message
         """
-        message = self.session.query(Message).filter(Message.id == message_id).first()
+        message = self.session.get(Message, message_id)
         if not message:
             raise HTTPException(
                 status_code=http_status.HTTP_404_NOT_FOUND, detail="Message not found"

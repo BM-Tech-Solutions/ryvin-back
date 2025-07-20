@@ -24,7 +24,7 @@ class MatchService(BaseService):
         """
         Get match by ID
         """
-        return self.session.query(Match).filter(Match.id == match_id).first()
+        return self.session.get(Match, match_id)
 
     def get_match_by_users(self, user1_id: UUID, user2_id: UUID) -> Optional[Match]:
         """
@@ -80,7 +80,7 @@ class MatchService(BaseService):
         self.session.refresh(match)
 
         # Send notification to user2
-        user2 = self.session.query(User).filter(User.id == user2_id).first()
+        user2 = self.session.get(User, user2_id)
         if user2:
             NotificationService().send_new_match_notification(user2, match)
 
@@ -92,7 +92,7 @@ class MatchService(BaseService):
         """
         Discover potential matches for a user
         """
-        user = self.session.query(User).filter(User.id == user_id).first()
+        user = self.session.get(User, user_id)
         if not user:
             raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="User not found")
 
@@ -180,8 +180,8 @@ class MatchService(BaseService):
             self.session.add(journey)
 
             # Send notifications to both users
-            user1 = self.session.query(User).filter(User.id == match.user1_id).first()
-            user2 = self.session.query(User).filter(User.id == match.user2_id).first()
+            user1 = self.session.get(User, match.user1_id)
+            user2 = self.session.get(User, match.user2_id)
 
             if user1 and user2:
                 NotificationService().send_match_confirmed_notification(user1, match)

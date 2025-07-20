@@ -252,7 +252,7 @@ def get_user_data(
     Get user data by ID for testing purposes.
     """
     try:
-        user = session.query(User).filter(User.id == user_id).first()
+        user = session.get(User, user_id)
 
         if not user:
             raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="User not found")

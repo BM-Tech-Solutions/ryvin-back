@@ -67,11 +67,8 @@ class PhotoService(BaseService):
         """
         Delete a photo
         """
-        photo = (
-            self.session.query(Photo).filter(Photo.id == photo_id, Photo.user_id == user_id).first()
-        )
-
-        if not photo:
+        photo = self.session.get(Photo, photo_id)
+        if not photo or photo.user_id != user_id:
             return False
 
         was_primary = photo.is_primary
@@ -95,11 +92,8 @@ class PhotoService(BaseService):
         """
         Set a photo as primary
         """
-        photo = (
-            self.session.query(Photo).filter(Photo.id == photo_id, Photo.user_id == user_id).first()
-        )
-
-        if not photo:
+        photo = self.session.get(Photo, photo_id)
+        if not photo or photo.user_id != user_id:
             return None
 
         # Clear primary flag on all user photos

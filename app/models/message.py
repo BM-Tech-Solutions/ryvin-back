@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Text
+from sqlalchemy import DateTime, ForeignKey, Text, text
 from sqlalchemy.dialects.postgresql import UUID as pgUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -32,7 +32,11 @@ class Message(Base):
     message_type: Mapped[str] = mapped_column(default=MessageType.TEXT)
 
     is_read: Mapped[bool] = mapped_column(default=False)
+    is_flagged: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
     sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    moderated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    is_deleted: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
     # Relationships
     journey: Mapped["Journey"] = relationship(back_populates="messages", foreign_keys=[journey_id])
