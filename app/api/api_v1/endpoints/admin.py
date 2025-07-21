@@ -5,6 +5,7 @@ from fastapi import APIRouter, Query
 from fastapi import status as http_status
 
 from app.core.dependencies import AdminUserDep, SessionDep
+from app.models.enums import MatchStatus
 from app.schemas.journey import Journey
 from app.schemas.match import Match
 from app.schemas.user import UserOut
@@ -79,7 +80,7 @@ def unban_user(
 def get_matches(
     session: SessionDep,
     current_user: AdminUserDep,
-    status: str = Query(None, description="Filter by match status"),
+    status: Optional[MatchStatus] = Query(None, description="Filter by match status"),
     min_compatibility: float = Query(
         None, ge=0, le=100, description="Filter by minimum compatibility score"
     ),
