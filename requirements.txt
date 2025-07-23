@@ -8,6 +8,8 @@ anyio==4.9.0
     # via
     #   httpx
     #   starlette
+apscheduler==3.11.0
+    # via ryvin-back (pyproject.toml)
 argon2-cffi==25.1.0
     # via minio
 argon2-cffi-bindings==21.2.0
@@ -328,6 +330,8 @@ typing-inspection==0.4.1
     # via
     #   pydantic
     #   pydantic-settings
+tzlocal==5.3.1
+    # via apscheduler
 uritemplate==4.2.0
     # via google-api-python-client
 urllib3==2.5.0

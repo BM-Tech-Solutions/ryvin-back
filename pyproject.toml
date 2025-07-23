@@ -42,4 +42,5 @@ dependencies = [
     "ruff", #replaces: flake8, black, isort
     "pre-commit>=4.2.0",
     "ipykernel>=6.29.5",
+    "apscheduler>=3.11.0",
 ]
