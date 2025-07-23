@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 
 class QuestionnaireBase(BaseModel):
@@ -10,7 +10,21 @@ class QuestionnaireBase(BaseModel):
     Base schema for user questionnaire data
     """
 
-    model_config = ConfigDict(from_attributes=True, strict=False, validate_by_name=True)
+    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
+
+    # profile
+    first_name: Optional[str] = None
+    gender: Optional[str] = Field(default=None, description="Gender of the user")
+    relationship_goal: Optional[str] = None
+    age: Optional[str] = Field(
+        default=None, ge=18, description="Age of the user (must be at least 18)"
+    )
+    city_of_residence: Optional[str] = None
+    nationality_cultural_origin: Optional[str] = None
+    languages_spoken: List[str] = None
+    professional_situation: Optional[str] = None
+    education_level: Optional[str] = None
+    previously_married: Optional[str] = None
 
     # religious_and_spiritual_beliefs
     religion_spirituality: Optional[str] = None
@@ -146,3 +160,14 @@ class Questionnaire(QuestionnaireInDBBase):
     """
 
     pass
+
+
+class QuestionnaireCompletion(BaseModel):
+    """
+    Schema for Questionnaire completion status
+    """
+
+    completion_percentage: int = Field(..., ge=0, le=100)
+    missing_fields: List[str] = Field(default_factory=list)
+    photo_count: int = 0
+    has_primary_photo: bool = False

@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional
 from uuid import UUID
 
 from app.core.security import utc_now
-from app.models import Questionnaire, QuestionnaireCategory, QuestionnaireField, User
+from app.models import Questionnaire, QuestionnaireCategory, QuestionnaireField
 from app.models.enums import FieldType, get_field_enum
 from app.schemas.questionnaire import QuestionnaireCreate, QuestionnaireUpdate
 
@@ -41,39 +41,31 @@ class QuestionnaireService(BaseService):
         return questionnaire
 
     def update_questionnaire(
-        self, user_id: UUID, questionnaire_data: QuestionnaireUpdate
+        self, quest: Questionnaire, questionnaire_data: QuestionnaireUpdate
     ) -> Questionnaire:
         """
         Update user questionnaire
         """
-        questionnaire = self.get_or_create_questionnaire(user_id)
-
         update_data = questionnaire_data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
-            setattr(questionnaire, field, value)
+            setattr(quest, field, value)
 
         self.session.commit()
-        self.session.refresh(questionnaire)
-        return questionnaire
+        self.session.refresh(quest)
+        return quest
 
-    def complete_questionnaire(self, user_id: UUID) -> Optional[Questionnaire]:
+    def complete_questionnaire(self, quest: Questionnaire) -> Optional[Questionnaire]:
         """
         Mark questionnaire as completed and update user record
         """
-        quest = self.get_questionnaire(user_id)
-        if not quest:
-            return None
-
         # Check if all required fields are filled
-        completed = not self.get_missing_fields(quest)
+        completed = not self.get_missing_required_fields(quest)
 
         # Mark questionnaire as completed
         quest.completed_at = utc_now() if completed else None
 
         # Update user record
-        user = self.session.get(User, user_id)
-        if user:
-            user.has_completed_questionnaire = completed
+        quest.user.has_completed_questionnaire = completed
 
         self.session.commit()
         self.session.refresh(quest)
@@ -152,7 +144,9 @@ class QuestionnaireService(BaseService):
                 }
 
                 # Add options if available
-                if field.field_type in [FieldType.SELECT, FieldType.NESTED_SELECT]:
+                if field.field_type in [
+                    FieldType.SELECT,
+                ]:
                     field_enum = get_field_enum(field.name)
                     field_data["options"] = field_enum.options() if field_enum else []
 
@@ -175,7 +169,7 @@ class QuestionnaireService(BaseService):
             .all()
         )
 
-    def get_missing_fields(self, quest: Questionnaire):
+    def get_missing_required_fields(self, quest: Questionnaire):
         return [
             field.name
             for field in self.get_required_fields()

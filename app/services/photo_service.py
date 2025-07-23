@@ -16,11 +16,17 @@ class PhotoService(BaseService):
     Service for User Photos operations
     """
 
-    def get_profile_photos(self, user_id: UUID) -> List[Photo]:
+    def get_user_photos(self, user_id: UUID, skip: int = 0, limit: int = 100) -> List[Photo]:
         """
         Get user photos
         """
-        return self.session.query(Photo).filter(Photo.user_id == user_id).all()
+        return (
+            self.session.query(Photo)
+            .filter(Photo.user_id == user_id)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
     def upload_photo(self, user_id: UUID, file: UploadFile) -> Photo:
         """

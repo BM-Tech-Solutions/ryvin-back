@@ -12,13 +12,13 @@ from app.core.config import settings
 
 # Import all models to ensure they're discovered by Alembic
 from app.core.database import Base
+from app.models import APSchedulerJob as APSchedulerJob
 from app.models import Journey as Journey
 from app.models import Match as Match
 from app.models import MeetingFeedback as MeetingFeedback
 from app.models import MeetingRequest as MeetingRequest
 from app.models import Message as Message
 from app.models import Photo as Photo
-from app.models import Profile as Profile
 from app.models import Questionnaire as Questionnaire
 from app.models import QuestionnaireCategory as QuestionnaireCategory
 from app.models import QuestionnaireField as QuestionnaireField

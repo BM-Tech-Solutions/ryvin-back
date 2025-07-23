@@ -465,8 +465,52 @@
         "label": "Quels aspects physiques sont importants pour toi chez un(e) partenaire, sans que ce soit bloquant ?",
         "description": "(plusieurs choix possibles)",
         "order_position": 5,
-        "field_type": "nested_select",
-        "required": true
+        "field_type": "checked_fields_group",
+        "required": true,
+        "child_fields": [
+          {
+            "name": "waist_size",
+            "label": "Taille",
+            "description": "Taille Souhaitée",
+            "order_position": 1,
+            "field_type": "range",
+            "required": false,
+            "field_unit": "années",
+            "placeholder": "168,180"
+          },
+          {
+            "name": "body_size",
+            "label": "Corpulence",
+            "description": "",
+            "order_position": 2,
+            "field_type": "select",
+            "required": false
+          },
+          {
+            "name": "clothing_style",
+            "label": "Style vestimentaire",
+            "description": "",
+            "order_position": 3,
+            "field_type": "select",
+            "required": false
+          },
+          {
+            "name": "",
+            "label": "Soin de soi / hygiène",
+            "description": "",
+            "order_position": 4,
+            "field_type": "check",
+            "required": false
+          },
+          {
+            "name": "",
+            "label": "Peu importe, je me fie surtout au ressenti global",
+            "description": "",
+            "order_position": 5,
+            "field_type": "check",
+            "required": false
+          }
+        ]
       }
     ]
   },
@@ -549,7 +593,8 @@
         "order_position": 13,
         "field_type": "range",
         "required": true,
-        "field_unit": "ans"
+        "field_unit": "années",
+        "placeholder": "18,24"
       }
     ]
   },
@@ -611,20 +656,31 @@
     "step": 5,
     "fields": [
       {
-        "name": "has_children",
+        "name": "children",
         "label": "As-tu des enfants ?",
         "description": "",
         "order_position": 1,
-        "field_type": "boolean",
-        "required": true
-      },
-      {
-        "name": "number_of_children",
-        "label": "Si oui, combien ?",
-        "description": "",
-        "order_position": 2,
-        "field_type": "text",
-        "required": true
+        "field_type": "fields_group",
+        "required": true,
+        "child_fields": [
+          {
+            "name": "has_children",
+            "label": "",
+            "description": "",
+            "order_position": 1,
+            "field_type": "boolean",
+            "required": true
+          },
+          {
+            "name": "number_of_children",
+            "label": "",
+            "description": "Si oui, combien ?",
+            "placeholder": "4",
+            "order_position": 2,
+            "field_type": "text",
+            "required": true
+          }
+        ]
       },
       {
         "name": "wants_children",

@@ -136,20 +136,3 @@ def moderate_message(
     admin_service.moderate_message(message_id, action, reason, current_user.id)
 
     return {"message": f"Message {action}d successfully"}
-
-
-@router.post("/moderate/profile/{profile_id}", status_code=http_status.HTTP_200_OK)
-def moderate_profile(
-    session: SessionDep,
-    current_user: AdminUserDep,
-    profile_id: UUID,
-    action: str,
-    reason: str = None,
-) -> Any:
-    """
-    Moderate a profile (admin only)
-    """
-    admin_service = AdminService(session)
-    admin_service.moderate_profile(profile_id, action, reason, current_user.id)
-
-    return {"message": f"Profile {action}ed successfully"}

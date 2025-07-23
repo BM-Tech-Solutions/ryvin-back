@@ -38,7 +38,8 @@ def update_questionnaire(
     Update current user's questionnaire
     """
     quest_service = QuestionnaireService(session)
-    quest = quest_service.update_questionnaire(current_user.id, questionnaire_in)
+    quest = quest_service.get_or_create_questionnaire(current_user.id)
+    quest = quest_service.update_questionnaire(quest, questionnaire_in)
     return quest
 
 
@@ -70,17 +71,18 @@ def complete_questionnaire(
     Mark questionnaire as completed
     """
     quest_service = QuestionnaireService(session)
-    quest = quest_service.complete_questionnaire(current_user.id)
-
+    quest = quest_service.get_questionnaire(current_user.id)
     if not quest:
         raise HTTPException(
             status_code=http_status.HTTP_404_NOT_FOUND, detail="Questionnaire not found"
         )
 
+    quest = quest_service.complete_questionnaire(current_user.id)
+
     if not quest.is_complete():
         raise HTTPException(
             status_code=http_status.HTTP_400_BAD_REQUEST,
-            detail=f"Questionnaire is incomplete. Missing field: {quest_service.get_missing_fields(quest)}",
+            detail=f"Questionnaire is incomplete. Missing field: {quest_service.get_missing_required_fields(quest)}",
         )
 
     return {

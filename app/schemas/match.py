@@ -12,7 +12,7 @@ class MatchBase(BaseModel):
     Base schema for match data
     """
 
-    model_config = ConfigDict(from_attributes=True, strict=False, validate_by_name=True)
+    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
 
     user1_id: UUID
     user2_id: UUID
@@ -76,6 +76,8 @@ class MatchResponse(BaseModel):
     Schema for detailed match response with user information
     """
 
+    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
+
     id: UUID
     user1_id: UUID
     user2_id: UUID
@@ -83,7 +85,3 @@ class MatchResponse(BaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
-    user_profile: Optional[dict] = None  # Simplified user profile information
-
-    class Config:
-        from_attributes = True

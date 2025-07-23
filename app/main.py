@@ -6,9 +6,11 @@ from fastapi.middleware.cors import CORSMiddleware
 # from fastapi.openapi.utils import get_openapi
 from fastapi.security import APIKeyHeader
 
-from app.core.config import settings
-from app.core.middleware import APITokenMiddleware
 from firebase import init_firebase
+
+from .core.config import settings
+from .core.middleware import APITokenMiddleware
+from .cron_jobs import scheduler
 
 # Define API key security scheme for Swagger docs
 api_key_header = APIKeyHeader(name="API-Token", auto_error=False)
@@ -19,7 +21,9 @@ api_key_header = APIKeyHeader(name="API-Token", auto_error=False)
 async def lifespan(app: FastAPI):
     init_firebase()
     print("firebase initialized successfuly")
+    scheduler.start()
     yield
+    scheduler.shutdown()
 
 
 app = FastAPI(

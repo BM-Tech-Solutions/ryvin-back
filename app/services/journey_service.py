@@ -248,9 +248,7 @@ class MessageService(BaseService):
             sender = self.session.get(User, sender_id)
 
             if other_user and sender:
-                sender_name = (
-                    f"{sender.profile.first_name}" if sender.profile.first_name else "Your match"
-                )
+                sender_name = "Your match"
                 NotificationService().send_new_message_notification(
                     other_user, message, sender_name
                 )
@@ -324,11 +322,7 @@ class MeetingService(BaseService):
             requester = self.session.get(User, requester_id)
 
             if other_user and requester:
-                requester_name = (
-                    f"{requester.profile.first_name}"
-                    if requester.profile.first_name
-                    else "Your match"
-                )
+                requester_name = requester.questionnaire.first_name or "Your Match"
                 NotificationService().send_meeting_request_notification(
                     other_user, meeting_request, requester_name
                 )

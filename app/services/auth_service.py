@@ -18,7 +18,7 @@ from jose import JWTError, jwt
 
 from app.core.config import settings
 from app.core.security import create_access_token, create_refresh_token, utc_now
-from app.models import Profile, Questionnaire, RefreshToken, User
+from app.models import Questionnaire, RefreshToken, User
 from app.services.base_service import BaseService
 
 
@@ -111,7 +111,6 @@ class AuthService(BaseService):
                 phone_number=phone_number,
                 is_verified=True,
                 last_login=utc_now(),
-                name=None,
                 email=None,
                 profile_image=None,
                 firebase_uid=None,  # Not storing Firebase UID as verification is in frontend
@@ -200,11 +199,6 @@ class AuthService(BaseService):
             self.session.commit()
             self.session.refresh(user)
 
-            # Check if profile is complete
-            profile_complete = (
-                user.profile and user.profile.first_name is not None and user.email is not None
-            )
-
             # Generate tokens
             access_token = create_access_token(subject=str(user.id))
             refresh_token = self._generate_unique_refresh_token(str(user.id))
@@ -238,10 +232,7 @@ class AuthService(BaseService):
             return {
                 "user_id": str(user.id),
                 "phone_number": user.phone_number,
-                "name": user.profile.first_name,
                 "email": user.email,
-                # "profile_image": user.profile_image,
-                "profile_complete": profile_complete,
                 "access_token": access_token,
                 "refresh_token": refresh_token,
                 "token_type": "bearer",
@@ -278,9 +269,7 @@ class AuthService(BaseService):
             user = self.session.query(User).filter(User.phone_number == phone_number).first()
 
             user_exists = user is not None
-            profile_complete = (
-                user_exists and user.email and user.profile and user.profile.first_name
-            )
+            profile_complete = user_exists and user.email
 
             if not user:
                 # Create new user
@@ -361,8 +350,8 @@ class AuthService(BaseService):
             if profile_complete:
                 response["user"] = {
                     "id": str(user.id),
-                    "phone": user.phone,
-                    "name": user.name,
+                    "phone": user.phone_number,
+                    "name": "***",
                     "email": user.email,
                     "is_verified": user.is_verified,
                     "created_at": user.created_at.isoformat(),
@@ -436,8 +425,6 @@ class AuthService(BaseService):
             # Update user information
             # user.name = name
             user.email = email
-            # if profile_image:
-            #     user.profile_image = profile_image
 
             self.session.commit()
             self.session.refresh(user)
@@ -562,7 +549,6 @@ class AuthService(BaseService):
                     phone_number=phone_number,
                     is_verified=True,
                     last_login=utc_now(),
-                    name=None,
                     email=None,
                     profile_image=None,
                     firebase_uid=None,  # Not storing Firebase UID as verification is in frontend
@@ -584,23 +570,7 @@ class AuthService(BaseService):
             self.session.commit()
             self.session.refresh(user)
 
-            # create profile & questionnaire for user if not created already
-            if not user.profile:
-                profile = Profile(
-                    user_id=user.id,
-                    first_name="",
-                    gender="",
-                    relationship_goal="",
-                    age=0,
-                    city_of_residence="",
-                    nationality_cultural_origin="",
-                    professional_situation="",
-                    education_level="",
-                    previously_married=False,
-                )
-                self.session.add(profile)
-                self.session.refresh(profile)
-
+            # create questionnaire for user if not created already
             if not user.questionnaire:
                 quest = Questionnaire(user_id=user.id)
                 self.session.add(quest)
@@ -611,7 +581,9 @@ class AuthService(BaseService):
 
             # Check if profile is complete
             is_profile_complete = (
-                user.profile and user.profile.first_name is not None and user.email is not None
+                user.questionnaire
+                and user.questionnaire.first_name is not None
+                and user.email is not None
             )
 
             # Generate tokens
@@ -752,23 +724,7 @@ class AuthService(BaseService):
             self.session.commit()
             self.session.refresh(user)
 
-            # create profile & questionnaire for user if not created already
-            if not user.profile:
-                profile = Profile(
-                    user_id=user.id,
-                    first_name="",
-                    gender="",
-                    relationship_goal="",
-                    age=0,
-                    city_of_residence="",
-                    nationality_cultural_origin="",
-                    professional_situation="",
-                    education_level="",
-                    previously_married=False,
-                )
-                self.session.add(profile)
-                self.session.refresh(profile)
-
+            # create questionnaire for user if not created already
             if not user.questionnaire:
                 quest = Questionnaire(user_id=user.id)
                 self.session.add(quest)

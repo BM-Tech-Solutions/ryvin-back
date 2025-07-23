@@ -1,8 +1,9 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, List, Optional
 from uuid import UUID
 
 from sqlalchemy import DateTime, ForeignKey
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as pgUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -25,6 +26,18 @@ class Questionnaire(Base):
         unique=True,
         index=True,
     )
+
+    # profile
+    first_name: Mapped[Optional[str]]
+    gender: Mapped[Optional[str]]
+    relationship_goal: Mapped[Optional[str]]
+    age: Mapped[Optional[str]]
+    city_of_residence: Mapped[Optional[str]]
+    nationality_cultural_origin: Mapped[Optional[str]]
+    languages_spoken: Mapped[Optional[List[str]]] = mapped_column(JSONB, default=list)
+    professional_situation: Mapped[Optional[str]]
+    education_level: Mapped[Optional[str]]
+    previously_married: Mapped[Optional[str]]
 
     # religious_and_spiritual_beliefs
     religion_spirituality: Mapped[Optional[str]]
@@ -118,3 +131,6 @@ class Questionnaire(Base):
     def is_complete(self) -> bool:
         """Check if the questionnaire is complete"""
         return self.completed_at is not None
+
+    def __repr__(self) -> str:
+        return f"<Questionnaire {self.id}: {self.first_name}, {self.age}>"

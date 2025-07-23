@@ -70,6 +70,20 @@ class PartnerSameReligiousEducationVision(BaseStrEnum):
     PEU_IMPORTE = "peu_importe", "Peu importe"
 
 
+class BodySize(BaseStrEnum):
+    THIN = "thin", "Mince"
+    ATHLETIC = "athletic", "Athlétique"
+    WITH_FORMS = "WITH_FORMS", "Avec Formes"
+    DONT_CARE = "dont_care", "Peu Importe"
+
+
+class ClothingStyle(BaseStrEnum):
+    CLASSIC = "classic", "Classique"
+    URBAIN = "urbain", "Urbain"
+    TRENDING = "trending", "Tendance"
+    DONT_CARE = "dont_care", "Peu Importe"
+
+
 class SportFrequency(BaseStrEnum):
     JAMAIS = "jamais", "Jamais"
     _1_2_PAR_SEMAINE = "1_2_par_semaine", "1 à 2 fois par semaine"
@@ -356,7 +370,7 @@ class FieldType(BaseStrEnum):
     INTEGER = "integer"
     RANGE = "range"
     SELECT = "select"
-    NESTED_SELECT = "nested_select"
+    PARENT_FIELD = "parent_field"
     BOOLEAN = "boolean"
 
 
@@ -403,27 +417,6 @@ fields_enums = {
     "ideal_partner_education_profession": IdealPartnerEducationProfession,
     "partner_must_want_children": PartnerMustWantChildren,
     "tolerance_social_vs_homebody": ToleranceSocial,
+    "body_size": BodySize,
+    "clothing style": ClothingStyle,
 }
-
-
-"""
-these are nested options for "ImportantPhysicalAspectsPartner"
-"options": [
-    { "label": "Taille", "value": "taille", "unit": "cm" },
-    {
-    "label": "Corpulence",
-    "value": "corpulence",
-    "sub_options": ["mince", "athlétique", "avec formes", "peu importe"]
-    },
-    {
-    "label": "Style vestimentaire",
-    "value": "style_vestimentaire",
-    "sub_options": ["classique", "urbain", "tendance", "peu importe"]
-    },
-    { "label": "Soin de soi / hygiène", "value": "soin_hygiene" },
-    {
-    "label": "Peu importe, je me fie surtout au ressenti global",
-    "value": "peu_importe_ressenti"
-    }
-]
-"""

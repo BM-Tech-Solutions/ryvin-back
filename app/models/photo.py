@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 class Photo(Base):
     """
-    Model for storing user profile photos
+    Model for storing user photos
     """
 
     __tablename__ = "photo"

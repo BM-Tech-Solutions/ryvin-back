@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     from .meeting_request import MeetingRequest
     from .message import Message
     from .photo import Photo
-    from .profile import Profile
     from .questionnaire import Questionnaire
 
 
@@ -39,9 +38,6 @@ class User(Base):
     banned_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
     # Relationships
-    profile: Mapped[Optional["Profile"]] = relationship(
-        back_populates="user", uselist=False, foreign_keys="Profile.user_id"
-    )
     questionnaire: Mapped[Optional["Questionnaire"]] = relationship(
         back_populates="user", uselist=False, foreign_keys="Questionnaire.user_id"
     )

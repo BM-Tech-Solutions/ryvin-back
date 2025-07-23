@@ -12,7 +12,7 @@ class JourneyBase(BaseModel):
     Base schema for journey data
     """
 
-    model_config = ConfigDict(from_attributes=True, strict=False, validate_by_name=True)
+    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
 
     match_id: UUID
     current_step: int = Field(default=JourneyStep.PRE_COMPATIBILITY.value)
@@ -39,6 +39,8 @@ class JourneyUpdate(BaseModel):
     """
     Schema for journey update
     """
+
+    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
 
     current_step: Optional[int] = None
     step1_completed_at: Optional[datetime] = None
@@ -100,6 +102,8 @@ class JourneyOut(BaseModel):
     Schema for detailed journey response with additional data
     """
 
+    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
+
     id: UUID
     match_id: UUID
     current_step: int
@@ -113,8 +117,3 @@ class JourneyOut(BaseModel):
     end_reason: Optional[str] = None
     created_at: datetime
     updated_at: datetime
-    match_data: Optional[dict] = None  # Additional match information
-    partner_profile: Optional[dict] = None  # Partner profile information
-
-    class Config:
-        from_attributes = True
