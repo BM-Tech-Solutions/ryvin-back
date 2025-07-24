@@ -41,7 +41,7 @@ class Settings(BaseSettings):
         password = data.get("POSTGRES_PASSWORD")
         host = data.get("POSTGRES_SERVER")
         port = data.get("POSTGRES_PORT")
-        db = data.get("POSTGRES_DB") or ""
+        db = data.get("POSTGRES_DB", "")
 
         # Manually construct the connection string to ensure correct format
         # Format: postgresql+psycopg2://user:password@host:port/dbname
