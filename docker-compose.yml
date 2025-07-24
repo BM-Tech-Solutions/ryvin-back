@@ -2,14 +2,14 @@ services:
   web:
     build: .
     # Use the entrypoint script with web service
-    entrypoint: ["/docker-entrypoint.sh"]
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    entrypoint: [ "/entrypoint.sh" ]
+    command: [ "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
     volumes:
       - .:/app
     ports:
       - "8001:8000"
     environment:
-      - ACCESS_TOKEN_EXPIRE_MINUTES=11520  # 8 days for testing
+      - ACCESS_TOKEN_EXPIRE_MINUTES=11520 # 8 days for testing
     depends_on:
       - migrations
     networks:
@@ -19,8 +19,8 @@ services:
   migrations:
     build: .
     # Use the entrypoint script with migrations parameter
-    entrypoint: ["/docker-entrypoint.sh"]
-    command: ["migrations"]
+    entrypoint: [ "/entrypoint.sh" ]
+    command: [ "migrations" ]
     volumes:
       - .:/app
     depends_on:
@@ -39,7 +39,7 @@ services:
     ports:
       - "5433:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 10s
       retries: 5
       start_period: 30s
