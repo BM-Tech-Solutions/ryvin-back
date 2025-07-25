@@ -27,8 +27,8 @@ scheduler = AsyncIOScheduler(
 )
 
 
-def scheduled_job_1():
-    print("scheduled_job_1")
+def scheduled_job_1(msg: str):
+    print(msg)
 
 
 def scheduled_job_2():
@@ -39,13 +39,14 @@ def scheduled_job_3():
     print("scheduled_job_3")
 
 
-# job_1 = scheduler.add_job(
-#     func=scheduled_job_1,
-#     id="interval_job_1",
-#     trigger="interval",
-#     seconds=10,
-#     replace_existing=True,
-# )
+job_1 = scheduler.add_job(
+    func=scheduled_job_1,
+    args=["periodic 10 min job"],
+    id="interval_job_1",
+    trigger="interval",
+    minutes=10,
+    replace_existing=True,
+)
 # job_2 = scheduler.add_job(
 #     func=scheduled_job_2,
 #     id="date_job_2",
