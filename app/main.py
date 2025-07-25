@@ -19,8 +19,11 @@ api_key_header = APIKeyHeader(name="API-Token", auto_error=False)
 # code to run before app startup & after app shutdown
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # firebase
     init_firebase()
     print("firebase initialized successfuly")
+
+    # periodic jobs schedule
     scheduler.start()
     yield
     scheduler.shutdown()

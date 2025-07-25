@@ -24,6 +24,7 @@ class QuestionnaireField(Base):
     label: Mapped[str]
     description: Mapped[str] = mapped_column(Text, default="")
     order_position: Mapped[int] = mapped_column(default=0)
+    parent_field: Mapped[Optional[str]]
     field_type: Mapped[str] = mapped_column(default=FieldType.TEXT)
     field_unit: Mapped[Optional[str]]
     placeholder: Mapped[Optional[str]]

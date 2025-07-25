@@ -16,7 +16,7 @@ class QuestionnaireBase(BaseModel):
     first_name: Optional[str] = None
     gender: Optional[str] = Field(default=None, description="Gender of the user")
     relationship_goal: Optional[str] = None
-    age: Optional[str] = Field(
+    age: Optional[int] = Field(
         default=None, ge=18, description="Age of the user (must be at least 18)"
     )
     city_of_residence: Optional[str] = None
@@ -67,16 +67,19 @@ class QuestionnaireBase(BaseModel):
     tolerance_social_vs_homebody: Optional[str] = None
     conflict_management: Optional[str] = None
     greatest_quality_in_relationship: Optional[str] = None
-    greatest_flaw_in_relationship: Optional[str] = None
     what_attracts_you: Optional[str] = None
     intolerable_flaw: Optional[str] = None
 
     # physical_preferences_and_attraction
     physical_description: Optional[str] = None
-    main_dressing_style: Optional[str] = None
-    importance_of_appearance: Optional[str] = None
+    clothing_style: Optional[str] = None
+    appearance_importance: Optional[str] = None
     partner_hygiene_appearance_importance: Optional[str] = None
-    important_physical_aspects_partner: Optional[str] = None
+    partner_waist_size: Optional[str] = None
+    partner_body_size: Optional[str] = None
+    partner_clothing_style: Optional[str] = None
+    care_partner_self_hygiene: Optional[bool] = None
+    dont_care_partner_physical_aspects: Optional[bool] = None
 
     # sexuality_and_intimacy
     importance_of_sexuality: Optional[str] = None

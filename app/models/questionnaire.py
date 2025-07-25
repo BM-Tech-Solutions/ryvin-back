@@ -80,16 +80,19 @@ class Questionnaire(Base):
     tolerance_social_vs_homebody: Mapped[Optional[str]]
     conflict_management: Mapped[Optional[str]]
     greatest_quality_in_relationship: Mapped[Optional[str]]
-    greatest_flaw_in_relationship: Mapped[Optional[str]]
     what_attracts_you: Mapped[Optional[str]]
     intolerable_flaw: Mapped[Optional[str]]
 
     # physical_preferences_and_attraction
     physical_description: Mapped[Optional[str]]
-    main_dressing_style: Mapped[Optional[str]]
-    importance_of_appearance: Mapped[Optional[str]]
+    clothing_style: Mapped[Optional[str]]
+    appearance_importance: Mapped[Optional[str]]
     partner_hygiene_appearance_importance: Mapped[Optional[str]]
-    important_physical_aspects_partner: Mapped[Optional[str]]
+    partner_waist_size: Mapped[Optional[str]]  # partner_physical_fields_group
+    partner_body_size: Mapped[Optional[str]]  # partner_physical_fields_group
+    partner_clothing_style: Mapped[Optional[str]]  # partner_physical_fields_group
+    care_partner_self_hygiene: Mapped[Optional[str]]  # partner_physical_fields_group
+    dont_care_partner_physical_aspects: Mapped[Optional[str]]  # partner_physical_fields_group
 
     # sexuality_and_intimacy
     importance_of_sexuality: Mapped[Optional[str]]
@@ -111,8 +114,8 @@ class Questionnaire(Base):
     ideal_couple_life_description: Mapped[Optional[str]]
 
     # children_and_family
-    has_children: Mapped[Optional[str]]
-    number_of_children: Mapped[Optional[str]]
+    has_children: Mapped[Optional[str]]  # children_fields_group
+    number_of_children: Mapped[Optional[str]]  # children_fields_group
     wants_children: Mapped[Optional[str]]
     partner_must_want_children: Mapped[Optional[str]]
     partner_desired_number_of_children: Mapped[Optional[str]]

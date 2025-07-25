@@ -18,31 +18,47 @@ class CustomSQLAlchemyJobStore(SQLAlchemyJobStore):
         return BaseJobStore.start(self, scheduler, alias)
 
 
-# Initialize a SQLAlchemyJobStore with SQLite database
-jobstores = {
-    "default": CustomSQLAlchemyJobStore(engine=engine),
-}
+sql_store = CustomSQLAlchemyJobStore(engine=engine)
 
 # Initialize an AsyncIOScheduler with the jobstore
-scheduler = AsyncIOScheduler(jobstores=jobstores, timezone=ZoneInfo("Africa/Algiers"))
+scheduler = AsyncIOScheduler(
+    jobstores={"default": sql_store},
+    timezone=ZoneInfo("Africa/Algiers"),
+)
 
 
-@scheduler.scheduled_job(trigger="interval", seconds=50, id="interval_job_1")
 def scheduled_job_1():
     print("scheduled_job_1")
 
 
-@scheduler.scheduled_job(trigger="date", run_date="2025-07-22 14:50:10", id="date_job_2")
 def scheduled_job_2():
     print("scheduled_job_2")
 
 
-@scheduler.scheduled_job(
-    trigger="cron",
-    day_of_week="mon-sun",
-    hour=14,
-    minute=50,
-    id="cron_job_3",
-)
 def scheduled_job_3():
     print("scheduled_job_3")
+
+
+# job_1 = scheduler.add_job(
+#     func=scheduled_job_1,
+#     id="interval_job_1",
+#     trigger="interval",
+#     seconds=10,
+#     replace_existing=True,
+# )
+# job_2 = scheduler.add_job(
+#     func=scheduled_job_2,
+#     id="date_job_2",
+#     trigger="date",
+#     run_date="2025-07-22 14:50:10",
+#     replace_existing=True,
+# )
+# job_3 = scheduler.add_job(
+#     func=scheduled_job_3,
+#     id="cron_job_3",
+#     trigger="cron",
+#     day_of_week="mon-sun",
+#     hour=14,
+#     minute=50,
+#     replace_existing=True,
+# )

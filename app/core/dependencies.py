@@ -22,7 +22,7 @@ async def test_get_user(
         UUID,
         Header(
             description="for testing only (instead of using 'Authorization')",
-            example="8131dbdf-e7a3-4197-bea8-19005ed8d520",
+            example="2abe20a1-2a18-4905-8b14-905e69b09ff7",
         ),
     ],
 ):

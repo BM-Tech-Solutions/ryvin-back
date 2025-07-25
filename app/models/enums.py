@@ -77,13 +77,6 @@ class BodySize(BaseStrEnum):
     DONT_CARE = "dont_care", "Peu Importe"
 
 
-class ClothingStyle(BaseStrEnum):
-    CLASSIC = "classic", "Classique"
-    URBAIN = "urbain", "Urbain"
-    TRENDING = "trending", "Tendance"
-    DONT_CARE = "dont_care", "Peu Importe"
-
-
 class SportFrequency(BaseStrEnum):
     JAMAIS = "jamais", "Jamais"
     _1_2_PAR_SEMAINE = "1_2_par_semaine", "1 à 2 fois par semaine"
@@ -194,11 +187,18 @@ class ToleranceSocial(BaseStrEnum):
     PREFERE_STYLE_PROCHE = "prefere_style_proche", "Je préfère un style de vie proche du mien"
 
 
-class MainDressingStyle(BaseStrEnum):
+class ClothingStyle(BaseStrEnum):
     CLASSIQUE_ELEGANT = "classique_elegant", "Classique / Élégant"
     DECONTRACTE_SPORTIF = "decontracte_sportif", "Décontracté / Sportif"
     URBAIN_TENDANCE = "urbain_tendance", "Urbain / Tendance"
     CHANGEANT_HUMEUR = "changeant_humeur", "Changeant selon l’humeur"
+
+
+class PartnerClothingStyle(BaseStrEnum):
+    CLASSIC = "classic", "Classique"
+    URBAIN = "urbain", "Urbain"
+    TRENDING = "trending", "Tendance"
+    DONT_CARE = "dont_care", "Peu Importe"
 
 
 class ImportanceOfAppearance(BaseStrEnum):
@@ -366,11 +366,11 @@ class MeetingStatus(BaseStrEnum):
 
 class FieldType(BaseStrEnum):
     TEXT = "text"
-    TEXT_BOX = "text_box"
+    TEXT_AREA = "text_area"
     INTEGER = "integer"
     RANGE = "range"
     SELECT = "select"
-    PARENT_FIELD = "parent_field"
+    FIELDS_GROUP = "fields_group"
     BOOLEAN = "boolean"
 
 
@@ -384,6 +384,10 @@ def get_field_enum(field_name: str) -> BaseStrEnum | None:
 
 
 fields_enums = {
+    "gender": Gender,
+    "relationship_goal": RelationshipGoal,
+    "professional_situation": ProfessionalSituation,
+    "education_level": EducationLevel,
     "religious_practice": ReligiousPractice,
     "partner_must_share_religion": PartnerMustShareReligion,
     "faith_transmission_to_children": FaithTransmissionToChildren,
@@ -403,8 +407,8 @@ fields_enums = {
     "partner_personality_preference": PartnerPersonalityPreference,
     "primary_love_language": PrimaryLoveLanguage,
     "friends_visit_frequency": FriendsVisitFrequency,
-    "main_dressing_style": MainDressingStyle,
-    "importance_of_appearance": ImportanceOfAppearance,
+    "clothing_style": ClothingStyle,
+    "appearance_importance": ImportanceOfAppearance,
     "partner_hygiene_appearance_importance": PartnerHygieneAppearanceImportance,
     "important_physical_aspects_partner": ImportantPhysicalAspectsPartner,
     "importance_of_sexuality": ImportanceOfSexuality,
@@ -417,6 +421,6 @@ fields_enums = {
     "ideal_partner_education_profession": IdealPartnerEducationProfession,
     "partner_must_want_children": PartnerMustWantChildren,
     "tolerance_social_vs_homebody": ToleranceSocial,
-    "body_size": BodySize,
-    "clothing style": ClothingStyle,
+    "partner_body_size": BodySize,
+    "partner_clothing_style": PartnerClothingStyle,
 }

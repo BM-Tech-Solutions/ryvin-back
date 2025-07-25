@@ -56,7 +56,7 @@ class UserInDBBase(UserBase):
     is_verified: bool
     is_active: bool
     has_completed_questionnaire: bool
-    # is_admin: bool
+    is_admin: bool
     created_at: datetime
     updated_at: datetime
     last_login: Optional[datetime] = None
@@ -88,7 +88,7 @@ class TestUserCreate(BaseModel):
     is_verified: bool = True
     has_completed_questionnaire: bool = False
     is_active: bool = True
-    #: str
+    is_admin: bool = True
     last_login: datetime = Field(default_factory=utc_now)
     subscription_type: SubscriptionType
     subscription_expires_at: Optional[datetime] = None
