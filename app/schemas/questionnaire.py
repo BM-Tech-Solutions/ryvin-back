@@ -1,8 +1,10 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+
+from app.models.enums import FieldType, get_field_enum
 
 
 class QuestionnaireBase(BaseModel):
@@ -174,3 +176,35 @@ class QuestionnaireCompletion(BaseModel):
     missing_fields: List[str] = Field(default_factory=list)
     photo_count: int = 0
     has_primary_photo: bool = False
+
+
+class FieldOut(BaseModel):
+    name: str
+    label: str
+    description: str
+    order_position: int
+    field_type: FieldType
+    options: Optional[list] = Field(default=None, validate_default=True)
+    parent_field: Optional[str] = None
+    field_unit: Optional[str] = None
+    placeholder: Optional[str] = None
+    required: bool
+    allow_custom: bool = False
+    child_fields: list["FieldOut"] = []
+
+    @field_validator("options")
+    @classmethod
+    def options_validator(cls, v: Optional[Any], info: ValidationInfo):
+        field_enum = get_field_enum(info.data.get("name"))
+        if field_enum:
+            return field_enum.options()
+        return None
+
+
+class CategoryOut(BaseModel):
+    name: str
+    label: str
+    description: str = ""
+    order_position: int
+    step: int
+    fields: list[FieldOut] = []

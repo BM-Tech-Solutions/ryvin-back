@@ -1,9 +1,10 @@
-from typing import Any, Dict, Optional
+from collections import defaultdict
+from typing import Optional
 from uuid import UUID
 
 from app.core.security import utc_now
 from app.models import Questionnaire, QuestionnaireCategory, QuestionnaireField
-from app.models.enums import FieldType, get_field_enum
+from app.models.enums import FieldType
 from app.schemas.questionnaire import QuestionnaireCreate, QuestionnaireUpdate
 
 from .base_service import BaseService
@@ -87,78 +88,61 @@ class QuestionnaireService(BaseService):
         score = 0
 
         # Example scoring logic (simplified)
-        if q1.relationship_goals == q2.relationship_goals:
+        if q1.relationship_goal == q2.relationship_goal:
             score += 20
 
-        if q1.communication_style == q2.communication_style:
+        if q1.accept_non_believer == q2.accept_non_believer:
             score += 15
 
-        if q1.love_language == q2.love_language:
+        if q1.primary_love_language == q2.primary_love_language:
             score += 15
 
         # Check if deal breakers match
-        if q1.deal_breakers and q2.deal_breakers:
-            # Lower score if deal breakers overlap
-            if any(item in q2.lifestyle_preferences for item in q1.deal_breakers.split(",")):
-                score -= 30
+        # if q1.deal_breakers and q2.deal_breakers:
+        #     # Lower score if deal breakers overlap
+        #     if any(item in q2.lifestyle_preferences for item in q1.deal_breakers.split(",")):
+        #         score -= 30
 
-            if any(item in q1.lifestyle_preferences for item in q2.deal_breakers.split(",")):
-                score -= 30
+        #     if any(item in q1.lifestyle_preferences for item in q2.deal_breakers.split(",")):
+        #         score -= 30
 
         # Ensure score is between 0 and 100
         return max(0, min(score, 100))
 
-    def get_questions_by_categories(self) -> Dict[str, Any]:
-        """
-        Get all questionnaire questions organized by categories from the database
-        """
-        # Query all categories ordered by their order_position field
-        categories_db = (
+    def get_all_categories(self) -> list[QuestionnaireCategory]:
+        return (
             self.session.query(QuestionnaireCategory)
             .order_by(QuestionnaireCategory.order_position)
             .all()
         )
 
-        # Build the response dictionary
-        categories = {}
+    def get_category_fields(self, category_id: UUID) -> list[QuestionnaireField]:
+        return (
+            self.session.query(QuestionnaireField)
+            .filter(QuestionnaireField.category_id == category_id)
+            .order_by(QuestionnaireField.order_position)
+            .all()
+        )
 
-        for category in categories_db:
-            # Query all fields for this category ordered by their order_position field
-            fields_db = (
-                self.session.query(QuestionnaireField)
-                .filter(QuestionnaireField.category_id == category.id)
-                .order_by(QuestionnaireField.order_position)
-                .all()
-            )
+    def get_questions_by_categories(self) -> list[QuestionnaireCategory]:
+        """
+        Get all questionnaire questions organized by categories from the database
+        """
+        categories = self.get_all_categories()
+        parent_fields = defaultdict(list)
+        for category in categories:
+            fields = self.get_category_fields(category.id)
+            new_fields = []
+            for field in fields:
+                if field.parent_field:
+                    parent_fields[field.parent_field].append(field)
+                else:
+                    new_fields.append(field)
+            for field in new_fields:
+                if field.field_type == FieldType.FIELDS_GROUP:
+                    field.child_fields = parent_fields[field.name]
 
-            # Build the fields list for this category
-            fields = []
-            for field in fields_db:
-                field_data = {
-                    "name": field.name,
-                    "label": field.label,
-                    "field_type": field.field_type,
-                    "required": field.required,
-                    "description": field.description or "",
-                    "order_position": field.order_position,
-                }
-
-                # Add options if available
-                if field.field_type in [
-                    FieldType.SELECT,
-                ]:
-                    field_enum = get_field_enum(field.name)
-                    field_data["options"] = field_enum.options() if field_enum else []
-
-                fields.append(field_data)
-
-            # Add the category to the response
-            categories[category.name] = {
-                "label": category.label,
-                "description": category.description or "",
-                "order_position": category.order_position,
-                "fields": fields,
-            }
+            category.fields = new_fields
 
         return categories
 
