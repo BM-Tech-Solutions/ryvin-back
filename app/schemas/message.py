@@ -5,8 +5,8 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
 
 from app.core.database import Session
+from app.models import Photo, Questionnaire
 from app.models.enums import MessageType
-from app.services import PhotoService, QuestionnaireService
 
 
 class MessageBase(BaseModel):
@@ -88,10 +88,12 @@ class MessageOut(BaseModel):
     def validate_sender(cls, value, info: ValidationInfo):
         sender_id = info.data.get("sender_id")
         with Session() as sess:
-            quest_service = QuestionnaireService(sess)
-            photo_service = PhotoService(sess)
-            quest = quest_service.get_questionnaire(sender_id)
-            primary_photo = photo_service.get_user_primary_photo(sender_id)
+            quest = sess.query(Questionnaire).filter(Questionnaire.user_id == sender_id).first()
+            primary_photo = (
+                sess.query(Photo)
+                .filter(Photo.user_id == sender_id, Photo.is_primary.is_(True))
+                .first()
+            )
             return {
                 "first_name": quest.first_name if quest else None,
                 "avatar": primary_photo.file_path if primary_photo else None,
