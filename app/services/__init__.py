@@ -4,6 +4,7 @@ from .base_service import BaseService
 from .journey_service import JourneyService, MeetingService, MessageService
 from .match_service import MatchService
 from .notification_service import NotificationService
+from .photo_service import PhotoService
 from .questionnaire_service import QuestionnaireService
 from .user_service import UserService
 
@@ -18,4 +19,5 @@ __all__ = [
     "MeetingService",
     "NotificationService",
     "AdminService",
+    "PhotoService",
 ]

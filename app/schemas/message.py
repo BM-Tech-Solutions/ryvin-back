@@ -2,9 +2,11 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
 
+from app.core.database import Session
 from app.models.enums import MessageType
+from app.services import PhotoService, QuestionnaireService
 
 
 class MessageBase(BaseModel):
@@ -12,20 +14,10 @@ class MessageBase(BaseModel):
     Base schema for message data
     """
 
-    model_config = ConfigDict(from_attributes=True, strict=False, validate_by_name=True)
+    model_config = ConfigDict(from_attributes=True)
 
-    journey_id: UUID
-    sender_id: UUID
     content: str
-    message_type: str = Field(default=MessageType.TEXT.value)
-
-    @field_validator("message_type")
-    def validate_message_type(cls, v):
-        if v not in [mtype.value for mtype in MessageType]:
-            raise ValueError(
-                f"Invalid message type. Must be one of: {[mtype.value for mtype in MessageType]}"
-            )
-        return v
+    message_type: MessageType = MessageType.TEXT
 
 
 class MessageCreate(MessageBase):
@@ -42,13 +34,12 @@ class MessageInDBBase(MessageBase):
     """
 
     id: UUID
+    sender_id: UUID
+    journey_id: UUID
     is_read: bool = False
     sent_at: datetime
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class MessageInDB(MessageInDBBase):
@@ -67,10 +58,19 @@ class Message(MessageInDBBase):
     pass
 
 
-class MessageResponse(BaseModel):
+class Sender(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    first_name: Optional[str] = None
+    avatar: Optional[str] = None
+
+
+class MessageOut(BaseModel):
     """
     Schema for detailed message response with sender information
     """
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     journey_id: UUID
@@ -81,8 +81,18 @@ class MessageResponse(BaseModel):
     sent_at: datetime
     created_at: datetime
     updated_at: datetime
-    sender_name: Optional[str] = None  # Sender's name for display
-    sender_avatar: Optional[str] = None  # Sender's avatar URL
+    sender: Sender
 
-    class Config:
-        from_attributes = True
+    @field_validator("sender", mode="before")
+    @classmethod
+    def validate_sender(cls, value, info: ValidationInfo):
+        sender_id = info.data.get("sender_id")
+        with Session() as sess:
+            quest_service = QuestionnaireService(sess)
+            photo_service = PhotoService(sess)
+            quest = quest_service.get_questionnaire(sender_id)
+            primary_photo = photo_service.get_user_primary_photo(sender_id)
+            return {
+                "first_name": quest.first_name if quest else None,
+                "avatar": primary_photo.file_path if primary_photo else None,
+            }

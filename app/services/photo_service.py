@@ -28,6 +28,16 @@ class PhotoService(BaseService):
             .all()
         )
 
+    def get_user_primary_photo(self, user_id: UUID) -> Optional[Photo]:
+        """
+        Get user primary photo
+        """
+        return (
+            self.session.query(Photo)
+            .filter(Photo.user_id == user_id, Photo.is_primary.is_(True))
+            .first()
+        )
+
     def upload_photo(self, user_id: UUID, file: UploadFile) -> Photo:
         """
         Upload a photo

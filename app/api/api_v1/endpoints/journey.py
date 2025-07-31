@@ -1,7 +1,7 @@
 from typing import Any, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from fastapi import status as http_status
 
 from app.core.dependencies import SessionDep, VerifiedUserDep
@@ -12,12 +12,13 @@ from app.schemas.meeting import (
     MeetingRequestCreate,
     MeetingRequestOut,
 )
-from app.schemas.message import MessageCreate, MessageResponse
+from app.schemas.message import MessageCreate, MessageOut
 from app.services import JourneyService, MeetingService, MessageService
 
 router = APIRouter()
 
 
+# Journey
 @router.get("", response_model=List[JourneyOut])
 def get_journeys(
     session: SessionDep,
@@ -90,7 +91,8 @@ def end_journey(
     return {"message": "Journey ended successfully"}
 
 
-@router.get("/{journey_id}/messages", response_model=List[MessageResponse])
+# Messages
+@router.get("/{journey_id}/messages", response_model=List[MessageOut])
 def get_messages(
     session: SessionDep,
     current_user: VerifiedUserDep,
@@ -108,7 +110,7 @@ def get_messages(
 
 @router.post(
     "/{journey_id}/messages",
-    response_model=MessageResponse,
+    response_model=MessageOut,
     status_code=http_status.HTTP_201_CREATED,
 )
 def create_message(
@@ -120,11 +122,61 @@ def create_message(
     """
     Create a new message in a journey
     """
+
+    journey_service = JourneyService(session)
+    journey = journey_service.get_journey_by_id(journey_id)
+    if current_user.id not in [journey.match.user1_id, journey.match.user2_id]:
+        raise HTTPException(
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            detail="User not related to this journey",
+        )
+
     message_service = MessageService(session)
     message = message_service.create_message(journey_id, current_user.id, message_in)
     return message
 
 
+@router.delete(
+    "/{journey_id}/messages/{message_id}",
+    status_code=http_status.HTTP_204_NO_CONTENT,
+)
+def delete_message(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
+    journey_id: UUID,
+    message_id: UUID,
+) -> None:
+    """
+    Delete a msg from a Journey
+    """
+
+    journey_service = JourneyService(session)
+    journey = journey_service.get_journey_by_id(journey_id)
+    if not journey:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail="Journey with not found",
+        )
+
+    if current_user.id not in [journey.match.user1_id, journey.match.user2_id]:
+        raise HTTPException(
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            detail="User not related to this journey",
+        )
+
+    msg_service = MessageService(session)
+    msg = msg_service.get_journey_message(journey_id, message_id)
+    if not msg:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail="Message with not found",
+        )
+
+    session.delete(msg)
+    session.commit()
+
+
+# Meeting Request
 @router.get("/{journey_id}/meeting-requests", response_model=List[MeetingRequestOut])
 def get_meeting_requests(
     session: SessionDep,
@@ -198,6 +250,7 @@ def decline_meeting_request(
     return {"message": "Meeting request declined successfully"}
 
 
+# Meeting Feedback
 @router.post(
     "/{journey_id}/meeting-feedback",
     response_model=MeetingFeedback,

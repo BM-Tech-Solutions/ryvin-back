@@ -220,18 +220,28 @@ class MessageService(BaseService):
             .all()
         )
 
+    def get_journey_message(self, journey_id: UUID, msg_id: UUID) -> Optional[Message]:
+        """
+        Get message from a journey
+        """
+        return (
+            self.session.query(Message)
+            .filter(Message.id == msg_id, Message.journey_id == journey_id)
+            .first()
+        )
+
     def create_message(
-        self, journey_id: UUID, sender_id: UUID, message_data: MessageCreate
+        self, journey_id: UUID, sender_id: UUID, message_in: MessageCreate
     ) -> Message:
         """
         Create a new message in a journey
         """
+        msg_data = message_in.model_dump(exclude_unset=True)
         # Create message
         message = Message(
             journey_id=journey_id,
             sender_id=sender_id,
-            content=message_data.content,
-            message_type=message_data.message_type,
+            **msg_data,
         )
 
         self.session.add(message)
@@ -248,7 +258,7 @@ class MessageService(BaseService):
             sender = self.session.get(User, sender_id)
 
             if other_user and sender:
-                sender_name = "Your match"
+                sender_name = sender.questionnaire.first_name
                 NotificationService().send_new_message_notification(
                     other_user, message, sender_name
                 )
