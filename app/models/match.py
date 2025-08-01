@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING
+from datetime import datetime
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from sqlalchemy import ForeignKey, UniqueConstraint
@@ -23,6 +24,9 @@ class Match(Base):
 
     user1_id: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"), index=True)
     user2_id: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"), index=True)
+    user1_accepted: Mapped[bool] = False
+    user2_accepted: Mapped[bool] = False
+    matched_at: Mapped[Optional[datetime]]
     compatibility_score: Mapped[float]
     status: Mapped[str] = mapped_column(default=MatchStatus.PENDING)
 

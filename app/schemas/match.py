@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import MatchStatus
 
@@ -18,12 +18,6 @@ class MatchBase(BaseModel):
     user2_id: UUID
     compatibility_score: float = Field(ge=0.0, le=100.0)
     status: MatchStatus = Field(default=MatchStatus.PENDING)
-
-    @field_validator("compatibility_score")
-    def validate_compatibility_score(cls, v):
-        if v < 0.0 or v > 100.0:
-            raise ValueError("Compatibility score must be between 0 and 100")
-        return v
 
 
 class MatchCreate(MatchBase):

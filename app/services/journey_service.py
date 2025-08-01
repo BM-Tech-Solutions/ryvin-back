@@ -171,7 +171,6 @@ class JourneyService(BaseService):
         """
         journey.status = JourneyStatus.COMPLETED
         journey.completed_at = utc_now()
-        journey.updated_at = utc_now()
 
         self.session.commit()
         self.session.refresh(journey)

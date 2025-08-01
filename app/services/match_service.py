@@ -6,6 +6,7 @@ from fastapi import status as http_status
 from sqlalchemy import and_, or_
 
 from app.core.security import utc_now
+from app.models.enums import JourneyStatus, JourneyStep, MatchStatus
 from app.models.journey import Journey
 from app.models.match import Match
 from app.models.user import User
@@ -70,7 +71,7 @@ class MatchService(BaseService):
             user1_id=user1_id,
             user2_id=user2_id,
             compatibility_score=compatibility_score,
-            status="pending",
+            status=MatchStatus.PENDING,
             user1_accepted=False,
             user2_accepted=False,
         )
@@ -113,12 +114,6 @@ class MatchService(BaseService):
             User.has_completed_questionnaire.is_(True),
         )
 
-        # Filter by gender preference (simplified)
-        if user.interested_in:
-            potential_matches_query = potential_matches_query.filter(
-                User.gender == user.interested_in
-            )
-
         # Exclude existing matches
         if existing_match_users:
             potential_matches_query = potential_matches_query.filter(
@@ -151,13 +146,15 @@ class MatchService(BaseService):
         match = self.get_match_by_id(match_id)
         if not match:
             raise HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND, detail="Match not found"
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Match not found",
             )
 
         # Check if user is part of the match
         if match.user1_id != user_id and match.user2_id != user_id:
             raise HTTPException(
-                status_code=http_status.HTTP_403_FORBIDDEN, detail="User is not part of this match"
+                status_code=http_status.HTTP_403_FORBIDDEN,
+                detail="User is not part of this match",
             )
 
         # Update match acceptance status
@@ -168,14 +165,14 @@ class MatchService(BaseService):
 
         # Check if both users have accepted
         if match.user1_accepted and match.user2_accepted:
-            match.status = "matched"
+            match.status = MatchStatus.ACTIVE
             match.matched_at = utc_now()
 
             # Create a journey for the match
             journey = Journey(
                 match_id=match.id,
-                current_step=1,  # First step: pre-compatibility
-                status="active",
+                current_step=JourneyStep.STEP_1_PRE_COMPATIBILITY,
+                status=JourneyStatus.ACTIVE,
             )
             self.session.add(journey)
 
@@ -198,23 +195,25 @@ class MatchService(BaseService):
         match = self.get_match_by_id(match_id)
         if not match:
             raise HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND, detail="Match not found"
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Match not found",
             )
 
         # Check if user is part of the match
         if match.user1_id != user_id and match.user2_id != user_id:
             raise HTTPException(
-                status_code=http_status.HTTP_403_FORBIDDEN, detail="User is not part of this match"
+                status_code=http_status.HTTP_403_FORBIDDEN,
+                detail="User is not part of this match",
             )
-
-        # Update match status
-        match.status = "declined"
 
         # Set which user declined
         if match.user1_id == user_id:
             match.user1_accepted = False
         else:
             match.user2_accepted = False
+
+        # Update match status
+        match.status = MatchStatus.DECLINED
 
         self.session.commit()
         self.session.refresh(match)
