@@ -47,19 +47,19 @@ job_1 = scheduler.add_job(
     minutes=10,
     replace_existing=True,
 )
-# job_2 = scheduler.add_job(
-#     func=scheduled_job_2,
-#     id="date_job_2",
-#     trigger="date",
-#     run_date="2025-07-22 14:50:10",
-#     replace_existing=True,
-# )
-# job_3 = scheduler.add_job(
-#     func=scheduled_job_3,
-#     id="cron_job_3",
-#     trigger="cron",
-#     day_of_week="mon-sun",
-#     hour=14,
-#     minute=50,
-#     replace_existing=True,
-# )
+job_2 = scheduler.add_job(
+    func=scheduled_job_2,
+    id="date_job_2",
+    trigger="date",
+    run_date="2025-07-22 14:50:10",
+    replace_existing=True,
+)
+job_3 = scheduler.add_job(
+    func=scheduled_job_3,
+    id="cron_job_3",
+    trigger="cron",
+    day_of_week="mon-sun",
+    hour=14,
+    minute=50,
+    replace_existing=True,
+)
