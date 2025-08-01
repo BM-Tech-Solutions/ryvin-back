@@ -5,17 +5,18 @@ from fastapi import APIRouter, Query
 from fastapi import status as http_status
 
 from app.core.dependencies import SessionDep, VerifiedUserDep
-from app.schemas.match import Match, MatchResponse
+from app.models.enums import MatchStatus
+from app.schemas.match import MatchOut
 from app.services.match_service import MatchService
 
 router = APIRouter()
 
 
-@router.get("", response_model=List[Match])
+@router.get("", response_model=List[MatchOut])
 def get_matches(
     session: SessionDep,
     current_user: VerifiedUserDep,
-    status: str = Query(None, description="Filter by match status"),
+    status: MatchStatus = Query(None, description="Filter by match status"),
     skip: int = 0,
     limit: int = 100,
 ) -> Any:
@@ -27,7 +28,7 @@ def get_matches(
     return matches
 
 
-@router.post("/discover", response_model=List[MatchResponse])
+@router.post("/discover", response_model=List[MatchOut])
 def discover_matches(
     session: SessionDep,
     current_user: VerifiedUserDep,
@@ -41,7 +42,7 @@ def discover_matches(
     return potential_matches
 
 
-@router.get("/{match_id}", response_model=Match)
+@router.get("/{match_id}", response_model=MatchOut)
 def get_match(session: SessionDep, current_user: VerifiedUserDep, match_id: UUID) -> Any:
     """
     Get a specific match by ID

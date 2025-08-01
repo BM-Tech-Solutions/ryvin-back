@@ -8,7 +8,7 @@ class Token(BaseModel):
     Schema for access token response
     """
 
-    model_config = ConfigDict(from_attributes=True, strict=False, validate_by_name=True)
+    model_config = ConfigDict(from_attributes=True)
 
     access_token: str
     refresh_token: str

@@ -1,6 +1,6 @@
 # ruff: noqa: F401 I001
 from .journey import Journey, JourneyCreate, JourneyInDB, JourneyUpdate
-from .match import Match, MatchCreate, MatchInDB, MatchUpdate
+from .match import MatchOut, MatchCreate, MatchUpdate
 from .meeting import (
     MeetingFeedback,
     MeetingFeedbackCreate,

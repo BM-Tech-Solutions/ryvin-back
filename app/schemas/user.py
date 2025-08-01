@@ -14,7 +14,7 @@ class UserBase(BaseModel):
     Base schema for user data
     """
 
-    model_config = ConfigDict(from_attributes=True, strict=False, validate_by_name=True)
+    model_config = ConfigDict(from_attributes=True)
 
     phone_number: str
     email: Optional[EmailStr] = None

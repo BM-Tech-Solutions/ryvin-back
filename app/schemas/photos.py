@@ -9,7 +9,7 @@ class PhotoBase(BaseModel):
     Base schema for photos
     """
 
-    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
+    model_config = ConfigDict(from_attributes=True)
 
     file_path: str
     is_primary: bool

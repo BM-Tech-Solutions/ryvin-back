@@ -43,7 +43,7 @@ class MatchService(BaseService):
         )
 
     def get_user_matches(
-        self, user_id: UUID, status: str = None, skip: int = 0, limit: int = 100
+        self, user_id: UUID, status: MatchStatus = None, skip: int = 0, limit: int = 100
     ) -> List[Match]:
         """
         Get all matches for a user

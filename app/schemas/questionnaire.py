@@ -12,7 +12,7 @@ class QuestionnaireBase(BaseModel):
     Base schema for user questionnaire data
     """
 
-    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
+    model_config = ConfigDict(from_attributes=True)
 
     # profile
     first_name: Optional[str] = None

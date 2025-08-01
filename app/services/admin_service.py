@@ -98,7 +98,7 @@ class AdminService(BaseService):
 
     def get_matches(
         self,
-        status: str = None,
+        status: MatchStatus = None,
         min_compatibility_score: float = None,
         skip: int = 0,
         limit: int = 100,

@@ -7,7 +7,7 @@ from fastapi import status as http_status
 from app.core.dependencies import AdminUserDep, SessionDep
 from app.models.enums import MatchStatus
 from app.schemas.journey import Journey
-from app.schemas.match import Match
+from app.schemas.match import MatchOut
 from app.schemas.user import UserOut
 from app.services.admin_service import AdminService
 
@@ -76,7 +76,7 @@ def unban_user(
     return {"message": "User unbanned successfully"}
 
 
-@router.get("/matches", response_model=List[Match])
+@router.get("/matches", response_model=List[MatchOut])
 def get_matches(
     session: SessionDep,
     current_user: AdminUserDep,

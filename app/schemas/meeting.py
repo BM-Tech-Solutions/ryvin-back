@@ -13,21 +13,13 @@ class MeetingRequestBase(BaseModel):
     Base schema for meeting request data
     """
 
-    model_config = ConfigDict(from_attributes=True, strict=False, validate_by_name=True)
+    model_config = ConfigDict(from_attributes=True)
 
     journey_id: UUID
     requested_by: UUID
     proposed_date: datetime
     proposed_location: str
-    status: str = Field(default=MeetingStatus.PROPOSED.value)
-
-    @field_validator("status")
-    def validate_status(cls, v):
-        if v not in [status.value for status in MeetingStatus]:
-            raise ValueError(
-                f"Invalid meeting status. Must be one of: {[status.value for status in MeetingStatus]}"
-            )
-        return v
+    status: MeetingStatus = MeetingStatus.PROPOSED
 
     @field_validator("proposed_date")
     def validate_proposed_date(cls, v):
@@ -51,15 +43,7 @@ class MeetingRequestUpdate(BaseModel):
 
     proposed_date: Optional[datetime] = None
     proposed_location: Optional[str] = None
-    status: Optional[str] = None
-
-    @field_validator("status")
-    def validate_status(cls, v):
-        if v is not None and v not in [status.value for status in MeetingStatus]:
-            raise ValueError(
-                f"Invalid meeting status. Must be one of: {[status.value for status in MeetingStatus]}"
-            )
-        return v
+    status: Optional[MeetingStatus] = None
 
     @field_validator("proposed_date")
     def validate_proposed_date(cls, v):
@@ -73,13 +57,12 @@ class MeetingRequestInDBBase(MeetingRequestBase):
     Base schema for meeting request in DB
     """
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     confirmed_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class MeetingRequestInDB(MeetingRequestInDBBase):
@@ -109,12 +92,6 @@ class MeetingFeedbackBase(BaseModel):
     feedback: Optional[str] = None
     wants_to_continue: bool
 
-    @field_validator("rating")
-    def validate_rating(cls, v):
-        if v < 1 or v > 5:
-            raise ValueError("Rating must be between 1 and 5")
-        return v
-
 
 class MeetingFeedbackCreate(MeetingFeedbackBase):
     """
@@ -129,12 +106,11 @@ class MeetingFeedbackInDBBase(MeetingFeedbackBase):
     Base schema for meeting feedback in DB
     """
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class MeetingFeedbackInDB(MeetingFeedbackInDBBase):
