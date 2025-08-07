@@ -1,5 +1,3 @@
-from typing import Any
-
 from fastapi import APIRouter, HTTPException
 from fastapi import status as http_status
 
@@ -7,7 +5,7 @@ from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.schemas.questionnaire import (
     CategoryOut,
     QuestionnaireCreate,
-    QuestionnaireInDB,
+    QuestionnaireOut,
     QuestionnaireUpdate,
 )
 from app.services.questionnaire_service import QuestionnaireService
@@ -25,12 +23,8 @@ def get_questionnaire(
     Get current user's questionnaire
     """
     quest_service = QuestionnaireService(session)
-    questionnaire = quest_service.get_questionnaire(current_user.id)
-    if not questionnaire:
-        raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND, detail="Questionnaire not found"
-        )
-    return QuestionnaireInDB.model_validate(questionnaire).model_dump(exclude_none=exclude_null)
+    questionnaire = quest_service.get_user_quest(current_user.id)
+    return QuestionnaireOut.model_validate(questionnaire).model_dump(exclude_none=exclude_null)
 
 
 @router.put("/me")
@@ -38,13 +32,16 @@ def update_questionnaire(
     session: SessionDep,
     current_user: VerifiedUserDep,
     questionnaire_in: QuestionnaireUpdate,
-) -> QuestionnaireInDB:
+) -> QuestionnaireOut:
     """
     Update current user's questionnaire
     """
     quest_service = QuestionnaireService(session)
-    quest = quest_service.get_or_create_questionnaire(current_user.id)
-    quest = quest_service.update_questionnaire(quest, questionnaire_in)
+    quest = quest_service.get_user_quest(current_user.id, raise_exc=False)
+    if quest:
+        quest = quest_service.update_questionnaire(quest, questionnaire_in)
+    else:
+        quest = quest_service.create_questionnaire(current_user.id, questionnaire_in)
     return quest
 
 
@@ -53,36 +50,28 @@ def create_questionnaire(
     session: SessionDep,
     current_user: VerifiedUserDep,
     questionnaire_in: QuestionnaireCreate,
-) -> QuestionnaireInDB:
+) -> QuestionnaireOut:
     """
     Create new Questionnaire for the current user
     """
     quest_service = QuestionnaireService(session)
-    quest = quest_service.get_questionnaire(current_user.id)
+    quest = quest_service.get_user_quest(current_user.id, raise_exc=False)
     if quest:
         raise HTTPException(
-            status_code=http_status.HTTP_400_BAD_REQUEST, detail="User already has a Questionnaire"
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="User already has a Questionnaire",
         )
-    quest = quest_service.create_questionnaire(current_user.id, questionnaire_in)
-    return quest
+    return quest_service.create_questionnaire(current_user.id, questionnaire_in)
 
 
-@router.post("/complete", status_code=http_status.HTTP_200_OK)
-def complete_questionnaire(
-    session: SessionDep,
-    current_user: VerifiedUserDep,
-) -> Any:
+@router.put("/complete", status_code=http_status.HTTP_200_OK)
+def complete_questionnaire(session: SessionDep, current_user: VerifiedUserDep) -> QuestionnaireOut:
     """
     Mark questionnaire as completed
     """
     quest_service = QuestionnaireService(session)
-    quest = quest_service.get_questionnaire(current_user.id)
-    if not quest:
-        raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND, detail="Questionnaire not found"
-        )
-
-    quest = quest_service.complete_questionnaire(current_user.id)
+    quest = quest_service.get_user_quest(current_user.id)
+    quest = quest_service.complete_questionnaire(quest)
 
     if not quest.is_complete():
         raise HTTPException(
@@ -90,14 +79,13 @@ def complete_questionnaire(
             detail=f"Questionnaire is incomplete. Missing field: {quest_service.get_missing_required_fields(quest)}",
         )
 
-    return {
-        "message": "Questionnaire completed successfully",
-        "completed_at": quest.completed_at,
-    }
+    return quest
 
 
-@router.get("/categories", response_model=list[CategoryOut])
-def get_questions_by_categories(session: SessionDep):
+@router.get("/by-categories", response_model=list[CategoryOut])
+def get_questions_by_categories(
+    session: SessionDep, current_user: VerifiedUserDep
+) -> list[CategoryOut]:
     """
     Get all questionnaire questions organized by categories from the database
     """

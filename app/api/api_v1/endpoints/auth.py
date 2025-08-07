@@ -12,12 +12,10 @@ from fastapi import APIRouter, HTTPException, Security
 from fastapi import status as http_status
 from firebase_admin import auth as firebase_auth
 from pydantic import BaseModel, EmailStr, Field
-from sqlalchemy.exc import IntegrityError
 
 from app.core.dependencies import SessionDep
 from app.main import api_key_header
 from app.models.user import User
-from app.schemas.user import TestUserCreate, UserOut
 from app.services.auth_service import AuthService
 
 
@@ -274,27 +272,3 @@ def get_user_data(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving user data: {str(e)}",
         )
-
-
-@router.post("/create-user/", tags=["test"])
-def create_user(session: SessionDep, user_in: TestUserCreate) -> UserOut:
-    """
-    Testing endpoint for creating a new user.
-    """
-    user = session.query(User).filter(User.phone_number == user_in.phone_number).first()
-    if user:
-        raise HTTPException(
-            status_code=http_status.HTTP_400_BAD_REQUEST,
-            detail=f"User with phone number: '{user_in.phone_number}' already exists",
-        )
-    try:
-        user = User(**user_in.model_dump(exclude_unset=True))
-        session.add(user)
-        session.commit()
-        session.refresh(user)
-    except IntegrityError as e:
-        raise HTTPException(
-            status_code=http_status.HTTP_400_BAD_REQUEST,
-            detail={"args": e.args},
-        )
-    return user

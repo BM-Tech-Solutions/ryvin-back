@@ -1,14 +1,15 @@
-from typing import Any, List, Optional
+from typing import Annotated, List
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Body, Query
 from fastapi import status as http_status
 
 from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.schemas.journey import JourneyOut
 from app.schemas.meeting import (
-    MeetingFeedback,
     MeetingFeedbackCreate,
+    MeetingFeedbackOut,
+    MeetingFeedbackUpdate,
     MeetingRequestCreate,
     MeetingRequestOut,
 )
@@ -32,14 +33,13 @@ def get_journeys(
     Get all journeys for the current user
     """
     journey_service = JourneyService(session)
-    journeys = journey_service.get_journeys(
+    return journey_service.get_user_journeys(
         user_id=current_user.id,
         current_step=current_step,
         is_completed=is_completed,
         skip=skip,
         limit=limit,
     )
-    return journeys
 
 
 @router.get("/{journey_id}", response_model=JourneyOut)
@@ -47,48 +47,42 @@ def get_journey(
     session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
-) -> Optional[JourneyOut]:
+) -> JourneyOut:
     """
     Get a specific journey by ID
     """
     journey_service = JourneyService(session)
-    journey = journey_service.get_journey_by_id(journey_id)
+    journey = journey_service.get_user_journey(current_user.id, journey_id)
     return journey
 
 
-@router.post("/{journey_id}/advance", status_code=http_status.HTTP_200_OK)
+@router.post("/{journey_id}/advance", response_model=JourneyOut)
 def advance_journey(
     session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
-) -> Any:
+) -> JourneyOut:
     """
     Advance to the next step in the journey
     """
     journey_service = JourneyService(session)
-    journey = journey_service.advance_journey(journey_id)
-
-    return {
-        "message": f"Journey advanced to step {journey.current_step}",
-        "current_step": journey.current_step,
-        "journey": journey,
-    }
+    journey = journey_service.get_user_journey(current_user.id, journey_id)
+    return journey_service.advance_journey(journey)
 
 
-@router.post("/{journey_id}/end", status_code=http_status.HTTP_200_OK)
+@router.post("/{journey_id}/end", response_model=JourneyOut)
 def end_journey(
     session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
-    reason: str,
-) -> Any:
+    reason: Annotated[str, Body(embed=True)],
+) -> JourneyOut:
     """
     End the journey
     """
     journey_service = JourneyService(session)
-    journey_service.end_journey(journey_id, current_user.id, reason)
-
-    return {"message": "Journey ended successfully"}
+    journey = journey_service.get_user_journey(current_user.id, journey_id)
+    return journey_service.end_journey(journey, current_user.id, reason)
 
 
 # Messages
@@ -99,13 +93,14 @@ def get_messages(
     journey_id: UUID,
     skip: int = 0,
     limit: int = 100,
-) -> Any:
+) -> List[MessageOut]:
     """
     Get all messages for a journey
     """
+    journey_service = JourneyService(session)
+    journey = journey_service.get_user_journey(current_user.id, journey_id)
     message_service = MessageService(session)
-    messages = message_service.get_messages(journey_id, current_user.id, skip, limit)
-    return messages
+    return message_service.get_journey_messages(journey.id, skip, limit)
 
 
 @router.post(
@@ -118,22 +113,15 @@ def create_message(
     current_user: VerifiedUserDep,
     journey_id: UUID,
     message_in: MessageCreate,
-) -> Any:
+) -> MessageOut:
     """
     Create a new message in a journey
     """
 
     journey_service = JourneyService(session)
-    journey = journey_service.get_journey_by_id(journey_id)
-    if current_user.id not in [journey.match.user1_id, journey.match.user2_id]:
-        raise HTTPException(
-            status_code=http_status.HTTP_401_UNAUTHORIZED,
-            detail="User not related to this journey",
-        )
-
+    journey = journey_service.get_user_journey(current_user.id, journey_id)
     message_service = MessageService(session)
-    message = message_service.create_message(journey_id, current_user.id, message_in)
-    return message
+    return message_service.create_message(journey, current_user, message_in)
 
 
 @router.delete(
@@ -151,26 +139,10 @@ def delete_message(
     """
 
     journey_service = JourneyService(session)
-    journey = journey_service.get_journey_by_id(journey_id)
-    if not journey:
-        raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail="Journey with not found",
-        )
-
-    if current_user.id not in [journey.match.user1_id, journey.match.user2_id]:
-        raise HTTPException(
-            status_code=http_status.HTTP_401_UNAUTHORIZED,
-            detail="User not related to this journey",
-        )
+    journey = journey_service.get_user_journey(current_user.id, journey_id)
 
     msg_service = MessageService(session)
-    msg = msg_service.get_journey_message(journey_id, message_id)
-    if not msg:
-        raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail="Message with not found",
-        )
+    msg = msg_service.get_journey_message(journey.id, message_id)
 
     session.delete(msg)
     session.commit()
@@ -186,9 +158,30 @@ def get_meeting_requests(
     """
     Get all meeting requests for a journey
     """
+
+    journey_service = JourneyService(session)
+    journey = journey_service.get_user_journey(current_user.id, journey_id)
+
     meeting_service = MeetingService(session)
-    meeting_requests = meeting_service.get_meeting_requests(journey_id, current_user.id)
-    return meeting_requests
+    return meeting_service.get_all_journey_meeting_reqs(journey.id)
+
+
+@router.get("/{journey_id}/meeting-requests/{meeting_request_id}", response_model=MeetingRequestOut)
+def get_meeting_request(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
+    journey_id: UUID,
+    meeting_request_id: UUID,
+) -> MeetingRequestOut:
+    """
+    Get one meeting request for a journey
+    """
+
+    journey_service = JourneyService(session)
+    journey = journey_service.get_user_journey(current_user.id, journey_id)
+
+    meeting_service = MeetingService(session)
+    return meeting_service.get_journey_meeting_request(journey.id, meeting_request_id)
 
 
 @router.post(
@@ -205,66 +198,174 @@ def create_meeting_request(
     """
     Create a new meeting request in a journey
     """
+
+    journey_service = JourneyService(session)
+    journey = journey_service.get_user_journey(current_user.id, journey_id)
+
     meeting_service = MeetingService(session)
-    meeting_request = meeting_service.create_meeting_request(
-        journey_id, current_user.id, meeting_request_in
-    )
-    return meeting_request
+    return meeting_service.create_meeting_request(journey, current_user, meeting_request_in)
 
 
-@router.post(
+@router.put(
     "/{journey_id}/meeting-requests/{meeting_request_id}/accept",
-    status_code=http_status.HTTP_200_OK,
+    response_model=MeetingRequestOut,
 )
 def accept_meeting_request(
     session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
     meeting_request_id: UUID,
-) -> Any:
+) -> MeetingRequestOut:
     """
     Accept a meeting request
     """
+
+    journey_service = JourneyService(session)
+    journey = journey_service.get_user_journey(current_user.id, journey_id)
+
     meeting_service = MeetingService(session)
-    meeting_service.accept_meeting_request(journey_id, meeting_request_id, current_user.id)
+    meeting_request = meeting_service.get_journey_meeting_request(journey.id, meeting_request_id)
 
-    return {"message": "Meeting request accepted successfully"}
+    return meeting_service.accept_meeting_request(current_user, meeting_request)
 
 
-@router.post(
-    "/{journey_id}/meeting-requests/{meeting_request_id}/decline",
-    status_code=http_status.HTTP_200_OK,
+@router.put(
+    "/{journey_id}/meeting-requests/{meeting_request_id}/reject",
+    response_model=MeetingRequestOut,
 )
 def decline_meeting_request(
     session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
     meeting_request_id: UUID,
-) -> Any:
+) -> MeetingRequestOut:
     """
     Decline a meeting request
     """
-    meeting_service = MeetingService(session)
-    meeting_service.decline_meeting_request(journey_id, meeting_request_id, current_user.id)
 
-    return {"message": "Meeting request declined successfully"}
+    journey_service = JourneyService(session)
+    journey = journey_service.get_user_journey(current_user.id, journey_id)
+
+    meeting_service = MeetingService(session)
+    meeting_request = meeting_service.get_journey_meeting_request(journey.id, meeting_request_id)
+
+    return meeting_service.decline_meeting_request(current_user, meeting_request)
+
+
+@router.put(
+    "/{journey_id}/meeting-requests/{meeting_request_id}/cancel",
+    response_model=MeetingRequestOut,
+)
+def cancel_meeting_request(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
+    journey_id: UUID,
+    meeting_request_id: UUID,
+) -> MeetingRequestOut:
+    """
+    Cancel a meeting request
+    """
+
+    journey_service = JourneyService(session)
+    journey = journey_service.get_user_journey(current_user.id, journey_id)
+
+    meeting_service = MeetingService(session)
+    meeting_request = meeting_service.get_journey_meeting_request(journey.id, meeting_request_id)
+
+    return meeting_service.cancel_meeting_request(current_user, meeting_request)
 
 
 # Meeting Feedback
 @router.post(
-    "/{journey_id}/meeting-feedback",
-    response_model=MeetingFeedback,
+    "/{journey_id}/meeting-requests/{meeting_request_id}/meeting-feedbacks",
+    response_model=MeetingFeedbackOut,
     status_code=http_status.HTTP_201_CREATED,
 )
 def create_meeting_feedback(
     session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
+    meeting_request_id: UUID,
     feedback_in: MeetingFeedbackCreate,
-) -> Any:
+) -> MeetingFeedbackOut:
     """
     Create feedback for a meeting
     """
+
+    journey_service = JourneyService(session)
+    journey = journey_service.get_user_journey(current_user.id, journey_id)
+
     meeting_service = MeetingService(session)
-    feedback = meeting_service.create_meeting_feedback(journey_id, current_user.id, feedback_in)
-    return feedback
+    meeting_request = meeting_service.get_journey_meeting_request(journey.id, meeting_request_id)
+    return meeting_service.create_meeting_feedback(current_user.id, meeting_request.id, feedback_in)
+
+
+@router.get(
+    "/{journey_id}/meeting-requests/{meeting_request_id}/meeting-feedbacks",
+    response_model=list[MeetingFeedbackOut],
+)
+def get_meeting_feedback(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
+    journey_id: UUID,
+    meeting_request_id: UUID,
+) -> list[MeetingFeedbackOut]:
+    """
+    Get feedback for a meeting
+    """
+
+    journey_service = JourneyService(session)
+    journey = journey_service.get_user_journey(current_user.id, journey_id)
+
+    meeting_service = MeetingService(session)
+    meeting_request = meeting_service.get_journey_meeting_request(journey.id, meeting_request_id)
+    return meeting_service.get_all_meeting_request_feedbacks(meeting_request.id)
+
+
+@router.get(
+    "/{journey_id}/meeting-requests/{meeting_request_id}/meeting-feedbacks/{meeting_feedback_id}",
+    response_model=MeetingFeedbackOut,
+)
+def get_journey_meeting_feedback(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
+    journey_id: UUID,
+    meeting_request_id: UUID,
+    meeting_feedback_id: UUID,
+) -> MeetingFeedbackOut:
+    """
+    Get feedback for a meeting
+    """
+
+    journey_service = JourneyService(session)
+    journey = journey_service.get_user_journey(current_user.id, journey_id)
+
+    meeting_service = MeetingService(session)
+    meeting_request = meeting_service.get_journey_meeting_request(journey.id, meeting_request_id)
+    return meeting_service.get_meeting_request_feedback(meeting_request.id, meeting_feedback_id)
+
+
+@router.put(
+    "/{journey_id}/meeting-requests/{meeting_request_id}/meeting-feedbacks/{meeting_feedback_id}",
+    response_model=MeetingFeedbackOut,
+)
+def update_meeting_feedback(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
+    journey_id: UUID,
+    meeting_request_id: UUID,
+    meeting_feedback_id: UUID,
+    feedback_in: MeetingFeedbackUpdate,
+) -> MeetingFeedbackOut:
+    """
+    Update feedback for a meeting
+    """
+
+    journey_service = JourneyService(session)
+    journey = journey_service.get_user_journey(current_user.id, journey_id)
+
+    meeting_service = MeetingService(session)
+    meeting_request = meeting_service.get_journey_meeting_request(journey.id, meeting_request_id)
+    feedback = meeting_service.get_meeting_request_feedback(meeting_request.id, meeting_feedback_id)
+
+    return meeting_service.update_meeting_feedback(feedback, feedback_in)

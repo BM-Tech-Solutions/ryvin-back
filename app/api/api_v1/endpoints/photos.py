@@ -1,7 +1,6 @@
-from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, UploadFile
 from fastapi import status as http_status
 
 from app.core.dependencies import SessionDep, VerifiedUserDep
@@ -22,9 +21,7 @@ def get_photos(
     get user's photos
     """
     photo_service = PhotoService(session)
-    photos = photo_service.get_user_photos(current_user.id, skip, limit)
-
-    return photos
+    return photo_service.get_user_photos(current_user.id, skip, limit)
 
 
 @router.post("", status_code=http_status.HTTP_201_CREATED)
@@ -37,48 +34,33 @@ def upload_photo(
     Upload a user's photo
     """
     photo_service = PhotoService(session)
-    photo = photo_service.upload_photo(current_user.id, file)
-
-    return photo
+    return photo_service.upload_photo(current_user.id, file)
 
 
-@router.post("/set-primary/{photo_id}", status_code=http_status.HTTP_200_OK)
+@router.post("/{photo_id}/set-primary")
 def set_primary_photo(
     session: SessionDep,
     current_user: VerifiedUserDep,
     photo_id: UUID,
-) -> Any:
+) -> PhotoOut:
     """
     Set a photo as primary for user
     """
     photo_service = PhotoService(session)
-    photo = photo_service.set_primary_photo(current_user.id, photo_id)
-
-    if not photo:
-        raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail="Photo not found",
-        )
-
-    return {"message": "Primary photo set successfully"}
+    photo = photo_service.get_user_photo(current_user.id, photo_id)
+    photo = photo_service.set_as_primary_photo(photo)
+    return photo
 
 
-@router.delete("/{photo_id}", status_code=http_status.HTTP_200_OK)
+@router.delete("/{photo_id}", status_code=http_status.HTTP_204_NO_CONTENT)
 def delete_photo(
     session: SessionDep,
     current_user: VerifiedUserDep,
     photo_id: UUID,
-) -> Any:
+):
     """
     Delete a user's photo
     """
     photo_service = PhotoService(session)
-    success = photo_service.delete_photo(current_user.id, photo_id)
-
-    if not success:
-        raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail="Photo not found",
-        )
-
-    return {"message": "Photo deleted successfully"}
+    photo = photo_service.get_user_photo(current_user.id, photo_id)
+    photo_service.delete_photo(photo)
