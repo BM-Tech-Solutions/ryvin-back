@@ -30,7 +30,7 @@ class MeetingFeedback(Base):
 
     # Relationships
     meeting_request: Mapped["MeetingRequest"] = relationship(
-        back_populates="feedback", foreign_keys=[meeting_request_id]
+        back_populates="feedbacks", foreign_keys=[meeting_request_id]
     )
     user: Mapped["User"] = relationship(back_populates="meeting_feedbacks", foreign_keys=[user_id])
 

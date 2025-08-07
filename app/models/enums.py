@@ -359,9 +359,9 @@ class MessageType(BaseStrEnum):
 class MeetingStatus(BaseStrEnum):
     PROPOSED = "proposee"
     ACCEPTED = "acceptee"
-    REJECTED = "refusee"
-    COMPLETED = "terminee"
+    DECLINED = "refusee"
     CANCELLED = "annulee"
+    COMPLETED = "terminee"
 
 
 class FieldType(BaseStrEnum):

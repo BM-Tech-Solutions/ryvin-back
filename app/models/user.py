@@ -53,7 +53,7 @@ class User(Base):
         back_populates="sender", foreign_keys="Message.sender_id"
     )
     meeting_requests: Mapped[List["MeetingRequest"]] = relationship(
-        back_populates="requester", foreign_keys="MeetingRequest.requested_by"
+        back_populates="requester", foreign_keys="MeetingRequest.requester_id"
     )
     meeting_feedbacks: Mapped[List["MeetingFeedback"]] = relationship(
         back_populates="user", foreign_keys="MeetingFeedback.user_id"

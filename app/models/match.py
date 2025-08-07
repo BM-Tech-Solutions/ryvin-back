@@ -33,9 +33,12 @@ class Match(Base):
     # Relationships
     user1: Mapped["User"] = relationship(back_populates="matches_as_user1", foreign_keys=[user1_id])
     user2: Mapped["User"] = relationship(back_populates="matches_as_user2", foreign_keys=[user2_id])
-    journey: Mapped["Journey"] = relationship(
+    journey: Mapped[Optional["Journey"]] = relationship(
         back_populates="match", uselist=False, foreign_keys="Journey.match_id"
     )
 
     def __repr__(self):
         return f"<Match {self.id}: {self.user1_id} - {self.user2_id}, Score: {self.compatibility_score}>"
+
+    def get_other_user(self, user: "User"):
+        return self.user1 if self.user2.id == user.id else self.user2

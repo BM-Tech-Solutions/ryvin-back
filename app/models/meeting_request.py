@@ -25,7 +25,7 @@ class MeetingRequest(Base):
     journey_id: Mapped[UUID] = mapped_column(
         pgUUID(as_uuid=True), ForeignKey("journey.id"), index=True
     )
-    requested_by: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"))
+    requester_id: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"))
 
     proposed_date: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     proposed_location: Mapped[str]
@@ -37,11 +37,10 @@ class MeetingRequest(Base):
         back_populates="meeting_requests", foreign_keys=[journey_id]
     )
     requester: Mapped["User"] = relationship(
-        back_populates="meeting_requests", foreign_keys=[requested_by]
+        back_populates="meeting_requests", foreign_keys=[requester_id]
     )
-    feedback: Mapped["MeetingFeedback | None"] = relationship(
+    feedbacks: Mapped[list["MeetingFeedback"]] = relationship(
         back_populates="meeting_request",
-        uselist=False,
         foreign_keys="MeetingFeedback.meeting_request_id",
     )
 
