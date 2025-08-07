@@ -8,6 +8,7 @@ from app.core.security import utc_now
 from app.models.enums import MeetingStatus
 
 
+# Meeting Request
 class MeetingRequestBase(BaseModel):
     """
     Base schema for meeting request data
@@ -15,11 +16,8 @@ class MeetingRequestBase(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    journey_id: UUID
-    requested_by: UUID
     proposed_date: datetime
     proposed_location: str
-    status: MeetingStatus = MeetingStatus.PROPOSED
 
     @field_validator("proposed_date")
     def validate_proposed_date(cls, v):
@@ -52,42 +50,28 @@ class MeetingRequestUpdate(BaseModel):
         return v
 
 
-class MeetingRequestInDBBase(MeetingRequestBase):
+class MeetingRequestOut(MeetingRequestBase):
     """
-    Base schema for meeting request in DB
+    Schema for meeting request response
     """
-
-    model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    journey_id: UUID
+    requester_id: UUID
+    status: MeetingStatus = MeetingStatus.PROPOSED
     confirmed_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
 
-class MeetingRequestInDB(MeetingRequestInDBBase):
-    """
-    Schema for meeting request in DB (internal use)
-    """
-
-    pass
-
-
-class MeetingRequestOut(MeetingRequestInDBBase):
-    """
-    Schema for meeting request response
-    """
-
-    pass
-
-
+# Meeting Feedback
 class MeetingFeedbackBase(BaseModel):
     """
     Base schema for meeting feedback data
     """
 
-    meeting_request_id: UUID
-    user_id: UUID
+    model_config = ConfigDict(from_attributes=True)
+
     rating: int = Field(ge=1, le=5)
     feedback: Optional[str] = None
     wants_to_continue: bool
@@ -101,29 +85,22 @@ class MeetingFeedbackCreate(MeetingFeedbackBase):
     pass
 
 
-class MeetingFeedbackInDBBase(MeetingFeedbackBase):
+class MeetingFeedbackUpdate(MeetingFeedbackBase):
     """
-    Base schema for meeting feedback in DB
-    """
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    created_at: datetime
-    updated_at: datetime
-
-
-class MeetingFeedbackInDB(MeetingFeedbackInDBBase):
-    """
-    Schema for meeting feedback in DB (internal use)
+    Schema for meeting feedback update
     """
 
-    pass
+    rating: int = Field(default=None, ge=1, le=5)
+    wants_to_continue: bool = None
 
 
-class MeetingFeedback(MeetingFeedbackInDBBase):
+class MeetingFeedbackOut(MeetingFeedbackBase):
     """
     Schema for meeting feedback response
     """
 
-    pass
+    id: UUID
+    meeting_request_id: UUID
+    user_id: UUID
+    created_at: datetime
+    updated_at: datetime

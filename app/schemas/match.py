@@ -17,7 +17,6 @@ class MatchBase(BaseModel):
     user1_id: UUID
     user2_id: UUID
     compatibility_score: float = Field(ge=0.0, le=100.0)
-    status: MatchStatus = MatchStatus.PENDING
 
 
 class MatchCreate(MatchBase):
@@ -34,6 +33,7 @@ class MatchUpdate(BaseModel):
     """
 
     status: Optional[MatchStatus] = None
+    compatibility_score: float = Field(ge=0.0, le=100.0)
 
 
 class MatchOut(MatchBase):
@@ -45,6 +45,16 @@ class MatchOut(MatchBase):
     user1_accepted: Optional[bool]
     user2_accepted: Optional[bool]
     matched_at: Optional[datetime]
+    status: MatchStatus = MatchStatus.PENDING
     compatibility_score: float
     created_at: datetime
     updated_at: datetime
+
+
+class PotentialMatch(BaseModel):
+    """
+    Schema for potential match response
+    """
+
+    user_id: UUID
+    compatibility_score: float

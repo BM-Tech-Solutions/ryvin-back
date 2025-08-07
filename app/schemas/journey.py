@@ -45,44 +45,9 @@ class JourneyUpdate(BaseModel):
     end_reason: Optional[str] = None
 
 
-class JourneyInDBBase(JourneyBase):
-    """
-    Base schema for journey in DB
-    """
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    step1_completed_at: Optional[datetime] = None
-    step2_completed_at: Optional[datetime] = None
-    step3_completed_at: Optional[datetime] = None
-    step4_completed_at: Optional[datetime] = None
-    step5_completed_at: Optional[datetime] = None
-    ended_by: Optional[UUID] = None
-    end_reason: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
-
-
-class JourneyInDB(JourneyInDBBase):
-    """
-    Schema for journey in DB (internal use)
-    """
-
-    pass
-
-
-class Journey(JourneyInDBBase):
-    """
-    Schema for journey response
-    """
-
-    pass
-
-
 class JourneyOut(BaseModel):
     """
-    Schema for detailed journey response with additional data
+    Schema for detailed journey response
     """
 
     model_config = ConfigDict(from_attributes=True)
