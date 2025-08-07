@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -10,6 +10,7 @@ from app.models.enums import JourneyStatus, JourneyStep, MatchStatus
 from app.models.journey import Journey
 from app.models.match import Match
 from app.models.user import User
+from app.schemas.match import MatchCreate, PotentialMatch
 
 from .base_service import BaseService
 from .notification_service import NotificationService
@@ -27,11 +28,38 @@ class MatchService(BaseService):
         """
         return self.session.get(Match, match_id)
 
-    def get_match_by_users(self, user1_id: UUID, user2_id: UUID) -> Optional[Match]:
+    def get_user_match(
+        self, user_id: UUID, match_id: UUID, raise_exc: bool = True
+    ) -> Optional[Match]:
+        """
+        Get User match by ID
+        """
+        match = (
+            self.session.query(Match)
+            .filter(
+                Match.id == match_id,
+                or_(
+                    Match.user1_id == user_id,
+                    Match.user2_id == user_id,
+                ),
+            )
+            .first()
+        )
+
+        if not match and raise_exc:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"User has no Match with id: {match_id}",
+            )
+        return match
+
+    def get_match_by_users(
+        self, user1_id: UUID, user2_id: UUID, raise_exc: bool = True
+    ) -> Optional[Match]:
         """
         Get match between two users if it exists
         """
-        return (
+        match = (
             self.session.query(Match)
             .filter(
                 or_(
@@ -42,61 +70,71 @@ class MatchService(BaseService):
             .first()
         )
 
+        if not match and raise_exc:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"No Match between users: {user1_id} and {user2_id}",
+            )
+        return match
+
     def get_user_matches(
-        self, user_id: UUID, status: MatchStatus = None, skip: int = 0, limit: int = 100
+        self,
+        user_id: UUID,
+        status: MatchStatus = None,
+        has_journey: bool = None,
+        skip: int = 0,
+        limit: int = 100,
     ) -> List[Match]:
         """
         Get all matches for a user
         """
-        query = self.session.query(Match).filter(
-            or_(Match.user1_id == user_id, Match.user2_id == user_id)
+        query = (
+            self.session.query(Match)
+            .outerjoin(Match.journey)
+            .filter(or_(Match.user1_id == user_id, Match.user2_id == user_id))
         )
 
         if status:
             query = query.filter(Match.status == status)
 
+        if has_journey is True:
+            query = query.filter(Journey.id.is_not(None))
+        elif has_journey is False:
+            query = query.filter(Journey.id.is_(None))
+
         return query.offset(skip).limit(limit).all()
 
-    def create_match(self, user1_id: UUID, user2_id: UUID, compatibility_score: int) -> Match:
+    def create_match(self, match_in: MatchCreate) -> Match:
         """
         Create a new potential match
         """
-        # Check if match already exists
-        existing_match = self.get_match_by_users(user1_id, user2_id)
-        if existing_match:
-            return existing_match
-
         # Create new match
         match = Match(
-            user1_id=user1_id,
-            user2_id=user2_id,
-            compatibility_score=compatibility_score,
-            status=MatchStatus.PENDING,
+            user1_id=match_in.user1_id,
+            user2_id=match_in.user2_id,
+            compatibility_score=match_in.compatibility_score,
             user1_accepted=False,
             user2_accepted=False,
+            status=MatchStatus.PENDING,
         )
 
         self.session.add(match)
         self.session.commit()
         self.session.refresh(match)
 
-        # Send notification to user2
-        user2 = self.session.get(User, user2_id)
-        if user2:
-            NotificationService().send_new_match_notification(user2, match)
+        # Send notifications to both users
+        notif_service = NotificationService()
+        notif_service.send_new_match_notification(match.user1, match)
+        notif_service.send_new_match_notification(match.user2, match)
 
         return match
 
     def discover_potential_matches(
         self, user_id: UUID, skip: int = 0, limit: int = 20
-    ) -> List[Dict[str, Any]]:
+    ) -> List[PotentialMatch]:
         """
         Discover potential matches for a user
         """
-        user = self.session.get(User, user_id)
-        if not user:
-            raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="User not found")
-
         # Get existing matches to exclude
         existing_match_users = []
         existing_matches = self.get_user_matches(user_id)
@@ -106,22 +144,19 @@ class MatchService(BaseService):
             else:
                 existing_match_users.append(match.user1_id)
 
-        # Query for potential matches
-        potential_matches_query = self.session.query(User).filter(
-            User.id != user_id,
-            User.is_active.is_(True),
-            User.is_verified.is_(True),
-            User.has_completed_questionnaire.is_(True),
-        )
-
-        # Exclude existing matches
-        if existing_match_users:
-            potential_matches_query = potential_matches_query.filter(
-                User.id.notin_(existing_match_users)
+        # get all potential matches
+        potential_matches = (
+            self.session.query(User)
+            .filter(
+                User.is_active.is_(True),
+                User.is_verified.is_(True),
+                User.has_completed_questionnaire.is_(True),
+                User.id.notin_([user_id, *existing_match_users]),
             )
-
-        # Get potential matches
-        potential_matches = potential_matches_query.offset(skip).limit(limit).all()
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
         # Calculate compatibility scores
         questionnaire_service = QuestionnaireService(self.session)
@@ -132,26 +167,22 @@ class MatchService(BaseService):
                 user_id, potential_match.id
             )
 
-            result.append({"user": potential_match, "compatibility_score": compatibility_score})
+            result.append(
+                PotentialMatch(
+                    user_id=potential_match.id,
+                    compatibility_score=compatibility_score,
+                )
+            )
 
         # Sort by compatibility score
-        result.sort(key=lambda x: x["compatibility_score"], reverse=True)
+        return sorted(result, key=lambda m: m.compatibility_score, reverse=True)
 
-        return result
-
-    def accept_match(self, match_id: UUID, user_id: UUID) -> Match:
+    def accept_match(self, match: Match, user_id: UUID) -> Match:
         """
         Accept a match
         """
-        match = self.get_match_by_id(match_id)
-        if not match:
-            raise HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Match not found",
-            )
-
         # Check if user is part of the match
-        if match.user1_id != user_id and match.user2_id != user_id:
+        if user_id not in [match.user1_id, match.user2_id]:
             raise HTTPException(
                 status_code=http_status.HTTP_403_FORBIDDEN,
                 detail="User is not part of this match",
@@ -177,40 +208,33 @@ class MatchService(BaseService):
             self.session.add(journey)
 
             # Send notifications to both users
-            user1 = self.session.get(User, match.user1_id)
-            user2 = self.session.get(User, match.user2_id)
-
-            if user1 and user2:
-                NotificationService().send_match_confirmed_notification(user1, match)
-                NotificationService().send_match_confirmed_notification(user2, match)
+            notif_service = NotificationService()
+            notif_service.send_match_confirmed_notification(match.user1, match)
+            notif_service.send_match_confirmed_notification(match.user2, match)
 
         self.session.commit()
         self.session.refresh(match)
         return match
 
-    def decline_match(self, match_id: UUID, user_id: UUID) -> Match:
+    def decline_match(self, match: Match, user_id: UUID) -> Match:
         """
         Decline a match
         """
-        match = self.get_match_by_id(match_id)
-        if not match:
-            raise HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Match not found",
-            )
-
         # Check if user is part of the match
-        if match.user1_id != user_id and match.user2_id != user_id:
+        if user_id not in [match.user1_id, match.user2_id]:
             raise HTTPException(
                 status_code=http_status.HTTP_403_FORBIDDEN,
                 detail="User is not part of this match",
             )
 
+        notif_service = NotificationService()
         # Set which user declined
         if match.user1_id == user_id:
             match.user1_accepted = False
+            notif_service.send_match_declined_notification(match.user2, match)
         else:
             match.user2_accepted = False
+            notif_service.send_match_declined_notification(match.user1, match)
 
         # Update match status
         match.status = MatchStatus.DECLINED

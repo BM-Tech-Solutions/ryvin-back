@@ -7,12 +7,8 @@ from fastapi import status as http_status
 from sqlalchemy import func
 
 from app.core.security import utc_now
+from app.models import Journey, Match, MeetingRequest, Message, Questionnaire, User
 from app.models.enums import JourneyStatus, MatchStatus, MeetingStatus
-from app.models.journey import Journey
-from app.models.match import Match
-from app.models.meeting import MeetingRequest
-from app.models.message import Message
-from app.models.user import User
 
 from .base_service import BaseService
 
@@ -27,13 +23,14 @@ class AdminService(BaseService):
         search: str = None,
         is_active: bool = None,
         is_verified: bool = None,
+        has_questionnaire: bool = None,
         skip: int = 0,
         limit: int = 100,
     ) -> List[User]:
         """
         Get all users with optional search
         """
-        query = self.session.query(User)
+        query = self.session.query(User).outerjoin(User.questionnaire)
 
         if is_active is not None:
             query = query.filter(User.is_active == is_active)
@@ -41,12 +38,17 @@ class AdminService(BaseService):
         if is_verified is not None:
             query = query.filter(User.is_verified == is_verified)
 
+        if has_questionnaire is True:
+            query = query.filter(Questionnaire.id.is_not(None))
+        elif has_questionnaire is False:
+            query = query.filter(Questionnaire.id.is_(None))
+
         if search:
             search_term = f"%{search}%"
             query = query.filter(
-                User.phone_number.ilike(search_term) | User.email.ilike(search_term)
-                # | User.first_name.ilike(search_term)
-                # | User.last_name.ilike(search_term)
+                User.phone_number.ilike(search_term)
+                | User.email.ilike(search_term)
+                | Questionnaire.first_name.ilike(search_term)
             )
 
         return query.offset(skip).limit(limit).all()
@@ -81,11 +83,6 @@ class AdminService(BaseService):
         user = self.get_user_by_id(user_id)
         if not user:
             raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="User not found")
-
-        if not user.is_banned:
-            raise HTTPException(
-                status_code=http_status.HTTP_400_BAD_REQUEST, detail="User is not banned"
-            )
 
         user.is_active = True
         user.is_banned = False

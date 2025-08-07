@@ -1,6 +1,10 @@
+import random
 from collections import defaultdict
 from typing import Optional
 from uuid import UUID
+
+from fastapi import HTTPException
+from fastapi import status as http_status
 
 from app.core.security import utc_now
 from app.models import Questionnaire, QuestionnaireCategory, QuestionnaireField
@@ -15,18 +19,35 @@ class QuestionnaireService(BaseService):
     Service for questionnaire-related operations
     """
 
-    def get_questionnaire(self, user_id: UUID) -> Optional[Questionnaire]:
+    def get_quest_by_id(self, quest_id: UUID, raise_exc: bool = True) -> Optional[Questionnaire]:
         """
         Get user questionnaire by user ID
         """
-        return self.session.query(Questionnaire).filter(Questionnaire.user_id == user_id).first()
+        quest = self.session.get(Questionnaire, quest_id)
+        if not quest and raise_exc:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"no Questionnaire with id: {quest_id}",
+            )
+        return quest
+
+    def get_user_quest(self, user_id: UUID, raise_exc: bool = True) -> Optional[Questionnaire]:
+        """
+        Get user questionnaire by user ID
+        """
+        quest = self.session.query(Questionnaire).filter(Questionnaire.user_id == user_id).first()
+        if not quest and raise_exc:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"User with id: '{user_id}' has no Questionnaire",
+            )
+        return quest
 
     def create_questionnaire(self, user_id: UUID, quest_in: QuestionnaireCreate) -> Questionnaire:
         """
         Create an empty questionnaire for a user
         """
-        quest_data = quest_in.model_dump(exclude_unset=True)
-        questionnaire = Questionnaire(**quest_data, user_id=user_id)
+        questionnaire = Questionnaire(**quest_in.model_dump(exclude_unset=True), user_id=user_id)
         self.session.add(questionnaire)
         self.session.commit()
         self.session.refresh(questionnaire)
@@ -36,18 +57,18 @@ class QuestionnaireService(BaseService):
         """
         Get existing questionnaire or create a new one
         """
-        questionnaire = self.get_questionnaire(user_id)
+        questionnaire = self.get_user_quest(user_id, raise_exc=False)
         if not questionnaire:
-            questionnaire = self.create_questionnaire(user_id)
+            questionnaire = self.create_questionnaire(user_id, QuestionnaireCreate())
         return questionnaire
 
     def update_questionnaire(
-        self, quest: Questionnaire, questionnaire_data: QuestionnaireUpdate
+        self, quest: Questionnaire, questionnaire_in: QuestionnaireUpdate
     ) -> Questionnaire:
         """
         Update user questionnaire
         """
-        update_data = questionnaire_data.model_dump(exclude_unset=True)
+        update_data = questionnaire_in.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             setattr(quest, field, value)
 
@@ -55,7 +76,7 @@ class QuestionnaireService(BaseService):
         self.session.refresh(quest)
         return quest
 
-    def complete_questionnaire(self, quest: Questionnaire) -> Optional[Questionnaire]:
+    def complete_questionnaire(self, quest: Questionnaire) -> Questionnaire:
         """
         Mark questionnaire as completed and update user record
         """
@@ -76,38 +97,12 @@ class QuestionnaireService(BaseService):
         """
         Calculate compatibility score between two users based on their questionnaires
         """
-        q1 = self.get_questionnaire(user1_id)
-        q2 = self.get_questionnaire(user2_id)
+        q1 = self.get_user_quest(user1_id, raise_exc=False)
+        q2 = self.get_user_quest(user2_id, raise_exc=False)
 
         if not q1 or not q2 or not q1.is_complete() or not q2.is_complete():
             return 0
-
-        # In a real app, we would implement a sophisticated algorithm
-        # For now, we'll use a simple scoring system
-
-        score = 0
-
-        # Example scoring logic (simplified)
-        if q1.relationship_goal == q2.relationship_goal:
-            score += 20
-
-        if q1.accept_non_believer == q2.accept_non_believer:
-            score += 15
-
-        if q1.primary_love_language == q2.primary_love_language:
-            score += 15
-
-        # Check if deal breakers match
-        # if q1.deal_breakers and q2.deal_breakers:
-        #     # Lower score if deal breakers overlap
-        #     if any(item in q2.lifestyle_preferences for item in q1.deal_breakers.split(",")):
-        #         score -= 30
-
-        #     if any(item in q1.lifestyle_preferences for item in q2.deal_breakers.split(",")):
-        #         score -= 30
-
-        # Ensure score is between 0 and 100
-        return max(0, min(score, 100))
+        return random.randint(0, 100)
 
     def get_all_categories(self) -> list[QuestionnaireCategory]:
         return (
@@ -149,7 +144,10 @@ class QuestionnaireService(BaseService):
     def get_required_fields(self) -> list[QuestionnaireField]:
         return (
             self.session.query(QuestionnaireField)
-            .filter(QuestionnaireField.required.is_(True))
+            .filter(
+                QuestionnaireField.required.is_(True),
+                QuestionnaireField.field_type != FieldType.FIELDS_GROUP,
+            )
             .all()
         )
 
