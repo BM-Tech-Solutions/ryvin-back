@@ -18,6 +18,8 @@ class MatchBase(BaseModel):
     user2_id: UUID
     compatibility_score: float = Field(ge=0.0, le=100.0)
     status: MatchStatus = Field(default=MatchStatus.PENDING)
+    user1_accepted: bool = Field(default=False)
+    user2_accepted: bool = Field(default=False)
 
     @field_validator("compatibility_score")
     def validate_compatibility_score(cls, v):
@@ -85,3 +87,5 @@ class MatchResponse(BaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
+    user1_accepted: bool = Field(default=False)
+    user2_accepted: bool = Field(default=False)

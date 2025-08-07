@@ -41,6 +41,12 @@ class MatchService(BaseService):
             .first()
         )
 
+    def get_all_matches(self, skip: int = 0, limit: int = 100) -> List[Match]:
+        """
+        Get all matches in the system
+        """
+        return self.session.query(Match).offset(skip).limit(limit).all()
+
     def get_user_matches(
         self, user_id: UUID, status: str = None, skip: int = 0, limit: int = 100
     ) -> List[Match]:

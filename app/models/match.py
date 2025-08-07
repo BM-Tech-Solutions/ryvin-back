@@ -25,6 +25,8 @@ class Match(Base):
     user2_id: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"), index=True)
     compatibility_score: Mapped[float]
     status: Mapped[str] = mapped_column(default=MatchStatus.PENDING)
+    user1_accepted: Mapped[bool] = mapped_column(default=False)
+    user2_accepted: Mapped[bool] = mapped_column(default=False)
 
     # Relationships
     user1: Mapped["User"] = relationship(back_populates="matches_as_user1", foreign_keys=[user1_id])

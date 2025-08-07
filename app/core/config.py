@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
+    
+    # JWT Authentication
+    JWT_SECRET_KEY: Optional[str] = None
+    REFRESH_TOKEN_EXPIRE_DAYS: Optional[int] = None
 
     # CORS
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
@@ -45,6 +49,19 @@ class Settings(BaseSettings):
 
     # Firebase Admin SDK Credentials
     FIREBASE_SERVICE_ACCOUNT_PATH: Optional[str] = None
+    FIREBASE_API_KEY: Optional[str] = None
+    FIREBASE_AUTH_DOMAIN: Optional[str] = None
+    FIREBASE_PROJECT_ID: Optional[str] = None
+    FIREBASE_TYPE: Optional[str] = None
+    FIREBASE_PROJECT_ID_ENV: Optional[str] = None
+    FIREBASE_PRIVATE_KEY_ID: Optional[str] = None
+    FIREBASE_PRIVATE_KEY: Optional[str] = None
+    FIREBASE_CLIENT_EMAIL: Optional[str] = None
+    FIREBASE_CLIENT_ID: Optional[str] = None
+    FIREBASE_AUTH_URI: Optional[str] = None
+    FIREBASE_TOKEN_URI: Optional[str] = None
+    FIREBASE_AUTH_PROVIDER_X509_CERT_URL: Optional[str] = None
+    FIREBASE_CLIENT_X509_CERT_URL: Optional[str] = None
 
     # Google OAuth (for Social Login)
     GOOGLE_CLIENT_ID: Optional[str] = None
