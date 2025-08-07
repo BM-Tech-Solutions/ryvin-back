@@ -1,8 +1,8 @@
 """init migration
 
-Revision ID: f66cdcce4ac2
+Revision ID: 9e4ac442a8af
 Revises:
-Create Date: 2025-07-25 04:23:34.787297
+Create Date: 2025-08-05 00:45:53.719426
 
 """
 
@@ -13,7 +13,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = "f66cdcce4ac2"
+revision: str = "9e4ac442a8af"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -76,6 +76,9 @@ def upgrade() -> None:
         "match",
         sa.Column("user1_id", sa.UUID(), nullable=False),
         sa.Column("user2_id", sa.UUID(), nullable=False),
+        sa.Column("user1_accepted", sa.Boolean(), nullable=False),
+        sa.Column("user2_accepted", sa.Boolean(), nullable=False),
+        sa.Column("matched_at", sa.DateTime(), nullable=True),
         sa.Column("compatibility_score", sa.Float(), nullable=False),
         sa.Column("status", sa.String(), nullable=False),
         sa.Column("id", sa.UUID(), nullable=False),
@@ -268,7 +271,7 @@ def upgrade() -> None:
     op.create_table(
         "meeting_request",
         sa.Column("journey_id", sa.UUID(), nullable=False),
-        sa.Column("requested_by", sa.UUID(), nullable=False),
+        sa.Column("requester_id", sa.UUID(), nullable=False),
         sa.Column("proposed_date", sa.DateTime(timezone=True), nullable=False),
         sa.Column("proposed_location", sa.String(), nullable=False),
         sa.Column("status", sa.String(), nullable=False),
@@ -281,7 +284,7 @@ def upgrade() -> None:
             ["journey.id"],
         ),
         sa.ForeignKeyConstraint(
-            ["requested_by"],
+            ["requester_id"],
             ["user.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
