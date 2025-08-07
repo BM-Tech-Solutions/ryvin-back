@@ -14,6 +14,8 @@ from app.schemas.token import TokenPayload
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
 
+EXAMPLE_ID_HEADER_VALUE = "1812dd00-d377-4314-b03d-23acc6561afa"
+
 
 # this dependency is for testing only, we'll remove this later
 async def test_get_user(
@@ -22,7 +24,7 @@ async def test_get_user(
         UUID,
         Header(
             description="for testing only (instead of using 'Authorization')",
-            example="2abe20a1-2a18-4905-8b14-905e69b09ff7",
+            example=EXAMPLE_ID_HEADER_VALUE,
         ),
     ],
 ):
@@ -73,7 +75,10 @@ async def get_current_active_user(current_user: TestGetUserDep) -> User:
     Get the current active user
     """
     if not current_user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="Inactive user",
+        )
     return current_user
 
 
