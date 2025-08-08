@@ -34,8 +34,8 @@ class APITokenMiddleware(BaseHTTPMiddleware):
         """
         # Skip validation for docs, openapi.json, redoc, and root path
         if (
-            path.endswith("/docs") 
-            or path.endswith("/openapi.json") 
+            path.endswith("/docs")
+            or path.endswith("/openapi.json")
             or path.endswith("/redoc")
             or path == "/"
         ):

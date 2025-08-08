@@ -1,11 +1,11 @@
 from typing import Any, List
 from uuid import UUID
 
-from fastapi import APIRouter, Query, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 from fastapi import status as http_status
 
 from app.core.dependencies import SessionDep
-from app.schemas.match import Match, MatchResponse
+from app.schemas.match import Match
 from app.services.match_service import MatchService
 from app.services.matching_cron_service import MatchingCronService
 
@@ -50,57 +50,45 @@ def get_specific_match(session: SessionDep, match_id: UUID) -> Any:
     match_service = MatchService(session)
     match = match_service.get_match_by_id(match_id)
     if not match:
-        raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail="Match not found"
-        )
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Match not found")
     return match
 
 
 @router.post("/trigger-matching/{user_id}", status_code=http_status.HTTP_200_OK)
-async def trigger_user_matching(
-    session: SessionDep,
-    user_id: UUID
-) -> Any:
+async def trigger_user_matching(session: SessionDep, user_id: UUID) -> Any:
     """
     Trigger matching algorithm for a specific user and return results
     """
     matching_service = MatchingCronService(session)
-    
+
     # Run matching synchronously and return results
     result = await matching_service.process_new_user_matching(user_id)
-    
+
     return {
         "message": f"Matching process completed for user {user_id}",
         "status": "completed",
-        "results": result
+        "results": result,
     }
 
 
 @router.post("/admin/trigger-matching", status_code=http_status.HTTP_200_OK)
-async def trigger_admin_matching(
-    session: SessionDep,
-    background_tasks: BackgroundTasks
-) -> Any:
+async def trigger_admin_matching(session: SessionDep, background_tasks: BackgroundTasks) -> Any:
     """
     Trigger matching algorithm for all users (admin function)
     """
     matching_service = MatchingCronService(session)
-    
+
     # Run daily matching in background
     background_tasks.add_task(matching_service.run_daily_matching)
-    
-    return {
-        "message": "Daily matching process triggered for all users",
-        "status": "processing"
-    }
+
+    return {"message": "Daily matching process triggered for all users", "status": "processing"}
 
 
 @router.post("/match/{match_id}/accept", response_model=Match, status_code=http_status.HTTP_200_OK)
 def accept_match(
     session: SessionDep,
     match_id: UUID,
-    user_id: UUID = Query(..., description="User ID accepting the match")
+    user_id: UUID = Query(..., description="User ID accepting the match"),
 ) -> Any:
     """
     Accept a match
@@ -114,7 +102,7 @@ def accept_match(
 def decline_match(
     session: SessionDep,
     match_id: UUID,
-    user_id: UUID = Query(..., description="User ID declining the match")
+    user_id: UUID = Query(..., description="User ID declining the match"),
 ) -> Any:
     """
     Decline a match
