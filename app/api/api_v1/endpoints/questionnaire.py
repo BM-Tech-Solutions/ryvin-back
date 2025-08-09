@@ -82,12 +82,31 @@ def complete_questionnaire(session: SessionDep, current_user: VerifiedUserDep) -
     return quest
 
 
-@router.get("/by-categories", response_model=list[CategoryOut])
-def get_questions_by_categories(
-    session: SessionDep, current_user: VerifiedUserDep
-) -> list[CategoryOut]:
+@router.get("/all-fields", response_model=list[CategoryOut])
+def get_all_fields(session: SessionDep, current_user: VerifiedUserDep) -> list[CategoryOut]:
     """
     Get all questionnaire questions organized by categories from the database
     """
     quest_service = QuestionnaireService(session)
     return quest_service.get_questions_by_categories()
+
+
+@router.get("/null-fields", response_model=list[CategoryOut])
+def get_null_field(session: SessionDep, current_user: VerifiedUserDep) -> list[CategoryOut]:
+    """
+    Get all null fields (not answered questions) by current user
+    """
+    if not current_user.questionnaire:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail="Current User has no Questionnaire",
+        )
+
+    quest_service = QuestionnaireService(session)
+    categories = quest_service.get_questions_by_categories()
+    for category in categories:
+        category.fields = [
+            f for f in category.fields if not current_user.questionnaire.is_field_answered(f.name)
+        ]
+
+    return categories

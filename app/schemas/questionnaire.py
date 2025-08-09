@@ -150,6 +150,10 @@ class QuestionnaireOut(QuestionnaireBase):
     created_at: datetime
     updated_at: datetime
 
+    @field_validator("number_of_children")
+    def validate_number_of_children(cls, v, info: ValidationInfo):
+        return v
+
 
 class QuestionnaireCompletion(BaseModel):
     """
