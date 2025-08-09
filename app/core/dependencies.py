@@ -14,7 +14,7 @@ from app.schemas.token import TokenPayload
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
 
-EXAMPLE_ID_HEADER_VALUE = "1812dd00-d377-4314-b03d-23acc6561afa"
+EXAMPLE_ID_HEADER_VALUE = "8e5f0900-a65a-4537-bc7c-a3893edfedab"
 
 
 # this dependency is for testing only, we'll remove this later
@@ -31,7 +31,7 @@ async def test_get_user(
     user = session.get(User, id_header)
     if not user:
         raise HTTPException(
-            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail=f"Could not find user with id: {id_header}",
         )
     return user

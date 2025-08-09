@@ -1,9 +1,12 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi import status as http_status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
+from fastapi.responses import Response
 from fastapi.security import APIKeyHeader
+from pydantic_core import ValidationError as PydanticValidationError
 
 from firebase import init_firebase
 
@@ -86,6 +89,15 @@ app.add_middleware(APITokenMiddleware)
 from app.api.api_v1.api import api_router  # noqa: E402, I001
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+
+@app.exception_handler(PydanticValidationError)
+async def pydantic_error_handler(request: Request, exc: PydanticValidationError):
+    return Response(
+        status_code=http_status.HTTP_400_BAD_REQUEST,
+        content=exc.json(),
+        media_type="application/json",
+    )
 
 
 @app.get("/")
