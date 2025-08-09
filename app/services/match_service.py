@@ -53,6 +53,12 @@ class MatchService(BaseService):
             )
         return match
 
+    def get_all_matches(self, skip: int = 0, limit: int = 100) -> List[Match]:
+        """
+        Get all matches in the system
+        """
+        return self.session.query(Match).offset(skip).limit(limit).all()
+
     def get_match_by_users(
         self, user1_id: UUID, user2_id: UUID, raise_exc: bool = True
     ) -> Optional[Match]:
@@ -81,26 +87,18 @@ class MatchService(BaseService):
         self,
         user_id: UUID,
         status: MatchStatus = None,
-        has_journey: bool = None,
         skip: int = 0,
         limit: int = 100,
     ) -> List[Match]:
         """
         Get all matches for a user
         """
-        query = (
-            self.session.query(Match)
-            .outerjoin(Match.journey)
-            .filter(or_(Match.user1_id == user_id, Match.user2_id == user_id))
+        query = self.session.query(Match).filter(
+            or_(Match.user1_id == user_id, Match.user2_id == user_id)
         )
 
         if status:
             query = query.filter(Match.status == status)
-
-        if has_journey is True:
-            query = query.filter(Journey.id.is_not(None))
-        elif has_journey is False:
-            query = query.filter(Journey.id.is_(None))
 
         return query.offset(skip).limit(limit).all()
 

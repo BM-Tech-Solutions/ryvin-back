@@ -1,55 +1,83 @@
-from typing import List
+from typing import Any, List
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 from fastapi import status as http_status
 
 from app.core.dependencies import SessionDep, VerifiedUserDep
-from app.models.enums import MatchStatus
 from app.schemas.journey import JourneyCreate, JourneyOut
-from app.schemas.match import MatchOut, PotentialMatch
+from app.schemas.match import MatchOut
 from app.services.journey_service import JourneyService
 from app.services.match_service import MatchService
+from app.services.matching_cron_service import MatchingCronService
 
 router = APIRouter()
 
 
 @router.get("", response_model=List[MatchOut])
-def get_matches(
+def get_all_matches(
     session: SessionDep,
-    current_user: VerifiedUserDep,
-    status: MatchStatus = Query(None, description="Filter by match status"),
-    has_journey: bool = None,
-    skip: int = 0,
-    limit: int = 100,
-) -> List[MatchOut]:
+    skip: int = Query(0, description="Number of matches to skip"),
+    limit: int = Query(100, description="Maximum number of matches to return"),
+) -> Any:
     """
-    Get all matches for the current user
+    Get all existing matches in the system
     """
     match_service = MatchService(session)
-    matches = match_service.get_user_matches(current_user.id, status, has_journey, skip, limit)
+    matches = match_service.get_all_matches(skip=skip, limit=limit)
     return matches
 
 
-@router.get("/discover", response_model=list[PotentialMatch])
-def discover_matches(
+@router.get("/{user_id}", response_model=List[MatchOut])
+def get_user_matches(
     session: SessionDep,
-    current_user: VerifiedUserDep,
-    skip: int = 0,
-    limit: int = Query(10, ge=1, le=50, description="Number of potential matches to discover"),
-) -> list[PotentialMatch]:
+    user_id: UUID,
+    status: str = Query(None, description="Filter by match status"),
+    skip: int = Query(0, description="Number of matches to skip"),
+    limit: int = Query(100, description="Maximum number of matches to return"),
+) -> Any:
     """
-    Discover potential matches for the current user
+    Get all matches for a specific user
     """
     match_service = MatchService(session)
-    potential_matches = match_service.discover_potential_matches(current_user.id, skip, limit)
-    return potential_matches
+    matches = match_service.get_user_matches(user_id, status, skip, limit)
+    return matches
+
+
+@router.post("/trigger-matching/{user_id}", status_code=http_status.HTTP_200_OK)
+async def trigger_user_matching(session: SessionDep, user_id: UUID) -> Any:
+    """
+    Trigger matching algorithm for a specific user and return results
+    """
+    matching_service = MatchingCronService(session)
+
+    # Run matching synchronously and return results
+    result = await matching_service.process_new_user_matching(user_id)
+
+    return {
+        "message": f"Matching process completed for user {user_id}",
+        "status": "completed",
+        "results": result,
+    }
+
+
+@router.post("/admin/trigger-matching", status_code=http_status.HTTP_200_OK)
+async def trigger_admin_matching(session: SessionDep, background_tasks: BackgroundTasks) -> Any:
+    """
+    Trigger matching algorithm for all users (admin function)
+    """
+    matching_service = MatchingCronService(session)
+
+    # Run daily matching in background
+    background_tasks.add_task(matching_service.run_daily_matching)
+
+    return {"message": "Daily matching process triggered for all users", "status": "processing"}
 
 
 @router.get("/{match_id}", response_model=MatchOut)
 def get_match(session: SessionDep, current_user: VerifiedUserDep, match_id: UUID) -> MatchOut:
     """
-    Get a specific match by ID
+    Get a specific match by match ID
     """
     match_service = MatchService(session)
     return match_service.get_user_match(current_user.id, match_id)

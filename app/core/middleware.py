@@ -15,8 +15,8 @@ class APITokenMiddleware(BaseHTTPMiddleware):
         if not self._is_protected_path(request.url.path):
             return await call_next(request)
 
-        # Get API token from headers
-        api_token = request.headers.get("API-Token")
+        # Get API token from headers (support both API-Token and X-API-Key)
+        api_token = request.headers.get("API-Token") or request.headers.get("X-API-Key")
 
         # Validate API token
         if not api_token or api_token != settings.API_TOKEN:
@@ -32,15 +32,14 @@ class APITokenMiddleware(BaseHTTPMiddleware):
         """
         Check if the path requires API token validation
         """
-        # Skip validation for docs and openapi.json
-        if path.endswith("/docs") or path.endswith("/openapi.json") or path.endswith("/redoc"):
+        # Skip validation for docs, openapi.json, redoc, and root path
+        if (
+            path.endswith("/docs")
+            or path.endswith("/openapi.json")
+            or path.endswith("/redoc")
+            or path == "/"
+        ):
             return False
 
-        # List of API paths that require token validation
-        protected_paths = [
-            f"{settings.API_V1_STR}/auth/verify-phone",
-            f"{settings.API_V1_STR}/auth/register-with-token",
-            f"{settings.API_V1_STR}/auth/social-login",
-        ]
-
-        return any(path.startswith(prefix) for prefix in protected_paths)
+        # Protect all API v1 endpoints
+        return path.startswith(f"{settings.API_V1_STR}/")
