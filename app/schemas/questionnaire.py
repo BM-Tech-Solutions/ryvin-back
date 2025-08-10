@@ -1,238 +1,172 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
-from app.models.enums import (
-    PracticeLevel, ImportanceLevel, SportFrequency, DietType, HygieneImportance,
-    ConsumptionLevel, StyleType, EducationPreference, PersonalityType,
-    LoveLanguage, SocialFrequency, SocialTolerance, IntimacyFrequency,
-    ComfortLevel, PublicAffectionLevel, CompatibilityType
-)
+from app.models.enums import FieldType, get_field_enum
 
 
 class QuestionnaireBase(BaseModel):
     """
     Base schema for user questionnaire data
     """
-    # Religion et spiritualité
-    religion: Optional[str] = None
-    est_pratiquant: Optional[str] = None
-    partenaire_meme_religion: Optional[str] = None
-    accepte_autre_religion: Optional[bool] = None
-    transmission_foi_enfants: Optional[bool] = None
-    meme_vision_education_religieuse: Optional[bool] = None
-    
-    # Mode de vie
-    frequence_sport: Optional[str] = None
-    habitudes_alimentaires: Optional[str] = None
-    approche_hygiene: Optional[str] = None
-    fume: Optional[str] = None
-    boit_alcool: Optional[str] = None
-    
-    # Préférences partenaire
-    sport_partenaire: Optional[str] = None
-    memes_habitudes_alimentaires: Optional[bool] = None
-    importance_proprete_partenaire: Optional[str] = None
-    accepte_fumeur: Optional[bool] = None
-    accepte_buveur: Optional[bool] = None
-    
-    # Physique
-    description_physique: Optional[str] = None
-    style_vestimentaire: Optional[str] = None
-    importance_apparence_soi: Optional[str] = None
-    importance_apparence_partenaire: Optional[str] = None
-    partenaire_ideal_physique: Optional[str] = None
-    criteres_physiques_non_negotiables: Optional[str] = None
-    
-    # Enfants et famille
-    souhaite_enfants: Optional[bool] = None
-    partenaire_doit_vouloir_enfants: Optional[bool] = None
-    nombre_enfants_souhaite: Optional[int] = None
-    approche_educative: Optional[str] = None
-    accepte_partenaire_avec_enfants: Optional[bool] = None
-    memes_valeurs_educatives: Optional[bool] = None
-    
-    # Socio-économique
-    importance_situation_financiere: Optional[str] = None
-    niveau_etudes_partenaire: Optional[str] = None
-    approche_argent_couple: Optional[str] = None
-    
-    # Personnalité
-    personalite: Optional[str] = None
-    preference_personalite_partenaire: Optional[str] = None
-    langage_amour: Optional[str] = None
-    meme_langage_amour: Optional[bool] = None
-    frequence_voir_amis: Optional[str] = None
-    tolerance_mode_vie_social: Optional[str] = None
-    gestion_conflits: Optional[str] = None
-    
-    # Sexualité
-    importance_sexualite: Optional[str] = None
-    frequence_ideale_rapports: Optional[str] = None
-    confort_parler_sexualite: Optional[str] = None
-    valeurs_sexuelles_proches: Optional[bool] = None
-    demonstrations_publiques_affection: Optional[str] = None
-    vision_sexualite_couple: Optional[str] = None
-    
-    # Valeurs politiques
-    orientation_politique: Optional[str] = None
-    importance_convictions_partenaire: Optional[str] = None
-    
-    # Animaux
-    a_animal: Optional[bool] = None
-    type_animal: Optional[str] = None
-    accepte_partenaire_avec_animal: Optional[bool] = None
-    allergies_animaux: Optional[bool] = None
-    allergies_quels_animaux: Optional[str] = None
-    
-    # Compatibilité
-    recherche_type: Optional[str] = None
-    
-    # Questions finales
-    vie_couple_ideale: Optional[str] = None
-    ce_qui_fait_craquer: Optional[str] = None
-    defaut_intolerable: Optional[str] = None
-    plus_grande_qualite: Optional[str] = None
-    plus_grand_defaut: Optional[str] = None
-    partenaire_ideal_personnalite: Optional[str] = None
-    lecons_relations_passees: Optional[str] = None
-    vision_10_ans: Optional[str] = None
-    raison_inscription: Optional[str] = None
 
-    # Validators for enum fields
-    @validator("est_pratiquant")
-    def validate_est_pratiquant(cls, v):
-        if v is not None and v not in [level.value for level in PracticeLevel]:
-            raise ValueError(f"Invalid practice level. Must be one of: {[level.value for level in PracticeLevel]}")
-        return v
+    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
 
-    @validator("partenaire_meme_religion", "importance_proprete_partenaire", 
-               "importance_apparence_soi", "importance_apparence_partenaire",
-               "importance_situation_financiere", "importance_sexualite")
-    def validate_importance_level(cls, v):
-        if v is not None and v not in [level.value for level in ImportanceLevel]:
-            raise ValueError(f"Invalid importance level. Must be one of: {[level.value for level in ImportanceLevel]}")
-        return v
+    # profile
+    first_name: Optional[str] = None
+    gender: Optional[str] = Field(default=None, description="Gender of the user")
+    relationship_goal: Optional[str] = None
+    age: Optional[int] = Field(
+        default=None, ge=18, description="Age of the user (must be at least 18)"
+    )
+    city_of_residence: Optional[str] = None
+    nationality_cultural_origin: Optional[str] = None
+    languages_spoken: List[str] = None
+    professional_situation: Optional[str] = None
+    education_level: Optional[str] = None
+    previously_married: Optional[str] = None
 
-    @validator("frequence_sport", "sport_partenaire")
-    def validate_sport_frequency(cls, v):
-        if v is not None and v not in [freq.value for freq in SportFrequency]:
-            raise ValueError(f"Invalid sport frequency. Must be one of: {[freq.value for freq in SportFrequency]}")
-        return v
+    # religious_and_spiritual_beliefs
+    religion_spirituality: Optional[str] = None
+    religious_practice: Optional[str] = None
+    partner_must_share_religion: Optional[str] = None
+    accept_non_believer: Optional[str] = None
+    faith_transmission_to_children: Optional[str] = None
+    partner_same_religious_education_vision: Optional[str] = None
 
-    @validator("habitudes_alimentaires")
-    def validate_diet_type(cls, v):
-        if v is not None and v not in [diet.value for diet in DietType]:
-            raise ValueError(f"Invalid diet type. Must be one of: {[diet.value for diet in DietType]}")
-        return v
+    # political_and_societal_values
+    political_orientation: Optional[str] = None
+    partner_share_convictions_importance: Optional[str] = None
+    lessons_from_past_relationships: Optional[str] = None
 
-    @validator("approche_hygiene")
-    def validate_hygiene_importance(cls, v):
-        if v is not None and v not in [level.value for level in HygieneImportance]:
-            raise ValueError(f"Invalid hygiene importance. Must be one of: {[level.value for level in HygieneImportance]}")
-        return v
+    # lifestyle_you
+    sport_frequency: Optional[str] = None
+    specific_dietary_habits: Optional[str] = None
+    hygiene_tidiness_approach: Optional[str] = None
+    smoker: Optional[str] = None
+    drinks_alcohol: Optional[str] = None
 
-    @validator("fume", "boit_alcool")
-    def validate_consumption_level(cls, v):
-        if v is not None and v not in [level.value for level in ConsumptionLevel]:
-            raise ValueError(f"Invalid consumption level. Must be one of: {[level.value for level in ConsumptionLevel]}")
-        return v
+    # lifestyle_partner
+    partner_sport_frequency: Optional[str] = None
+    partner_same_dietary_habits: Optional[str] = None
+    partner_cleanliness_importance: Optional[str] = None
+    accept_smoker_partner: Optional[str] = None
+    accept_alcohol_consumer_partner: Optional[str] = None
+    has_pet: Optional[str] = None
+    type_of_pet: Optional[str] = None
+    ready_to_live_with_pet: Optional[str] = None
+    allergic_to_animals: Optional[str] = None
+    which_animals_allergic: Optional[str] = None
 
-    @validator("style_vestimentaire")
-    def validate_style_type(cls, v):
-        if v is not None and v not in [style.value for style in StyleType]:
-            raise ValueError(f"Invalid style type. Must be one of: {[style.value for style in StyleType]}")
-        return v
+    # personality_and_social_relations
+    personality_type: Optional[str] = None
+    partner_personality_preference: Optional[str] = None
+    primary_love_language: Optional[str] = None
+    partner_same_love_language: Optional[str] = None
+    friends_visit_frequency: Optional[str] = None
+    tolerance_social_vs_homebody: Optional[str] = None
+    conflict_management: Optional[str] = None
+    greatest_quality_in_relationship: Optional[str] = None
+    what_attracts_you: Optional[str] = None
+    intolerable_flaw: Optional[str] = None
 
-    @validator("niveau_etudes_partenaire")
-    def validate_education_preference(cls, v):
-        if v is not None and v not in [pref.value for pref in EducationPreference]:
-            raise ValueError(f"Invalid education preference. Must be one of: {[pref.value for pref in EducationPreference]}")
-        return v
+    # physical_preferences_and_attraction
+    physical_description: Optional[str] = None
+    clothing_style: Optional[str] = None
+    appearance_importance: Optional[str] = None
+    partner_hygiene_appearance_importance: Optional[str] = None
+    partner_waist_size: Optional[str] = None
+    partner_body_size: Optional[str] = None
+    partner_clothing_style: Optional[str] = None
+    care_partner_self_hygiene: Optional[bool] = None
+    dont_care_partner_physical_aspects: Optional[bool] = None
 
-    @validator("personalite", "preference_personalite_partenaire")
-    def validate_personality_type(cls, v):
-        if v is not None and v not in [ptype.value for ptype in PersonalityType]:
-            raise ValueError(f"Invalid personality type. Must be one of: {[ptype.value for ptype in PersonalityType]}")
-        return v
+    # sexuality_and_intimacy
+    importance_of_sexuality: Optional[str] = None
+    ideal_intimate_frequency: Optional[str] = None
+    comfort_level_talking_sexuality: Optional[str] = None
+    partner_sexual_values_alignment: Optional[str] = None
+    comfortable_public_affection: Optional[str] = None
+    ideal_sexuality_vision: Optional[str] = None
 
-    @validator("langage_amour")
-    def validate_love_language(cls, v):
-        if v is not None and v not in [lang.value for lang in LoveLanguage]:
-            raise ValueError(f"Invalid love language. Must be one of: {[lang.value for lang in LoveLanguage]}")
-        return v
+    # desired_compatibility
+    partner_similarity_preference: Optional[str] = None
+    partner_age_range: Optional[str] = None
 
-    @validator("frequence_voir_amis")
-    def validate_social_frequency(cls, v):
-        if v is not None and v not in [freq.value for freq in SocialFrequency]:
-            raise ValueError(f"Invalid social frequency. Must be one of: {[freq.value for freq in SocialFrequency]}")
-        return v
+    # socio_economic_level
+    importance_financial_situation_partner: Optional[str] = None
+    ideal_partner_education_profession: Optional[str] = None
+    money_approach_in_couple: Optional[str] = None
+    ideal_partner_description: Optional[str] = None
+    ideal_couple_life_description: Optional[str] = None
 
-    @validator("tolerance_mode_vie_social")
-    def validate_social_tolerance(cls, v):
-        if v is not None and v not in [tol.value for tol in SocialTolerance]:
-            raise ValueError(f"Invalid social tolerance. Must be one of: {[tol.value for tol in SocialTolerance]}")
-        return v
+    # children_and_family
+    has_children: Optional[str] = None
+    number_of_children: Optional[str] = None
+    wants_children: Optional[str] = None
+    partner_must_want_children: Optional[str] = None
+    partner_desired_number_of_children: Optional[str] = None
+    educational_approach: Optional[str] = None
+    accept_partner_with_children: Optional[str] = None
+    share_same_educational_values: Optional[str] = None
+    imagine_yourself_in10_years: Optional[str] = None
+    reason_for_registration: Optional[str] = None
 
-    @validator("frequence_ideale_rapports")
-    def validate_intimacy_frequency(cls, v):
-        if v is not None and v not in [freq.value for freq in IntimacyFrequency]:
-            raise ValueError(f"Invalid intimacy frequency. Must be one of: {[freq.value for freq in IntimacyFrequency]}")
-        return v
-
-    @validator("confort_parler_sexualite")
-    def validate_comfort_level(cls, v):
-        if v is not None and v not in [level.value for level in ComfortLevel]:
-            raise ValueError(f"Invalid comfort level. Must be one of: {[level.value for level in ComfortLevel]}")
-        return v
-
-    @validator("demonstrations_publiques_affection")
-    def validate_public_affection_level(cls, v):
-        if v is not None and v not in [level.value for level in PublicAffectionLevel]:
-            raise ValueError(f"Invalid public affection level. Must be one of: {[level.value for level in PublicAffectionLevel]}")
-        return v
-
-    @validator("recherche_type")
-    def validate_compatibility_type(cls, v):
-        if v is not None and v not in [ctype.value for ctype in CompatibilityType]:
-            raise ValueError(f"Invalid compatibility type. Must be one of: {[ctype.value for ctype in CompatibilityType]}")
-        return v
+    # No validators here to avoid raising on reads of legacy/partial data
 
 
 class QuestionnaireCreate(QuestionnaireBase):
     """
     Schema for questionnaire creation
     """
-    pass
+
+    @field_validator("number_of_children")
+    @classmethod
+    def validate_number_of_children_on_create(cls, v, info: ValidationInfo):
+        flag = (info.data.get("has_children") or "").strip().lower()
+        has_kids = flag in ("yes", "true", "1", "y", "oui")
+        if has_kids and (v is None or str(v).strip() == ""):
+            raise ValueError("Number of children is required when has_children is True")
+        if not has_kids:
+            return None  # normalize to None when user indicates no children
+        return v
 
 
 class QuestionnaireUpdate(QuestionnaireBase):
     """
     Schema for questionnaire update
     """
-    pass
+    @field_validator("number_of_children")
+    @classmethod
+    def validate_number_of_children_on_update(cls, v, info: ValidationInfo):
+        flag = (info.data.get("has_children") or "").strip().lower()
+        has_kids = flag in ("yes", "true", "1", "y", "oui")
+        if has_kids and (v is None or str(v).strip() == ""):
+            raise ValueError("Number of children is required when has_children is True")
+        if not has_kids:
+            return None
+        return v
 
 
 class QuestionnaireInDBBase(QuestionnaireBase):
     """
     Base schema for questionnaire in DB
     """
+
     id: UUID
     user_id: UUID
     completed_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class QuestionnaireInDB(QuestionnaireInDBBase):
     """
     Schema for questionnaire in DB (internal use)
     """
+
     pass
 
 
@@ -240,4 +174,48 @@ class Questionnaire(QuestionnaireInDBBase):
     """
     Schema for questionnaire response
     """
+
     pass
+
+
+class QuestionnaireCompletion(BaseModel):
+    """
+    Schema for Questionnaire completion status
+    """
+
+    completion_percentage: int = Field(..., ge=0, le=100)
+    missing_fields: List[str] = Field(default_factory=list)
+    photo_count: int = 0
+    has_primary_photo: bool = False
+
+
+class FieldOut(BaseModel):
+    name: str
+    label: str
+    description: str
+    order_position: int
+    field_type: FieldType
+    options: Optional[list] = Field(default=None, validate_default=True)
+    parent_field: Optional[str] = None
+    field_unit: Optional[str] = None
+    placeholder: Optional[str] = None
+    required: bool
+    allow_custom: bool = False
+    child_fields: list["FieldOut"] = []
+
+    @field_validator("options")
+    @classmethod
+    def options_validator(cls, v: Optional[Any], info: ValidationInfo):
+        field_enum = get_field_enum(info.data.get("name"))
+        if field_enum:
+            return field_enum.options()
+        return None
+
+
+class CategoryOut(BaseModel):
+    name: str
+    label: str
+    description: str = ""
+    order_position: int
+    step: int
+    fields: list[FieldOut] = []

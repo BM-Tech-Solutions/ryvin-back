@@ -21,6 +21,7 @@ var/
 *.egg
 
 # Virtual Environment
+.venv/
 venv/
 ENV/
 
@@ -51,3 +52,6 @@ media/
 # Logs
 logs/
 *.log
+
+# ruff
+.ruff_cache

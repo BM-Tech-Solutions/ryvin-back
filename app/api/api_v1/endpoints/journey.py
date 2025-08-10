@@ -1,189 +1,300 @@
-from typing import Any, List
+from typing import Any, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, HTTPException, Query
+from fastapi import status as http_status
 
-from app.core.database import get_db
-from app.core.dependencies import get_current_verified_user
-from app.models.user import User
-from app.models.enums import JourneyStep
-from app.schemas.journey import Journey, JourneyResponse
-from app.schemas.message import Message, MessageCreate, MessageResponse
-from app.schemas.meeting import MeetingRequest, MeetingRequestCreate, MeetingFeedback, MeetingFeedbackCreate
-from app.services import JourneyService, MessageService, MeetingService
+from app.core.dependencies import SessionDep, VerifiedUserDep
+from app.schemas.journey import JourneyOut
+from app.schemas.meeting import (
+    MeetingFeedback,
+    MeetingFeedbackCreate,
+    MeetingRequestCreate,
+    MeetingRequestOut,
+)
+from app.schemas.message import MessageCreate, MessageOut
+from app.services import JourneyService, MeetingService, MessageService
 
 router = APIRouter()
 
 
-@router.get("", response_model=List[JourneyResponse])
+# Journey
+@router.get(
+    "",
+    response_model=List[JourneyOut],
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def get_journeys(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
     current_step: int = Query(None, description="Filter by current step"),
     is_completed: bool = Query(None, description="Filter by completion status"),
     skip: int = 0,
     limit: int = 100,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
-) -> Any:
+) -> List[JourneyOut]:
     """
     Get all journeys for the current user
     """
-    journey_service = JourneyService(db)
-    journeys = journey_service.get_user_journeys(current_user.id, current_step, is_completed, skip, limit)
+    journey_service = JourneyService(session)
+    journeys = journey_service.get_journeys(
+        user_id=current_user.id,
+        current_step=current_step,
+        is_completed=is_completed,
+        skip=skip,
+        limit=limit,
+    )
     return journeys
 
 
-@router.get("/{journey_id}", response_model=JourneyResponse)
+@router.get(
+    "/{journey_id}",
+    response_model=JourneyOut,
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def get_journey(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
     journey_id: UUID,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
-) -> Any:
+) -> Optional[JourneyOut]:
     """
     Get a specific journey by ID
     """
-    journey_service = JourneyService(db)
-    journey = journey_service.get_journey(journey_id, current_user.id)
+    journey_service = JourneyService(session)
+    journey = journey_service.get_journey_by_id(journey_id)
     return journey
 
 
-@router.post("/{journey_id}/advance", status_code=status.HTTP_200_OK)
+@router.post(
+    "/{journey_id}/advance",
+    status_code=http_status.HTTP_200_OK,
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def advance_journey(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
     journey_id: UUID,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
 ) -> Any:
     """
     Advance to the next step in the journey
     """
-    journey_service = JourneyService(db)
-    journey = journey_service.advance_journey(journey_id, current_user.id)
-    
+    journey_service = JourneyService(session)
+    journey = journey_service.advance_journey(journey_id)
+
     return {
         "message": f"Journey advanced to step {journey.current_step}",
         "current_step": journey.current_step,
-        "journey": journey
+        "journey": journey,
     }
 
 
-@router.post("/{journey_id}/end", status_code=status.HTTP_200_OK)
+@router.post(
+    "/{journey_id}/end",
+    status_code=http_status.HTTP_200_OK,
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def end_journey(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
     journey_id: UUID,
     reason: str,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
 ) -> Any:
     """
     End the journey
     """
-    journey_service = JourneyService(db)
+    journey_service = JourneyService(session)
     journey_service.end_journey(journey_id, current_user.id, reason)
-    
+
     return {"message": "Journey ended successfully"}
 
 
-@router.get("/{journey_id}/messages", response_model=List[MessageResponse])
+# Messages
+@router.get(
+    "/{journey_id}/messages",
+    response_model=List[MessageOut],
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def get_messages(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
     journey_id: UUID,
     skip: int = 0,
     limit: int = 100,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
 ) -> Any:
     """
     Get all messages for a journey
     """
-    message_service = MessageService(db)
+    message_service = MessageService(session)
     messages = message_service.get_messages(journey_id, current_user.id, skip, limit)
     return messages
 
 
-@router.post("/{journey_id}/messages", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{journey_id}/messages",
+    response_model=MessageOut,
+    status_code=http_status.HTTP_201_CREATED,
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def create_message(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
     journey_id: UUID,
     message_in: MessageCreate,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
 ) -> Any:
     """
     Create a new message in a journey
     """
-    message_service = MessageService(db)
+
+    journey_service = JourneyService(session)
+    journey = journey_service.get_journey_by_id(journey_id)
+    if current_user.id not in [journey.match.user1_id, journey.match.user2_id]:
+        raise HTTPException(
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            detail="User not related to this journey",
+        )
+
+    message_service = MessageService(session)
     message = message_service.create_message(journey_id, current_user.id, message_in)
     return message
 
 
-@router.post("/{journey_id}/meeting-requests", response_model=MeetingRequest, status_code=status.HTTP_201_CREATED)
-def create_meeting_request(
+@router.delete(
+    "/{journey_id}/messages/{message_id}",
+    status_code=http_status.HTTP_204_NO_CONTENT,
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
+def delete_message(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
     journey_id: UUID,
-    meeting_request_in: MeetingRequestCreate,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
-) -> Any:
+    message_id: UUID,
+) -> None:
     """
-    Create a new meeting request in a journey
+    Delete a msg from a Journey
     """
-    meeting_service = MeetingService(db)
-    meeting_request = meeting_service.create_meeting_request(journey_id, current_user.id, meeting_request_in)
-    return meeting_request
+
+    journey_service = JourneyService(session)
+    journey = journey_service.get_journey_by_id(journey_id)
+    if not journey:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail="Journey with not found",
+        )
+
+    if current_user.id not in [journey.match.user1_id, journey.match.user2_id]:
+        raise HTTPException(
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            detail="User not related to this journey",
+        )
+
+    msg_service = MessageService(session)
+    msg = msg_service.get_journey_message(journey_id, message_id)
+    if not msg:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail="Message with not found",
+        )
+
+    session.delete(msg)
+    session.commit()
 
 
-@router.get("/{journey_id}/meeting-requests", response_model=List[MeetingRequest])
+# Meeting Request
+@router.get(
+    "/{journey_id}/meeting-requests",
+    response_model=List[MeetingRequestOut],
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def get_meeting_requests(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
     journey_id: UUID,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
-) -> Any:
+) -> List[MeetingRequestOut]:
     """
     Get all meeting requests for a journey
     """
-    meeting_service = MeetingService(db)
+    meeting_service = MeetingService(session)
     meeting_requests = meeting_service.get_meeting_requests(journey_id, current_user.id)
     return meeting_requests
 
 
-@router.post("/{journey_id}/meeting-requests/{meeting_request_id}/accept", status_code=status.HTTP_200_OK)
+@router.post(
+    "/{journey_id}/meeting-requests",
+    response_model=MeetingRequestOut,
+    status_code=http_status.HTTP_201_CREATED,
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
+def create_meeting_request(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
+    journey_id: UUID,
+    meeting_request_in: MeetingRequestCreate,
+) -> MeetingRequestOut:
+    """
+    Create a new meeting request in a journey
+    """
+    meeting_service = MeetingService(session)
+    meeting_request = meeting_service.create_meeting_request(
+        journey_id, current_user.id, meeting_request_in
+    )
+    return meeting_request
+
+
+@router.post(
+    "/{journey_id}/meeting-requests/{meeting_request_id}/accept",
+    status_code=http_status.HTTP_200_OK,
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def accept_meeting_request(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
     journey_id: UUID,
     meeting_request_id: UUID,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
 ) -> Any:
     """
     Accept a meeting request
     """
-    meeting_service = MeetingService(db)
+    meeting_service = MeetingService(session)
     meeting_service.accept_meeting_request(journey_id, meeting_request_id, current_user.id)
-    
+
     return {"message": "Meeting request accepted successfully"}
 
 
-@router.post("/{journey_id}/meeting-requests/{meeting_request_id}/decline", status_code=status.HTTP_200_OK)
+@router.post(
+    "/{journey_id}/meeting-requests/{meeting_request_id}/decline",
+    status_code=http_status.HTTP_200_OK,
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def decline_meeting_request(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
     journey_id: UUID,
     meeting_request_id: UUID,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
 ) -> Any:
     """
     Decline a meeting request
     """
-    meeting_service = MeetingService(db)
+    meeting_service = MeetingService(session)
     meeting_service.decline_meeting_request(journey_id, meeting_request_id, current_user.id)
-    
+
     return {"message": "Meeting request declined successfully"}
 
 
-@router.post("/{journey_id}/meeting-feedback", response_model=MeetingFeedback, status_code=status.HTTP_201_CREATED)
+# Meeting Feedback
+@router.post(
+    "/{journey_id}/meeting-feedback",
+    response_model=MeetingFeedback,
+    status_code=http_status.HTTP_201_CREATED,
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def create_meeting_feedback(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
     journey_id: UUID,
     feedback_in: MeetingFeedbackCreate,
-    current_user: User = Depends(get_current_verified_user),
-    db: Session = Depends(get_db)
 ) -> Any:
     """
     Create feedback for a meeting
     """
-    meeting_service = MeetingService(db)
+    meeting_service = MeetingService(session)
     feedback = meeting_service.create_meeting_feedback(journey_id, current_user.id, feedback_in)
     return feedback

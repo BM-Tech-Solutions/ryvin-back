@@ -7,6 +7,9 @@ class BaseService:
     """
     def __init__(self, db: Session):
         self.db = db
+        # Backward-compatibility alias: many services reference `self.session`
+        # Ensure it's always available when BaseService is used
+        self.session = db
     
     def commit_changes(self):
         """

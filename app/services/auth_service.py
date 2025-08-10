@@ -14,7 +14,8 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from jose import jwt, JWTError
-from firebase_admin import auth as firebase_auth, credentials, initialize_app
+from firebase_admin import auth as firebase_auth
+from firebase import init_firebase
 
 from app.core.config import settings
 from app.core.security import create_access_token, create_refresh_token
@@ -22,51 +23,6 @@ from app.models.user import User
 from app.models.token import RefreshToken
 from app.services.base_service import BaseService
 from app.services.user_service import UserService
-
-
-# Initialize Firebase Admin SDK
-firebase_app = None
-
-# Try to initialize Firebase with environment variables first
-if (settings.FIREBASE_TYPE and settings.FIREBASE_PROJECT_ID_ENV and 
-    settings.FIREBASE_PRIVATE_KEY and settings.FIREBASE_CLIENT_EMAIL):
-    try:
-        # Create credentials dictionary from environment variables
-        firebase_cred_dict = {
-            "type": settings.FIREBASE_TYPE,
-            "project_id": settings.FIREBASE_PROJECT_ID_ENV,
-            "private_key_id": settings.FIREBASE_PRIVATE_KEY_ID,
-            "private_key": settings.FIREBASE_PRIVATE_KEY.replace('\\n', '\n'),  # Fix newlines in private key
-            "client_email": settings.FIREBASE_CLIENT_EMAIL,
-            "client_id": settings.FIREBASE_CLIENT_ID,
-            "auth_uri": settings.FIREBASE_AUTH_URI,
-            "token_uri": settings.FIREBASE_TOKEN_URI,
-            "auth_provider_x509_cert_url": settings.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
-            "client_x509_cert_url": settings.FIREBASE_CLIENT_X509_CERT_URL
-        }
-        firebase_cred = credentials.Certificate(firebase_cred_dict)
-        firebase_app = initialize_app(firebase_cred)
-        print("Firebase Admin SDK initialized successfully from environment variables")
-    except Exception as e:
-        print(f"Failed to initialize Firebase from environment variables: {e}")
-
-# Fall back to file-based credentials if environment variables are not available
-if firebase_app is None and settings.FIREBASE_SERVICE_ACCOUNT_PATH:
-    try:
-        import os
-        # Check if file exists
-        if os.path.exists(settings.FIREBASE_SERVICE_ACCOUNT_PATH):
-            firebase_cred = credentials.Certificate(settings.FIREBASE_SERVICE_ACCOUNT_PATH)
-            firebase_app = initialize_app(firebase_cred)
-            print("Firebase Admin SDK initialized successfully from credentials file")
-        else:
-            print(f"Firebase credentials file not found at: {settings.FIREBASE_SERVICE_ACCOUNT_PATH}")
-    except Exception as e:
-        print(f"Firebase initialization error: {str(e)}")
-        # Continue without Firebase initialization for development environments
-else:
-    print("FIREBASE_SERVICE_ACCOUNT_PATH not set in environment variables")
-    # Continue without Firebase initialization
 
 
 class AuthService(BaseService):
@@ -87,7 +43,7 @@ class AuthService(BaseService):
                 firebase_exists = False
             
             # Check if user exists in our database
-            user = self.db.query(User).filter(User.phone == phone_number).first()
+            user = self.db.query(User).filter(User.phone_number == phone_number).first()
             
             response = {
                 "exists": firebase_exists or user is not None,
@@ -152,7 +108,7 @@ class AuthService(BaseService):
                 )
             
             # Check if user already exists
-            user = self.db.query(User).filter(User.phone == phone_number).first()
+            user = self.db.query(User).filter(User.phone_number == phone_number).first()
             if user:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -161,21 +117,13 @@ class AuthService(BaseService):
             
             # Create new user with null profile fields
             user = User(
-                phone=phone_number,
+                phone_number=phone_number,
                 is_verified=True,
                 last_login=datetime.utcnow(),
-                name=None,
                 email=None,
-                profile_image=None,
-                firebase_uid=None  # Not storing Firebase UID as verification is in frontend
             )
             
-            # Add device info if provided
-            if device_info:
-                if "device_id" in device_info:
-                    user.device_id = device_info.get("device_id")
-                if "platform" in device_info:
-                    user.platform = device_info.get("platform")
+            # Device info fields are not stored on User model currently
             
             self.db.add(user)
             self.db.commit()
@@ -232,7 +180,7 @@ class AuthService(BaseService):
                 )
             
             # Check if user exists in our database
-            user = self.db.query(User).filter(User.phone == phone_number).first()
+            user = self.db.query(User).filter(User.phone_number == phone_number).first()
             
             if not user:
                 raise HTTPException(
@@ -252,8 +200,8 @@ class AuthService(BaseService):
             self.db.commit()
             self.db.refresh(user)
             
-            # Check if profile is complete
-            profile_complete = user.name is not None and user.email is not None
+            # Check if profile is complete (based on available fields)
+            profile_complete = user.email is not None
             
             # Generate tokens
             access_token = create_access_token(subject=str(user.id))
@@ -285,10 +233,8 @@ class AuthService(BaseService):
             
             return {
                 "user_id": str(user.id),
-                "phone_number": user.phone,
-                "name": user.name,
+                "phone_number": user.phone_number,
                 "email": user.email,
-                "profile_image": user.profile_image,
                 "profile_complete": profile_complete,
                 "access_token": access_token,
                 "refresh_token": refresh_token,
@@ -322,28 +268,19 @@ class AuthService(BaseService):
                 )
             
             # Check if user exists in our database
-            user = self.db.query(User).filter(User.phone == phone_number).first()
+            user = self.db.query(User).filter(User.phone_number == phone_number).first()
             
             user_exists = user is not None
-            profile_complete = user is not None and user.name is not None and user.email is not None
+            profile_complete = user is not None and user.email is not None
             
             if not user:
                 # Create new user
                 user = User(
-                    phone=phone_number,
+                    phone_number=phone_number,
                     is_verified=True,
                     last_login=datetime.utcnow(),
-                    name=None,
                     email=None,
-                    profile_image=None
                 )
-                
-                # Add device info if provided
-                if device_info:
-                    if "device_id" in device_info:
-                        user.device_id = device_info.get("device_id")
-                    if "platform" in device_info:
-                        user.platform = device_info.get("platform")
                 
                 self.db.add(user)
                 self.db.commit()
@@ -353,12 +290,7 @@ class AuthService(BaseService):
                 user.is_verified = True
                 user.last_login = datetime.utcnow()
                 
-                # Update device info if provided
-                if device_info:
-                    if "device_id" in device_info:
-                        user.device_id = device_info.get("device_id")
-                    if "platform" in device_info:
-                        user.platform = device_info.get("platform")
+                # Device info fields are not stored on User model currently
                 
                 self.db.commit()
                 self.db.refresh(user)
@@ -596,30 +528,24 @@ class AuthService(BaseService):
                 )
             
             # Check if user exists in our database
-            user = self.db.query(User).filter(User.phone == phone_number).first()
+            user = self.db.query(User).filter(User.phone_number == phone_number).first()
             is_new_user = user is None
             
             if is_new_user:
                 # Create new user with null profile fields
                 user = User(
-                    phone=phone_number,
+                    phone_number=phone_number,
                     is_verified=True,
                     last_login=datetime.utcnow(),
                     name=None,
                     email=None,
-                    profile_image=None,
-                    firebase_uid=None  # Not storing Firebase UID as verification is in frontend
+                    profile_image=None
                 )
             else:
                 # Update last login timestamp
                 user.last_login = datetime.utcnow()
             
-            # Add or update device info if provided
-            if device_info:
-                if "device_id" in device_info:
-                    user.device_id = device_info.get("device_id")
-                if "platform" in device_info:
-                    user.platform = device_info.get("platform")
+            # Device info is accepted but not stored as the User model has no such columns
             
             # Save user to database
             if is_new_user:
@@ -695,6 +621,8 @@ class AuthService(BaseService):
         5. Returns login info in both cases
         """
         try:
+            # Ensure Firebase is initialized with proper project ID/options
+            init_firebase()
             # Verify the Google ID token using Firebase Admin SDK
             try:
                 decoded_token = firebase_auth.verify_id_token(google_token)
@@ -735,28 +663,21 @@ class AuthService(BaseService):
             if is_new_user:
                 # Create new user
                 user = User(
+                    phone_number=None,
                     email=email,
                     name=name,
                     profile_image=profile_image,
-                    firebase_uid=None,  # No Firebase UID for Google auth
                     is_verified=True,
                     last_login=datetime.utcnow(),
-                    google_id=google_id
                 )
             else:
                 # Update existing user
                 user.name = name if name else user.name
                 user.profile_image = profile_image if profile_image else user.profile_image
-                user.google_id = google_id
                 user.last_login = datetime.utcnow()
                 user.is_verified = True
             
-            # Add or update device info if provided
-            if device_info:
-                if "device_id" in device_info:
-                    user.device_id = device_info.get("device_id")
-                if "platform" in device_info:
-                    user.platform = device_info.get("platform")
+            # Device info is accepted but not stored as the User model has no such columns
             
             # Save user to database
             if is_new_user:
@@ -797,7 +718,7 @@ class AuthService(BaseService):
             
             return {
                 "user_id": str(user.id),
-                "phone_number": user.phone,
+                "phone_number": user.phone_number,
                 "email": email,
                 "name": name,
                 "profile_image": profile_image,

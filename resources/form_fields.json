@@ -1,0 +1,752 @@
+[
+  {
+    "name": "profile",
+    "label": "Profile",
+    "description": "",
+    "order_position": 1,
+    "step": 1,
+    "fields": [
+      {
+        "name": "first_name",
+        "label": "Quel est ton prénom ?",
+        "description": "",
+        "order_position": 1,
+        "field_type": "text",
+        "required": true
+      },
+      {
+        "name": "gender",
+        "label": "Tu es :",
+        "description": "",
+        "order_position": 2,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "relationship_goal",
+        "label": "Tu souhaites :",
+        "description": "",
+        "order_position": 3,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "age",
+        "label": "Quel est ton âge ?",
+        "description": "",
+        "order_position": 4,
+        "field_type": "integer",
+        "placeholder": "18",
+        "required": true,
+        "field_unit": "années"
+      },
+      {
+        "name": "city_of_residence",
+        "label": "Quelle est ta ville de résidence ?",
+        "description": "",
+        "order_position": 5,
+        "field_type": "text",
+        "required": true
+      },
+      {
+        "name": "nationality_cultural_origin",
+        "label": "Quelle est ta nationalité / origine culturelle ?",
+        "description": "",
+        "order_position": 6,
+        "field_type": "text",
+        "required": true
+      },
+      {
+        "name": "languages_spoken",
+        "label": "Quelle(s) langue(s) parles-tu couramment ?",
+        "description": "",
+        "order_position": 7,
+        "field_type": "text",
+        "required": true
+      },
+      {
+        "name": "professional_situation",
+        "label": "Quelle est ta situation professionnelle ?",
+        "description": "",
+        "order_position": 8,
+        "field_type": "select",
+        "required": true,
+        "allow_custom": true
+      },
+      {
+        "name": "education_level",
+        "label": "Quel est ton niveau d’études ?",
+        "description": "",
+        "order_position": 9,
+        "field_type": "select",
+        "required": true,
+        "allow_custom": true
+      },
+      {
+        "name": "previously_married",
+        "label": "As-tu déjà été marié(e) ?",
+        "description": "",
+        "order_position": 10,
+        "field_type": "boolean",
+        "required": true
+      }
+    ]
+  },
+  {
+    "name": "religious_and_spiritual_beliefs",
+    "label": "Croyances religieuses et spirituelles",
+    "description": "",
+    "order_position": 1,
+    "step": 2,
+    "fields": [
+      {
+        "name": "religion_spirituality",
+        "label": "Quelle est ta religion ou spiritualité ?",
+        "description": "",
+        "order_position": 1,
+        "field_type": "text",
+        "placeholder": "Muslim",
+        "required": true
+      },
+      {
+        "name": "religious_practice",
+        "label": "Es-tu pratiquant(e) ?",
+        "description": "",
+        "order_position": 2,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "partner_must_share_religion",
+        "label": "Ton/ta partenaire doit-il(elle) partager ta religion ?",
+        "description": "",
+        "order_position": 3,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "accept_non_believer",
+        "label": "Acceptes-tu un(e) partenaire non-croyant(e) ou d’une autre religion ?",
+        "description": "",
+        "order_position": 4,
+        "field_type": "boolean",
+        "required": true
+      },
+      {
+        "name": "faith_transmission_to_children",
+        "label": "La transmission de ta foi à tes enfants est-elle importante ?",
+        "description": "",
+        "order_position": 5,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "partner_same_religious_education_vision",
+        "label": "Ton/ta partenaire doit-il(elle) avoir la même vision sur l’éducation religieuse ?",
+        "description": "",
+        "order_position": 6,
+        "field_type": "select",
+        "required": true
+      }
+    ]
+  },
+  {
+    "name": "political_and_societal_values",
+    "label": "Valeurs politiques et sociétales",
+    "description": "",
+    "order_position": 2,
+    "step": 2,
+    "fields": [
+      {
+        "name": "political_orientation",
+        "label": "Quelle est ton orientation politique ?",
+        "description": "",
+        "order_position": 7,
+        "field_type": "text_area",
+        "required": true
+      },
+      {
+        "name": "partner_share_convictions_importance",
+        "label": "Est-ce important pour toi que ton/ta partenaire partage tes convictions ?",
+        "description": "",
+        "order_position": 8,
+        "field_type": "text",
+        "required": true
+      },
+      {
+        "name": "lessons_from_past_relationships",
+        "label": "Qu’as-tu appris de tes relations passées ?",
+        "description": "",
+        "order_position": 9,
+        "field_type": "text",
+        "required": true
+      }
+    ]
+  },
+  {
+    "name": "lifestyle_you",
+    "label": "Toi",
+    "description": "",
+    "order_position": 1,
+    "step": 3,
+    "fields": [
+      {
+        "name": "sport_frequency",
+        "label": "À quelle fréquence fais-tu du sport ?",
+        "description": "",
+        "order_position": 1,
+        "field_type": "select",
+        "required": true,
+        "allow_custom": true
+      },
+      {
+        "name": "specific_dietary_habits",
+        "label": "As-tu des habitudes alimentaires spécifiques ?",
+        "description": "",
+        "order_position": 2,
+        "field_type": "select",
+        "required": true,
+        "allow_custom": true
+      },
+      {
+        "name": "hygiene_tidiness_approach",
+        "label": "Quelle est ton approche de l’hygiène et du rangement ?",
+        "description": "",
+        "order_position": 3,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "smoker",
+        "label": "Fumes-tu ?",
+        "description": "",
+        "order_position": 4,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "drinks_alcohol",
+        "label": "Bois-tu de l’alcool ?",
+        "description": "",
+        "order_position": 5,
+        "field_type": "select",
+        "required": true
+      }
+    ]
+  },
+  {
+    "name": "lifestyle_partner",
+    "label": "Chez ton/ta partenaire :",
+    "description": "",
+    "order_position": 2,
+    "step": 3,
+    "fields": [
+      {
+        "name": "partner_sport_frequency",
+        "label": "Quelle fréquence de sport souhaites-tu chez lui/elle ?",
+        "description": "",
+        "order_position": 6,
+        "field_type": "select",
+        "required": true,
+        "allow_custom": true
+      },
+      {
+        "name": "partner_same_dietary_habits",
+        "label": "Doit-il(elle) avoir les mêmes habitudes alimentaires que toi ?",
+        "description": "",
+        "order_position": 7,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "partner_cleanliness_importance",
+        "label": "Quelle importance accordes-tu à la propreté et au rangement chez l’autre ?",
+        "description": "",
+        "order_position": 8,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "accept_smoker_partner",
+        "label": "Acceptes-tu un(e) partenaire fumeur(se) ?",
+        "description": "",
+        "order_position": 9,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "accept_alcohol_consumer_partner",
+        "label": "Acceptes-tu un(e) partenaire qui consomme de l’alcool ?",
+        "description": "",
+        "order_position": 10,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "has_pet",
+        "label": "As-tu un animal de compagnie ?",
+        "description": "",
+        "order_position": 11,
+        "field_type": "boolean",
+        "required": true
+      },
+      {
+        "name": "type_of_pet",
+        "label": "Si oui, quel animal ?",
+        "description": "",
+        "order_position": 12,
+        "field_type": "text",
+        "required": true
+      },
+      {
+        "name": "ready_to_live_with_pet",
+        "label": "Es-tu prêt(e) à vivre avec un(e) partenaire qui a un animal ?",
+        "description": "",
+        "order_position": 13,
+        "field_type": "select",
+        "required": true,
+        "allow_custom": true
+      },
+      {
+        "name": "allergic_to_animals",
+        "label": "Es-tu allergique à certains animaux ?",
+        "description": "",
+        "order_position": 14,
+        "field_type": "boolean",
+        "required": true
+      },
+      {
+        "name": "which_animals_allergic",
+        "label": "Si oui, lesquels ?",
+        "description": "",
+        "order_position": 15,
+        "field_type": "text",
+        "required": true
+      }
+    ]
+  },
+  {
+    "name": "personality_and_social_relations",
+    "label": "Personnalité et relations sociales",
+    "description": "",
+    "order_position": 3,
+    "step": 3,
+    "fields": [
+      {
+        "name": "personality_type",
+        "label": "Tu es plutôt :",
+        "description": "",
+        "order_position": 16,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "partner_personality_preference",
+        "label": "Tu préfères quelqu’un de :",
+        "description": "",
+        "order_position": 17,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "primary_love_language",
+        "label": "Ton langage de l’amour principal :",
+        "description": "",
+        "order_position": 18,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "partner_same_love_language",
+        "label": "Ton/ta partenaire doit-il(elle) avoir le même langage de l’amour que toi ?",
+        "description": "",
+        "order_position": 19,
+        "field_type": "boolean",
+        "required": true
+      },
+      {
+        "name": "friends_visit_frequency",
+        "label": "À quelle fréquence aimes-tu voir tes amis ?",
+        "description": "",
+        "order_position": 20,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "tolerance_social_vs_homebody",
+        "label": "Quelle est ta tolérance vis-à-vis d’un mode de vie très sociable ou très casanier chez l’autre ?",
+        "description": "",
+        "order_position": 21,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "conflict_management",
+        "label": "Comment gères-tu les conflits dans le couple ?",
+        "description": "",
+        "order_position": 22,
+        "field_type": "text",
+        "required": true
+      },
+      {
+        "name": "greatest_quality_in_relationship",
+        "label": "Quelle est ta plus grande qualité dans une relation ? Et ton plus grand défaut ?",
+        "description": "",
+        "order_position": 23,
+        "field_type": "text_area",
+        "required": true
+      },
+      {
+        "name": "what_attracts_you",
+        "label": "Qu’est-ce qui te fait craquer chez quelqu’un ?",
+        "description": "",
+        "order_position": 24,
+        "field_type": "text",
+        "required": true
+      },
+      {
+        "name": "intolerable_flaw",
+        "label": "Quel est le défaut que tu ne pourrais jamais tolérer ?",
+        "description": "",
+        "order_position": 25,
+        "field_type": "text",
+        "required": true
+      }
+    ]
+  },
+  {
+    "name": "physical_preferences_and_attraction",
+    "label": "Préférences physiques et attirance",
+    "description": "",
+    "order_position": 1,
+    "step": 4,
+    "fields": [
+      {
+        "name": "physical_description",
+        "label": "Décris-toi physiquement, en quelques lignes.",
+        "description": "",
+        "order_position": 1,
+        "field_type": "text",
+        "required": true
+      },
+      {
+        "name": "clothing_style",
+        "label": "Quel est ton style vestimentaire principal ?",
+        "description": "",
+        "order_position": 2,
+        "field_type": "select",
+        "required": true,
+        "allow_custom": true
+      },
+      {
+        "name": "appearance_importance",
+        "label": "Quelle importance accordes-tu à ton apparence physique ?",
+        "description": "",
+        "order_position": 3,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "partner_hygiene_appearance_importance",
+        "label": "Quelle importance accordes-tu à l’hygiène, au soin de soi et à l’apparence chez l’autre ?",
+        "description": "",
+        "order_position": 4,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "partner_physical_fields_group",
+        "label": "Quels aspects physiques sont importants pour toi chez un(e) partenaire, sans que ce soit bloquant ?",
+        "description": "(plusieurs choix possibles)",
+        "order_position": 5,
+        "field_type": "fields_group",
+        "required": true,
+        "child_fields": [
+          {
+            "name": "partner_waist_size",
+            "label": "Taille",
+            "description": "Taille Souhaitée",
+            "order_position": 1,
+            "field_type": "range",
+            "required": false,
+            "field_unit": "années",
+            "placeholder": "168,180",
+            "parent_field": "partner_physical_fields_group"
+          },
+          {
+            "name": "partner_body_size",
+            "label": "Corpulence",
+            "description": "",
+            "order_position": 2,
+            "field_type": "select",
+            "required": false,
+            "parent_field": "partner_physical_fields_group"
+          },
+          {
+            "name": "partner_clothing_style",
+            "label": "Style vestimentaire",
+            "description": "",
+            "order_position": 3,
+            "field_type": "select",
+            "required": false,
+            "parent_field": "partner_physical_fields_group"
+          },
+          {
+            "name": "care_partner_self_hygiene",
+            "label": "Soin de soi / hygiène",
+            "description": "",
+            "order_position": 4,
+            "field_type": "boolean",
+            "required": false,
+            "parent_field": "partner_physical_fields_group"
+          },
+          {
+            "name": "dont_care_partner_physical_aspects",
+            "label": "Peu importe, je me fie surtout au ressenti global",
+            "description": "",
+            "order_position": 5,
+            "field_type": "boolean",
+            "required": false,
+            "parent_field": "partner_physical_fields_group"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "sexuality_and_intimacy",
+    "label": "Sexualité et intimité",
+    "description": "",
+    "order_position": 2,
+    "step": 4,
+    "fields": [
+      {
+        "name": "importance_of_sexuality",
+        "label": "Quelle importance accordes-tu à la sexualité dans un couple ?",
+        "description": "",
+        "order_position": 6,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "ideal_intimate_frequency",
+        "label": "Quelle est ta fréquence idéale de rapports intimes ?",
+        "description": "",
+        "order_position": 7,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "comfort_level_talking_sexuality",
+        "label": "Quel est ton niveau de confort pour parler de sexualité avec ton/ta partenaire ?",
+        "description": "",
+        "order_position": 8,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "partner_sexual_values_alignment",
+        "label": "Ton/ta partenaire doit-il(elle) avoir des valeurs sexuelles proches des tiennes ?",
+        "description": "",
+        "order_position": 9,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "comfortable_public_affection",
+        "label": "Es-tu à l’aise avec les démonstrations publiques d’affection ?",
+        "description": "",
+        "order_position": 10,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "ideal_sexuality_vision",
+        "label": "Quelle est ta vision idéale de la sexualité dans un couple ?",
+        "description": "",
+        "order_position": 11,
+        "field_type": "text",
+        "required": true
+      }
+    ]
+  },
+  {
+    "name": "desired_compatibility",
+    "label": "Compatibilité souhaitée",
+    "description": "",
+    "order_position": 3,
+    "step": 4,
+    "fields": [
+      {
+        "name": "partner_similarity_preference",
+        "label": "Tu recherches quelqu’un de :",
+        "description": "",
+        "order_position": 12,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "partner_age_range",
+        "label": "Quelle est la tranche d’âge que tu souhaiterais pour ton/ta partenaire ?",
+        "description": "",
+        "order_position": 13,
+        "field_type": "range",
+        "required": true,
+        "field_unit": "années",
+        "placeholder": "18,24"
+      }
+    ]
+  },
+  {
+    "name": "socio_economic_level",
+    "label": "Niveau socio-économique",
+    "description": "",
+    "order_position": 4,
+    "step": 4,
+    "fields": [
+      {
+        "name": "importance_financial_situation_partner",
+        "label": "Quelle importance accordes-tu à la situation financière de ton/ta partenaire ?",
+        "description": "",
+        "order_position": 14,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "ideal_partner_education_profession",
+        "label": "Ton/ta partenaire idéal(e) doit-il(elle) avoir :",
+        "description": "",
+        "order_position": 15,
+        "field_type": "select",
+        "required": true,
+        "allow_custom": true
+      },
+      {
+        "name": "money_approach_in_couple",
+        "label": "Quelle est ton approche vis-à-vis de l’argent dans un couple ?",
+        "description": "",
+        "order_position": 16,
+        "field_type": "text",
+        "required": true
+      },
+      {
+        "name": "ideal_partner_description",
+        "label": "Décris ton/ta partenaire idéal(e), sans parler du physique.",
+        "description": "",
+        "order_position": 17,
+        "field_type": "text",
+        "required": true
+      },
+      {
+        "name": "ideal_couple_life_description",
+        "label": "Décris ta vie de couple idéale.",
+        "description": "",
+        "order_position": 18,
+        "field_type": "text",
+        "required": true
+      }
+    ]
+  },
+  {
+    "name": "children_and_family",
+    "label": "Enfants et famille",
+    "description": "",
+    "order_position": 1,
+    "step": 5,
+    "fields": [
+      {
+        "name": "children_fields_group",
+        "label": "",
+        "description": "",
+        "order_position": 1,
+        "field_type": "fields_group",
+        "required": true,
+        "child_fields": [
+          {
+            "name": "has_children",
+            "label": "As-tu des enfants ?",
+            "description": "",
+            "order_position": 1,
+            "field_type": "boolean",
+            "required": true,
+            "parent_field": "children_fields_group"
+          },
+          {
+            "name": "number_of_children",
+            "label": "",
+            "description": "Si oui, combien ?",
+            "placeholder": "4",
+            "order_position": 2,
+            "field_type": "text",
+            "required": false,
+            "parent_field": "children_fields_group"
+          }
+        ]
+      },
+      {
+        "name": "wants_children",
+        "label": "Souhaites-tu avoir des enfants / d’autres enfants ?",
+        "description": "",
+        "order_position": 2,
+        "field_type": "boolean",
+        "required": true
+      },
+      {
+        "name": "partner_must_want_children",
+        "label": "Ton/ta partenaire doit-il(elle) aussi vouloir des enfants ?",
+        "description": "",
+        "order_position": 3,
+        "field_type": "select",
+        "required": true
+      },
+      {
+        "name": "partner_desired_number_of_children",
+        "label": "Si oui, combien ?",
+        "description": "",
+        "order_position": 4,
+        "field_type": "text",
+        "required": true
+      },
+      {
+        "name": "educational_approach",
+        "label": "Quelle est ton approche éducative ?",
+        "description": "",
+        "order_position": 5,
+        "field_type": "text",
+        "required": true
+      },
+      {
+        "name": "accept_partner_with_children",
+        "label": "Acceptes-tu un(e) partenaire ayant déjà des enfants ?",
+        "description": "",
+        "order_position": 6,
+        "field_type": "boolean",
+        "required": true
+      },
+      {
+        "name": "share_same_educational_values",
+        "label": "Est-ce important que vous partagiez les mêmes valeurs éducatives ?",
+        "description": "",
+        "order_position": 7,
+        "field_type": "boolean",
+        "required": true
+      },
+      {
+        "name": "imagine_yourself_in10_years",
+        "label": "Tu t’imagines comment dans 10 ans ?",
+        "description": "",
+        "order_position": 8,
+        "field_type": "text",
+        "required": true
+      },
+      {
+        "name": "reason_for_registration",
+        "label": "Pourquoi t’es-tu inscrit(e) sur cette application ?",
+        "description": "",
+        "order_position": 9,
+        "field_type": "text",
+        "required": true
+      }
+    ]
+  }
+]

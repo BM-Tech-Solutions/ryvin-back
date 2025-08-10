@@ -1,22 +1,29 @@
-from logging.config import fileConfig
-
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
-from alembic import context
+import os
 
 # Import our app's config and models
 import sys
-import os
+from logging.config import fileConfig
+
+from alembic import context
+from sqlalchemy import engine_from_config, pool
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from app.core.config import settings
-from app.core.database import Base
 
 # Import all models to ensure they're discovered by Alembic
-from app.models import (
-    User, UserProfile, UserQuestionnaire, Match, Journey,
-    Message, MeetingRequest, MeetingFeedback
-)
+from app.core.database import Base
+from app.models import APSchedulerJob as APSchedulerJob
+from app.models import Journey as Journey
+from app.models import Match as Match
+from app.models import MeetingFeedback as MeetingFeedback
+from app.models import MeetingRequest as MeetingRequest
+from app.models import Message as Message
+from app.models import Photo as Photo
+from app.models import Questionnaire as Questionnaire
+from app.models import QuestionnaireCategory as QuestionnaireCategory
+from app.models import QuestionnaireField as QuestionnaireField
+from app.models import RefreshToken as RefreshToken
+from app.models import User as User
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -79,7 +86,7 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, 
+            connection=connection,
             target_metadata=target_metadata,
             compare_type=True,
         )

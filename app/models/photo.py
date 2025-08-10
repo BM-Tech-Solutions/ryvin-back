@@ -1,20 +1,28 @@
-from datetime import datetime
-from sqlalchemy import Column, ForeignKey, String, Boolean, DateTime
-from sqlalchemy.dialects.postgresql import UUID
-from uuid import uuid4
+from typing import TYPE_CHECKING
+from uuid import UUID
+
+from sqlalchemy import ForeignKey
+from sqlalchemy.dialects.postgresql import UUID as pgUUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+
+if TYPE_CHECKING:
+    from .user import User
 
 
 class Photo(Base):
     """
-    Model for storing user profile photos
+    Model for storing user photos
     """
-    __tablename__ = "photos"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    file_path = Column(String, nullable=False)
-    is_primary = Column(Boolean, default=False, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    __tablename__ = "photo"
+
+    user_id: Mapped[UUID] = mapped_column(
+        pgUUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), index=True
+    )
+    file_path: Mapped[str]
+    is_primary: Mapped[bool] = mapped_column(default=False)
+
+    # Relationship
+    user: Mapped["User"] = relationship(back_populates="photos", foreign_keys=[user_id])

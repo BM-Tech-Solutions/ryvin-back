@@ -16,14 +16,11 @@ from app.core.database import get_db
 from app.main import api_key_header
 from app.services.auth_service import AuthService
 from app.models.user import User
+from firebase import init_firebase
 
 # Firebase Admin SDK
-import firebase_admin
 from firebase_admin import auth as firebase_auth
-
-# Initialize Firebase Admin if not already initialized
-if not firebase_admin._apps:
-    firebase_admin.initialize_app()
+import firebase_admin  # keep import if needed elsewhere, but don't initialize here
 
 # Request models
 class PhoneAuthRequest(BaseModel):
@@ -211,6 +208,8 @@ async def get_test_google_token(
     - test2@example.com
     """
     try:
+        # Ensure Firebase is initialized (defensive)
+        init_firebase()
         # Check if user exists in Firebase Auth
         try:
             user = firebase_auth.get_user_by_email(email)
@@ -286,7 +285,7 @@ def get_user_data(
         # Convert user object to dictionary
         user_data = {
             "id": str(user.id),
-            "phone": user.phone,
+            "phone": user.phone_number,
             "email": user.email,
             "name": user.name,
             "is_verified": user.is_verified,

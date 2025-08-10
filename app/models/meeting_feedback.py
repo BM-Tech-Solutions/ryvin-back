@@ -1,23 +1,40 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, Text
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from typing import TYPE_CHECKING
+from uuid import UUID
 
-from app.models.base import BaseModel
+from sqlalchemy import ForeignKey, Text
+from sqlalchemy.dialects.postgresql import UUID as pgUUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.core.database import Base
+
+if TYPE_CHECKING:
+    from .meeting_request import MeetingRequest
+    from .user import User
 
 
-class MeetingFeedback(BaseModel):
+class MeetingFeedback(Base):
     """
     Meeting feedback model for user feedback after physical meetings
     """
-    meeting_request_id = Column(UUID(as_uuid=True), ForeignKey("meetingrequest.id"), nullable=False)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False)
-    rating = Column(Integer, nullable=False)  # 1-5 rating
-    feedback = Column(Text, nullable=True)
-    wants_to_continue = Column(Boolean, nullable=False)
-    
+
+    __tablename__ = "meeting_feedback"
+
+    meeting_request_id: Mapped[UUID] = mapped_column(
+        pgUUID(as_uuid=True), ForeignKey("meeting_request.id"), index=True
+    )
+    user_id: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"), index=True)
+
+    rating: Mapped[int]  # 1-5 rating
+    feedback: Mapped[str | None] = mapped_column(Text)
+    wants_to_continue: Mapped[bool]
+
     # Relationships
-    meeting_request = relationship("MeetingRequest", back_populates="feedback")
-    user = relationship("User", back_populates="meeting_feedback", foreign_keys=[user_id])
-    
+    meeting_request: Mapped["MeetingRequest"] = relationship(
+        back_populates="feedback", foreign_keys=[meeting_request_id]
+    )
+    user: Mapped["User"] = relationship(back_populates="meeting_feedbacks", foreign_keys=[user_id])
+
     def __repr__(self):
-        return f"<MeetingFeedback {self.id}: Meeting {self.meeting_request_id}, Rating: {self.rating}>"
+        return (
+            f"<MeetingFeedback {self.id}: Meeting {self.meeting_request_id}, Rating: {self.rating}>"
+        )

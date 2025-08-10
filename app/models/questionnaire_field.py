@@ -1,25 +1,44 @@
-from sqlalchemy import Column, String, Integer, ForeignKey, Text, Boolean
-from sqlalchemy.orm import relationship
+from typing import TYPE_CHECKING, Optional
+from uuid import UUID
 
-from app.models.base import BaseModel
+from sqlalchemy import ForeignKey, Text
+from sqlalchemy.dialects.postgresql import UUID as pgUUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.core.database import Base
+
+from .enums import FieldType
+
+if TYPE_CHECKING:
+    from .questionnaire_category import QuestionnaireCategory
 
 
-class QuestionnaireField(BaseModel):
+class QuestionnaireField(Base):
     """
     Model for questionnaire fields/questions
     """
+
     __tablename__ = "questionnaire_field"
-    
-    name = Column(String, nullable=False, unique=True)
-    label = Column(String, nullable=False)
-    description = Column(Text, nullable=True)
-    field_type = Column(String, nullable=False, default="text")  # text, boolean, select, etc.
-    options = Column(Text, nullable=True)  # JSON string for select options
-    required = Column(Boolean, default=False)
-    order_position = Column(Integer, nullable=False, default=0)
-    
+
+    name: Mapped[str] = mapped_column(unique=True)
+    label: Mapped[str]
+    description: Mapped[str] = mapped_column(Text, default="")
+    order_position: Mapped[int] = mapped_column(default=0)
+    parent_field: Mapped[Optional[str]]
+    field_type: Mapped[str] = mapped_column(default=FieldType.TEXT)
+    field_unit: Mapped[Optional[str]]
+    placeholder: Mapped[Optional[str]]
+    required: Mapped[bool] = mapped_column(default=False)
+    allow_custom: Mapped[bool] = mapped_column(default=False)
+
     # Foreign key to category
-    category_id = Column(Integer, ForeignKey("questionnaire_category.id"), nullable=False)
-    
+    category_id: Mapped[UUID] = mapped_column(
+        pgUUID(as_uuid=True),
+        ForeignKey("questionnaire_category.id"),
+        index=True,
+    )
+
     # Define relationship with QuestionnaireCategory
-    category = relationship("QuestionnaireCategory", back_populates="fields")
+    category: Mapped["QuestionnaireCategory"] = relationship(
+        back_populates="fields", foreign_keys=[category_id]
+    )
