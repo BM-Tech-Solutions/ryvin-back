@@ -13,21 +13,26 @@ from app.services.questionnaire_service import QuestionnaireService
 router = APIRouter()
 
 
-@router.get("/me")
+@router.get(
+    "/me",
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def get_questionnaire(
     session: SessionDep,
     current_user: VerifiedUserDep,
-    exclude_null: bool = False,
-):
+) -> QuestionnaireOut:
     """
     Get current user's questionnaire
     """
     quest_service = QuestionnaireService(session)
     questionnaire = quest_service.get_user_quest(current_user.id)
-    return QuestionnaireOut.model_validate(questionnaire).model_dump(exclude_none=exclude_null)
+    return questionnaire
 
 
-@router.put("/me")
+@router.put(
+    "/me",
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def update_questionnaire(
     session: SessionDep,
     current_user: VerifiedUserDep,
@@ -45,7 +50,10 @@ def update_questionnaire(
     return quest
 
 
-@router.post("/me")
+@router.post(
+    "/me",
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def create_questionnaire(
     session: SessionDep,
     current_user: VerifiedUserDep,
@@ -64,8 +72,15 @@ def create_questionnaire(
     return quest_service.create_questionnaire(current_user.id, questionnaire_in)
 
 
-@router.put("/complete", status_code=http_status.HTTP_200_OK)
-def complete_questionnaire(session: SessionDep, current_user: VerifiedUserDep) -> QuestionnaireOut:
+@router.post(
+    "/complete",
+    status_code=http_status.HTTP_200_OK,
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
+def complete_questionnaire(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
+) -> QuestionnaireOut:
     """
     Mark questionnaire as completed
     """

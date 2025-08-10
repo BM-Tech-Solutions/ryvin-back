@@ -5,6 +5,7 @@ from uuid import UUID
 
 from fastapi import HTTPException, UploadFile
 from fastapi import status as http_status
+from sqlalchemy.orm import Session
 
 from app.models import Photo
 
@@ -15,6 +16,10 @@ class PhotoService(BaseService):
     """
     Service for User Photos operations
     """
+
+    def __init__(self, db: Session):
+        super().__init__(db)
+        self.session = db
 
     def get_user_photos(self, user_id: UUID, skip: int = 0, limit: int = 100) -> List[Photo]:
         """

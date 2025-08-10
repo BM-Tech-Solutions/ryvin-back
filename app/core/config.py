@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     # SECURITY
     SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 14
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
 
     # JWT Authentication
@@ -49,6 +49,19 @@ class Settings(BaseSettings):
 
     # Firebase Admin SDK Credentials
     FIREBASE_SERVICE_ACCOUNT_PATH: Optional[str] = None
+    FIREBASE_API_KEY: Optional[str] = None
+    FIREBASE_AUTH_DOMAIN: Optional[str] = None
+    FIREBASE_PROJECT_ID: Optional[str] = None
+    FIREBASE_TYPE: Optional[str] = None
+    FIREBASE_PROJECT_ID_ENV: Optional[str] = None
+    FIREBASE_PRIVATE_KEY_ID: Optional[str] = None
+    FIREBASE_PRIVATE_KEY: Optional[str] = None
+    FIREBASE_CLIENT_EMAIL: Optional[str] = None
+    FIREBASE_CLIENT_ID: Optional[str] = None
+    FIREBASE_AUTH_URI: Optional[str] = None
+    FIREBASE_TOKEN_URI: Optional[str] = None
+    FIREBASE_AUTH_PROVIDER_X509_CERT_URL: Optional[str] = None
+    FIREBASE_CLIENT_X509_CERT_URL: Optional[str] = None
 
     # Google OAuth (for Social Login)
     GOOGLE_CLIENT_ID: Optional[str] = None
@@ -59,12 +72,6 @@ class Settings(BaseSettings):
 
     # API SECURITY
     API_TOKEN: str
-
-    # Twilio
-    TWILIO_ACCOUNT_SID: str
-    TWILIO_API_KEY_SID: str
-    TWILIO_API_KEY_SECRET: str
-    TWILIO_CHAT_SERVICE_SID: str
 
     @field_validator("DATABASE_URI", mode="before")
     def assemble_db_connection(cls, v: Optional[str], info: ValidationInfo) -> Any:

@@ -5,6 +5,7 @@ from uuid import UUID
 
 from fastapi import HTTPException
 from fastapi import status as http_status
+from sqlalchemy.orm import Session
 
 from app.core.security import utc_now
 from app.models import Questionnaire, QuestionnaireCategory, QuestionnaireField
@@ -18,6 +19,10 @@ class QuestionnaireService(BaseService):
     """
     Service for questionnaire-related operations
     """
+
+    def __init__(self, db: Session):
+        super().__init__(db)
+        self.session = db
 
     def get_quest_by_id(self, quest_id: UUID, raise_exc: bool = True) -> Optional[Questionnaire]:
         """

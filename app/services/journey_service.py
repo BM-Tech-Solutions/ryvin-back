@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import HTTPException
 from fastapi import status as http_status
 from sqlalchemy import or_
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.security import utc_now
 from app.models.enums import JourneyStatus, JourneyStep, MeetingStatus
@@ -26,6 +26,10 @@ class JourneyService(BaseService):
     """
     Service for journey-related operations
     """
+
+    def __init__(self, db: Session):
+        super().__init__(db)
+        self.session = db
 
     def get_journey_by_id(self, journey_id: UUID, raise_exc: bool = True) -> Optional[Journey]:
         """

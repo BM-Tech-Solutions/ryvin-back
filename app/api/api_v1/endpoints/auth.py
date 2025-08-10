@@ -5,18 +5,21 @@ Endpoints for Firebase phone authentication and Google OAuth.
 """
 
 from typing import Any, Dict, Optional
-from uuid import UUID
 
+import firebase_admin  # keep import if needed elsewhere, but don't initialize here  # noqa: F401
 import httpx
-from fastapi import APIRouter, HTTPException, Security
-from fastapi import status as http_status
+from fastapi import APIRouter, Depends, HTTPException, Security, status
+
+# Firebase Admin SDK
 from firebase_admin import auth as firebase_auth
 from pydantic import BaseModel, EmailStr, Field
+from sqlalchemy.orm import Session
 
-from app.core.dependencies import SessionDep
+from app.core.database import get_db
 from app.main import api_key_header
 from app.models.user import User
 from app.services.auth_service import AuthService
+from firebase import init_firebase
 
 
 # Request models
@@ -80,8 +83,8 @@ router = APIRouter()
 
 @router.post("/phone-auth", response_model=AuthResponse)
 def phone_auth(
-    session: SessionDep,
     request: PhoneAuthRequest,
+    db: Session = Depends(get_db),
     api_key: str = Security(api_key_header),
 ) -> Any:
     """
@@ -93,7 +96,7 @@ def phone_auth(
     2. Creates account if user doesn't exist
     3. Returns login info in both cases
     """
-    auth_service = AuthService(session)
+    auth_service = AuthService(db)
     return auth_service.phone_auth(
         phone_number=request.phone_number, device_info=request.device_info
     )
@@ -101,8 +104,8 @@ def phone_auth(
 
 @router.post("/google-auth", response_model=AuthResponse)
 def google_auth(
-    session: SessionDep,
     request: GoogleAuthRequest,
+    db: Session = Depends(get_db),
     api_key: str = Security(api_key_header),
 ) -> Any:
     """
@@ -115,7 +118,7 @@ def google_auth(
     4. Creates account if user doesn't exist
     5. Returns login info in both cases
     """
-    auth_service = AuthService(session)
+    auth_service = AuthService(db)
     return auth_service.google_auth(
         google_token=request.google_token, device_info=request.device_info
     )
@@ -124,13 +127,13 @@ def google_auth(
 @router.post("/complete-profile", response_model=CompleteProfileResponse)
 def complete_profile(
     request: CompleteProfileRequest,
-    session: SessionDep,
+    db: Session = Depends(get_db),
     api_key: str = Security(api_key_header),
 ) -> Any:
     """
     Complete user profile after authentication
     """
-    auth_service = AuthService(session)
+    auth_service = AuthService(db)
     return auth_service.complete_profile(
         access_token=request.access_token,
         name=request.name,
@@ -140,25 +143,27 @@ def complete_profile(
 
 
 @router.post("/refresh-token", response_model=TokenResponse)
-def refresh_token(request: RefreshTokenRequest, session: SessionDep) -> Any:
+def refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_db)) -> Any:
     """
     Refresh access token
     """
-    auth_service = AuthService(session)
+    auth_service = AuthService(db)
     return auth_service.refresh_tokens(request.refresh_token)
 
 
 @router.post("/logout", response_model=LogoutResponse)
-def logout(request: RefreshTokenRequest, session: SessionDep) -> Any:
+def logout(request: RefreshTokenRequest, db: Session = Depends(get_db)) -> Any:
     """
     Logout user by revoking refresh token
     """
-    auth_service = AuthService(session)
+    auth_service = AuthService(db)
     return auth_service.logout(request.refresh_token)
 
 
 @router.get("/test-token/{phone_number}")
-def get_test_token(phone_number: str, api_key: str = Security(api_key_header)) -> Dict[str, str]:
+def get_test_token(
+    phone_number: str, db: Session = Depends(get_db), api_key: str = Security(api_key_header)
+) -> Dict[str, str]:
     """
     Generate a test token for a given phone number.
     This endpoint is for testing purposes only.
@@ -177,7 +182,7 @@ def get_test_token(phone_number: str, api_key: str = Security(api_key_header)) -
 
 @router.get("/test-google-token/{email}")
 async def get_test_google_token(
-    email: str, api_key: str = Security(api_key_header)
+    email: str, db: Session = Depends(get_db), api_key: str = Security(api_key_header)
 ) -> Dict[str, Any]:
     """
     Generate a test Firebase ID token for a given email.
@@ -191,6 +196,8 @@ async def get_test_google_token(
     - test2@example.com
     """
     try:
+        # Ensure Firebase is initialized (defensive)
+        init_firebase()
         # Check if user exists in Firebase Auth
         try:
             user = firebase_auth.get_user_by_email(email)
@@ -220,7 +227,7 @@ async def get_test_google_token(
 
     except Exception as e:
         raise HTTPException(
-            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error generating test token: {str(e)}",
         )
 
@@ -244,23 +251,23 @@ async def exchange_custom_token_for_id_token(custom_token: str) -> str:
 
 @router.get("/test-user/{user_id}")
 def get_user_data(
-    session: SessionDep, user_id: UUID, api_key: str = Security(api_key_header)
+    user_id: str, db: Session = Depends(get_db), api_key: str = Security(api_key_header)
 ) -> Dict[str, Any]:
     """
     Get user data by ID for testing purposes.
     """
     try:
-        user = session.get(User, user_id)
+        user = db.query(User).filter(User.id == user_id).first()
 
         if not user:
-            raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
         # Convert user object to dictionary
         user_data = {
             "id": str(user.id),
-            "phone_number": user.phone_number,
+            "phone": user.phone_number,
             "email": user.email,
-            "name": "test_name",
+            "name": user.name,
             "is_verified": user.is_verified,
             "created_at": user.created_at.isoformat(),
             "last_login": user.last_login.isoformat() if user.last_login else None,
@@ -269,6 +276,6 @@ def get_user_data(
         return {"user": user_data}
     except Exception as e:
         raise HTTPException(
-            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving user data: {str(e)}",
         )
