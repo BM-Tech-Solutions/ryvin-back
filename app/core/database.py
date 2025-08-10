@@ -43,4 +43,16 @@ def get_session() -> Generator[Session, None, None]:
         session.close()
 
 
+def get_db() -> Generator[Session, None, None]:
+    """
+    Backward-compatible alias for obtaining a database session.
+    Mirrors get_session() so modules can depend on get_db.
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
 SessionDep = Annotated[Session, Depends(get_session)]

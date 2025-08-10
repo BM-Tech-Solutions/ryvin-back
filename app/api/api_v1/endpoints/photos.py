@@ -11,7 +11,11 @@ from app.services.photo_service import PhotoService
 router = APIRouter()
 
 
-@router.get("", status_code=http_status.HTTP_201_CREATED)
+@router.get(
+    "",
+    status_code=http_status.HTTP_201_CREATED,
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def get_photos(
     session: SessionDep,
     current_user: VerifiedUserDep,
@@ -27,7 +31,11 @@ def get_photos(
     return photos
 
 
-@router.post("", status_code=http_status.HTTP_201_CREATED)
+@router.post(
+    "",
+    status_code=http_status.HTTP_201_CREATED,
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def upload_photo(
     session: SessionDep,
     current_user: VerifiedUserDep,
@@ -42,7 +50,11 @@ def upload_photo(
     return photo
 
 
-@router.post("/set-primary/{photo_id}", status_code=http_status.HTTP_200_OK)
+@router.post(
+    "/set-primary/{photo_id}",
+    status_code=http_status.HTTP_200_OK,
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def set_primary_photo(
     session: SessionDep,
     current_user: VerifiedUserDep,
@@ -63,7 +75,11 @@ def set_primary_photo(
     return {"message": "Primary photo set successfully"}
 
 
-@router.delete("/{photo_id}", status_code=http_status.HTTP_200_OK)
+@router.delete(
+    "/{photo_id}",
+    status_code=http_status.HTTP_200_OK,
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def delete_photo(
     session: SessionDep,
     current_user: VerifiedUserDep,

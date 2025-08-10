@@ -4,16 +4,17 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi.openapi.utils import get_openapi
-from fastapi.security import APIKeyHeader
+from fastapi.security import APIKeyHeader, HTTPBearer
 
 from firebase import init_firebase
 
 from .core.config import settings
-from .core.middleware import APITokenMiddleware
+from .core.auth import CombinedAuthMiddleware
 from .cron_jobs import scheduler
 
-# Define API key security scheme for Swagger docs
+# Define security schemes for Swagger docs
 api_key_header = APIKeyHeader(name="API-Token", auto_error=False)
+http_bearer = HTTPBearer(auto_error=False)
 
 
 # code to run before app startup & after app shutdown
@@ -51,7 +52,7 @@ def custom_openapi():
         routes=app.routes,
     )
 
-    # Add API key security scheme
+    # Add security schemes (API key and Bearer JWT)
     openapi_schema["components"] = openapi_schema.get("components", {})
     openapi_schema["components"]["securitySchemes"] = {
         "APIKeyHeader": {
@@ -59,11 +60,18 @@ def custom_openapi():
             "in": "header",
             "name": "API-Token",
             "description": "API token for protected endpoints",
-        }
+        },
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+            "description": "JWT Bearer token (Authorization: Bearer <token>)",
+        },
     }
 
-    # Apply security globally
-    openapi_schema["security"] = [{"APIKeyHeader": []}]
+    # Apply security globally as AND (require both API key and Bearer)
+    # In OpenAPI, a single object includes schemes that are ANDed together.
+    openapi_schema["security"] = [{"APIKeyHeader": [], "BearerAuth": []}]
 
     app.openapi_schema = openapi_schema
     return app.openapi_schema
@@ -80,8 +88,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Add API token middleware
-app.add_middleware(APITokenMiddleware)
+# Add combined auth middleware (accepts API-Token or Bearer JWT)
+app.add_middleware(CombinedAuthMiddleware)
 
 # Import and include API routers
 from app.api.api_v1.api import api_router  # noqa: E402, I001

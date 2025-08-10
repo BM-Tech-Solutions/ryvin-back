@@ -114,13 +114,7 @@ class QuestionnaireBase(BaseModel):
     imagine_yourself_in10_years: Optional[str] = None
     reason_for_registration: Optional[str] = None
 
-    @field_validator("number_of_children")
-    def validate_number_of_children(cls, v, info: ValidationInfo):
-        if info.data.get("has_children") and v is None:
-            raise ValueError("Number of children is required when has_children is True")
-        if not info.data.get("has_children") and v is not None:
-            return None  # Reset to None if has_children is False
-        return v
+    # No validators here to avoid raising on reads of legacy/partial data
 
 
 class QuestionnaireCreate(QuestionnaireBase):
@@ -128,15 +122,32 @@ class QuestionnaireCreate(QuestionnaireBase):
     Schema for questionnaire creation
     """
 
-    pass
+    @field_validator("number_of_children")
+    @classmethod
+    def validate_number_of_children_on_create(cls, v, info: ValidationInfo):
+        flag = (info.data.get("has_children") or "").strip().lower()
+        has_kids = flag in ("yes", "true", "1", "y", "oui")
+        if has_kids and (v is None or str(v).strip() == ""):
+            raise ValueError("Number of children is required when has_children is True")
+        if not has_kids:
+            return None  # normalize to None when user indicates no children
+        return v
 
 
 class QuestionnaireUpdate(QuestionnaireBase):
     """
     Schema for questionnaire update
     """
-
-    pass
+    @field_validator("number_of_children")
+    @classmethod
+    def validate_number_of_children_on_update(cls, v, info: ValidationInfo):
+        flag = (info.data.get("has_children") or "").strip().lower()
+        has_kids = flag in ("yes", "true", "1", "y", "oui")
+        if has_kids and (v is None or str(v).strip() == ""):
+            raise ValueError("Number of children is required when has_children is True")
+        if not has_kids:
+            return None
+        return v
 
 
 class QuestionnaireInDBBase(QuestionnaireBase):

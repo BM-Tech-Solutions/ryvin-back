@@ -8,12 +8,16 @@ from app.models.enums import FieldType
 from app.schemas.questionnaire import QuestionnaireCreate, QuestionnaireUpdate
 
 from .base_service import BaseService
+from sqlalchemy.orm import Session
 
 
 class QuestionnaireService(BaseService):
     """
     Service for questionnaire-related operations
     """
+    def __init__(self, db: Session):
+        super().__init__(db)
+        self.session = db
 
     def get_questionnaire(self, user_id: UUID) -> Optional[Questionnaire]:
         """

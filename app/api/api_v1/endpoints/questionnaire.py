@@ -15,11 +15,17 @@ from app.services.questionnaire_service import QuestionnaireService
 router = APIRouter()
 
 
-@router.get("/me")
+@router.get(
+    "/me",
+    openapi_extra={
+        "security": [
+            {"APIKeyHeader": [], "BearerAuth": []}
+        ]
+    },
+)
 def get_questionnaire(
     session: SessionDep,
     current_user: VerifiedUserDep,
-    exclude_null: bool = False,
 ):
     """
     Get current user's questionnaire
@@ -30,10 +36,17 @@ def get_questionnaire(
         raise HTTPException(
             status_code=http_status.HTTP_404_NOT_FOUND, detail="Questionnaire not found"
         )
-    return QuestionnaireInDB.model_validate(questionnaire).model_dump(exclude_none=exclude_null)
+    return QuestionnaireInDB.model_validate(questionnaire).model_dump()
 
 
-@router.put("/me")
+@router.put(
+    "/me",
+    openapi_extra={
+        "security": [
+            {"APIKeyHeader": [], "BearerAuth": []}
+        ]
+    },
+)
 def update_questionnaire(
     session: SessionDep,
     current_user: VerifiedUserDep,
@@ -48,7 +61,14 @@ def update_questionnaire(
     return quest
 
 
-@router.post("/me")
+@router.post(
+    "/me",
+    openapi_extra={
+        "security": [
+            {"APIKeyHeader": [], "BearerAuth": []}
+        ]
+    },
+)
 def create_questionnaire(
     session: SessionDep,
     current_user: VerifiedUserDep,
@@ -67,7 +87,15 @@ def create_questionnaire(
     return quest
 
 
-@router.post("/complete", status_code=http_status.HTTP_200_OK)
+@router.post(
+    "/complete",
+    status_code=http_status.HTTP_200_OK,
+    openapi_extra={
+        "security": [
+            {"APIKeyHeader": [], "BearerAuth": []}
+        ]
+    },
+)
 def complete_questionnaire(
     session: SessionDep,
     current_user: VerifiedUserDep,

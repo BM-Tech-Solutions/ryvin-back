@@ -7,12 +7,16 @@ from app.models.user import User
 from app.schemas.user import UserUpdate
 
 from .base_service import BaseService
+from sqlalchemy.orm import Session
 
 
 class UserService(BaseService):
     """
     Service for user-related operations
     """
+    def __init__(self, db: Session):
+        super().__init__(db)
+        self.session = db
 
     def get_user_by_id(self, user_id: UUID) -> Optional[User]:
         """

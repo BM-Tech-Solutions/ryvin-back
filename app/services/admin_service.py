@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import HTTPException
 from fastapi import status as http_status
 from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from app.core.security import utc_now
 from app.models.enums import JourneyStatus, MatchStatus, MeetingStatus
@@ -21,6 +22,12 @@ class AdminService(BaseService):
     """
     Service for admin-related operations
     """
+    def __init__(self, db: Session):
+        # Ensure BaseService initialization (sets self.db)
+        super().__init__(db)
+        # Backward-compatibility: many methods reference self.session
+        # Provide an alias so existing code continues to work.
+        self.session = db
 
     def get_users(
         self,

@@ -25,6 +25,8 @@ class User(Base):
 
     phone_number: Mapped[str] = mapped_column(unique=True, index=True)
     email: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
+    name: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
+    profile_image: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
     has_completed_questionnaire: Mapped[bool] = mapped_column(default=False)
     subscription_type: Mapped[str] = mapped_column(default=SubscriptionType.FREE)
     subscription_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
