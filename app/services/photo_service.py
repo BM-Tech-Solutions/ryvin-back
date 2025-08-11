@@ -5,17 +5,18 @@ from uuid import UUID
 
 from fastapi import HTTPException, UploadFile
 from fastapi import status as http_status
+from sqlalchemy.orm import Session
 
 from app.models import Photo
 
 from .base_service import BaseService
-from sqlalchemy.orm import Session
 
 
 class PhotoService(BaseService):
     """
     Service for User Photos operations
     """
+
     def __init__(self, db: Session):
         super().__init__(db)
         self.session = db
@@ -41,6 +42,39 @@ class PhotoService(BaseService):
             .filter(Photo.user_id == user_id, Photo.is_primary.is_(True))
             .first()
         )
+
+    def get_user_photo(
+        self, user_id: UUID, photo_id: UUID, raise_exc: bool = True
+    ) -> Optional[Photo]:
+        """
+        Get specific user photo
+        """
+        photo = (
+            self.session.query(Photo).filter(Photo.user_id == user_id, Photo.id == photo_id).first()
+        )
+        if not photo and raise_exc:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"User has no Photo with id: {photo_id}",
+            )
+
+        return photo
+
+    def set_as_primary_photo(self, photo: Photo) -> Photo:
+        """
+        Set a photo as primary
+        """
+        # Clear primary flag on all user photos
+        self.session.query(Photo).filter(Photo.user_id == photo.user_id).update(
+            {"is_primary": False}
+        )
+
+        # Set new primary photo
+        photo.is_primary = True
+        self.session.commit()
+        self.session.refresh(photo)
+
+        return photo
 
     def upload_photo(self, user_id: UUID, file: UploadFile) -> Photo:
         """
@@ -83,14 +117,10 @@ class PhotoService(BaseService):
 
         return photo
 
-    def delete_photo(self, user_id: UUID, photo_id: UUID) -> bool:
+    def delete_photo(self, photo: Photo):
         """
         Delete a photo
         """
-        photo = self.session.get(Photo, photo_id)
-        if not photo or photo.user_id != user_id:
-            return False
-
         was_primary = photo.is_primary
 
         # In a real app, we would delete the file from storage
@@ -101,27 +131,7 @@ class PhotoService(BaseService):
 
         # If deleted photo was primary, set another photo as primary
         if was_primary:
-            next_photo = self.session.query(Photo).filter(Photo.user_id == user_id).first()
+            next_photo = self.session.query(Photo).filter(Photo.user_id == photo.user_id).first()
             if next_photo:
                 next_photo.is_primary = True
                 self.session.commit()
-
-        return True
-
-    def set_primary_photo(self, user_id: UUID, photo_id: UUID) -> Optional[Photo]:
-        """
-        Set a photo as primary
-        """
-        photo = self.session.get(Photo, photo_id)
-        if not photo or photo.user_id != user_id:
-            return None
-
-        # Clear primary flag on all user photos
-        self.session.query(Photo).filter(Photo.user_id == user_id).update({"is_primary": False})
-
-        # Set new primary photo
-        photo.is_primary = True
-        self.session.commit()
-        self.session.refresh(photo)
-
-        return photo

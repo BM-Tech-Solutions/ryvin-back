@@ -45,16 +45,33 @@ class NotificationService:
         Send notification when both users accept a match
         """
         # Get the other user in the match
-        other_user_id = match.user1_id if match.user2_id == user.id else match.user2_id
-
-        # In a real app, we would query the database for the other user's name
-        other_user_name = "Someone"  # Placeholder
+        other_user_name = "Someone"
+        other_user = match.user1 if match.user2 == user.id else match.user2
+        if other_user.questionnaire and other_user.questionnaire.first_name:
+            other_user_name = other_user.questionnaire.first_name
 
         return self.send_notification(
             user,
             "Match Confirmed!",
-            f"You and {other_user_name} [{other_user_id}] have matched! Start your journey together.",
+            f"You and '{other_user_name}' have matched! Start your journey together.",
             {"match_id": str(match.id), "type": "match_confirmed"},
+        )
+
+    def send_match_declined_notification(self, user: User, match: Match) -> bool:
+        """
+        Send notification when the other user declines a match
+        """
+        # Get the other user in the match
+        other_user_name = "Someone"
+        other_user = match.user1 if match.user2 == user.id else match.user2
+        if other_user.questionnaire and other_user.questionnaire.first_name:
+            other_user_name = other_user.questionnaire.first_name
+
+        return self.send_notification(
+            user,
+            "Match Declined!",
+            f"'{other_user_name}' has declined this match, Good luck next time.",
+            {"match_id": str(match.id), "type": "match_declined"},
         )
 
     def send_journey_step_advanced_notification(self, user: User, journey: Journey) -> bool:
@@ -100,7 +117,7 @@ class NotificationService:
         return self.send_notification(
             user,
             "Journey Ended",
-            f"Your journey has ended. {reason}",
+            f"Your journey has ended: {reason}",
             {"journey_id": str(journey.id), "type": "journey_ended", "reason": reason},
         )
 
@@ -136,22 +153,20 @@ class NotificationService:
             },
         )
 
-    def send_meeting_response_notification(
-        self, user: User, meeting_request: MeetingRequest, accepted: bool
-    ) -> bool:
+    def send_meeting_response_notification(self, meeting_request: MeetingRequest) -> bool:
         """
         Send notification for a meeting request response
         """
-        status = "accepted" if accepted else "declined"
+
+        proposed_date = meeting_request.proposed_date.strftime("%B %d, %Y")
 
         return self.send_notification(
-            user,
-            f"Meeting Request {status.capitalize()}",
-            f"Your meeting request for {meeting_request.proposed_date.strftime('%B %d, %Y')} was {status}",
+            meeting_request.requester,
+            f"Meeting Request {meeting_request.status.capitalize()}",
+            f"Your meeting request for {proposed_date} was {meeting_request.status}",
             {
                 "journey_id": str(meeting_request.journey_id),
                 "meeting_id": str(meeting_request.id),
                 "type": "meeting_response",
-                "accepted": accepted,
             },
         )

@@ -2,41 +2,61 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
+from fastapi import HTTPException
+from fastapi import status as http_status
+from sqlalchemy.orm import Session
+
 from app.core.security import utc_now
 from app.models.user import User
 from app.schemas.user import UserUpdate
 
 from .base_service import BaseService
-from sqlalchemy.orm import Session
 
 
 class UserService(BaseService):
     """
     Service for user-related operations
     """
+
     def __init__(self, db: Session):
         super().__init__(db)
         self.session = db
 
-    def get_user_by_id(self, user_id: UUID) -> Optional[User]:
+    def get_user_by_id(self, user_id: UUID, raise_exc: bool = True) -> Optional[User]:
         """
         Get user by ID
         """
-        return self.session.get(User, user_id)
+        user = self.session.get(User, user_id)
+        if not user and raise_exc:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"no User with id: {user_id}",
+            )
+        return user
 
-    def get_user_by_phone(self, phone_number: str) -> Optional[User]:
+    def get_user_by_phone(self, phone_number: str, raise_exc: bool = True) -> Optional[User]:
         """
         Get user by phone number
         """
-        return self.session.query(User).filter(User.phone_number == phone_number).first()
+        user = self.session.query(User).filter(User.phone_number == phone_number).first()
+        if not user and raise_exc:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"no User with Phone Number: {phone_number}",
+            )
+        return user
 
-    def get_user_by_email(self, email: str) -> Optional[User]:
+    def get_user_by_email(self, email: str, raise_exc: bool = True) -> Optional[User]:
         """
         Get user by email
         """
-        if not email:
-            return None
-        return self.session.query(User).filter(User.email == email).first()
+        user = self.session.query(User).filter(User.email == email).first()
+        if not user and raise_exc:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"no User with Email: {email}",
+            )
+        return user
 
     def create_user(self, phone_number: str) -> User:
         """

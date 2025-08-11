@@ -135,5 +135,9 @@ class Questionnaire(Base):
         """Check if the questionnaire is complete"""
         return self.completed_at is not None
 
+    def is_field_answered(self, field_name: str) -> bool:
+        """Check if some field is answered in this Questionnaire"""
+        return getattr(self, field_name, None) not in [None, ""]
+
     def __repr__(self) -> str:
         return f"<Questionnaire {self.id}: {self.first_name}, {self.age}>"

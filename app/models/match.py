@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING
+from datetime import datetime
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from sqlalchemy import ForeignKey, UniqueConstraint
@@ -23,17 +24,21 @@ class Match(Base):
 
     user1_id: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"), index=True)
     user2_id: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"), index=True)
-    compatibility_score: Mapped[float]
-    status: Mapped[str] = mapped_column(default=MatchStatus.PENDING)
     user1_accepted: Mapped[bool] = mapped_column(default=False)
     user2_accepted: Mapped[bool] = mapped_column(default=False)
+    matched_at: Mapped[Optional[datetime]]
+    compatibility_score: Mapped[float]
+    status: Mapped[str] = mapped_column(default=MatchStatus.PENDING)
 
     # Relationships
     user1: Mapped["User"] = relationship(back_populates="matches_as_user1", foreign_keys=[user1_id])
     user2: Mapped["User"] = relationship(back_populates="matches_as_user2", foreign_keys=[user2_id])
-    journey: Mapped["Journey"] = relationship(
+    journey: Mapped[Optional["Journey"]] = relationship(
         back_populates="match", uselist=False, foreign_keys="Journey.match_id"
     )
 
     def __repr__(self):
         return f"<Match {self.id}: {self.user1_id} - {self.user2_id}, Score: {self.compatibility_score}>"
+
+    def get_other_user(self, user: "User"):
+        return self.user1 if self.user2.id == user.id else self.user2

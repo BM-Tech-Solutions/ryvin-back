@@ -1,7 +1,7 @@
-from functools import lru_cache
-import os
 import json
 import logging
+import os
+from functools import lru_cache
 
 import firebase_admin
 from firebase_admin import credentials
@@ -28,7 +28,9 @@ def init_firebase():
             return app
 
         # Otherwise, reinitialize with a resolved project_id
-        logging.warning("Existing Firebase app has no projectId; reinitializing with resolved project_id")
+        logging.warning(
+            "Existing Firebase app has no projectId; reinitializing with resolved project_id"
+        )
         firebase_admin.delete_app(app)
     except ValueError:
         pass  # Not initialized yet
@@ -54,9 +56,13 @@ def init_firebase():
         service_account_info = {
             "type": settings.FIREBASE_TYPE,
             # Prefer explicit FIREBASE_PROJECT_ID, then FIREBASE_PROJECT_ID_ENV, then env var
-            "project_id": settings.FIREBASE_PROJECT_ID or settings.FIREBASE_PROJECT_ID_ENV or os.getenv("GOOGLE_CLOUD_PROJECT"),
+            "project_id": settings.FIREBASE_PROJECT_ID
+            or settings.FIREBASE_PROJECT_ID_ENV
+            or os.getenv("GOOGLE_CLOUD_PROJECT"),
             "private_key_id": settings.FIREBASE_PRIVATE_KEY_ID,
-            "private_key": settings.FIREBASE_PRIVATE_KEY.replace('\\n', '\n') if settings.FIREBASE_PRIVATE_KEY else None,
+            "private_key": settings.FIREBASE_PRIVATE_KEY.replace("\\n", "\n")
+            if settings.FIREBASE_PRIVATE_KEY
+            else None,
             "client_email": settings.FIREBASE_CLIENT_EMAIL,
             "client_id": settings.FIREBASE_CLIENT_ID,
             "auth_uri": settings.FIREBASE_AUTH_URI,

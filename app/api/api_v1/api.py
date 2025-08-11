@@ -6,7 +6,7 @@ from app.main import api_key_header, http_bearer
 api_router = APIRouter(
     dependencies=[
         Security(api_key_header),  # non-enforcing, auto_error=False
-        Security(http_bearer),     # non-enforcing, auto_error=False
+        Security(http_bearer),  # non-enforcing, auto_error=False
     ]
 )
 

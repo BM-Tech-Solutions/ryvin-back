@@ -1,20 +1,19 @@
-from typing import Any, List, Optional
+from typing import Annotated, Any, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Query, Security, HTTPException, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Body, HTTPException, Query, Security
 from fastapi import status as http_status
 from pydantic import BaseModel, EmailStr
 
 from app.core.dependencies import AdminViaTokenDep, SessionDep
-from app.models.enums import MatchStatus
-from app.schemas.journey import Journey
-from app.schemas.match import Match
-from app.schemas.user import UserOut
-from app.services.admin_service import AdminService
-from app.models.user import User
 from app.core.security import utc_now
 from app.main import api_key_header
-from app.services.match_service import MatchService
+from app.models.enums import MatchStatus
+from app.models.user import User
+from app.schemas.journey import JourneyCreate, JourneyOut
+from app.schemas.match import MatchCreate, MatchOut
+from app.schemas.user import UserOut
+from app.services import AdminService, JourneyService, MatchService, UserService
 from app.services.matching_cron_service import MatchingCronService
 
 router = APIRouter()
@@ -72,6 +71,7 @@ def seed_admin(
         "is_admin": user.is_admin,
     }
 
+
 @router.post("/matching/trigger", status_code=http_status.HTTP_200_OK)
 async def trigger_matching_all(
     session: SessionDep,
@@ -96,12 +96,12 @@ async def trigger_matching_for_user(
     return {"message": "Matching process triggered for user", "result": result}
 
 
-@router.get("/matches/{match_id}", response_model=Match)
+@router.get("/matches/{match_id}", response_model=MatchOut)
 def admin_get_match_by_id(
     session: SessionDep,
     match_id: UUID,
     current_user: AdminViaTokenDep,
-) -> Match | None:
+) -> MatchOut | None:
     """Get a specific match by ID (admin)."""
     match = MatchService(session).get_match_by_id(match_id)
     if not match:
@@ -109,7 +109,7 @@ def admin_get_match_by_id(
     return match
 
 
-@router.get("/users/{user_id}/matches", response_model=list[Match])
+@router.get("/users/{user_id}/matches", response_model=list[MatchOut])
 def admin_get_user_matches(
     session: SessionDep,
     current_user: AdminViaTokenDep,
@@ -117,10 +117,11 @@ def admin_get_user_matches(
     status: str | None = Query(None, description="Filter by match status"),
     skip: int = Query(0, description="Number of matches to skip"),
     limit: int = Query(100, description="Maximum number of matches to return"),
-) -> list[Match]:
+) -> list[MatchOut]:
     """Get matches for a given user (admin)."""
     matches = MatchService(session).get_user_matches(user_id, status, skip, limit)
     return matches
+
 
 @router.get("/users", response_model=list[UserOut])
 def get_users(
@@ -128,6 +129,9 @@ def get_users(
     current_user: AdminViaTokenDep,
     search: str | None = Query(None, description="Search Query"),
     is_active: bool | None = Query(None, description="Filter by active status"),
+    has_questionnaire: bool | None = Query(
+        None, description="Filter by if user has a Questionnaire"
+    ),
     is_verified: bool | None = Query(None, description="Filter by verification status"),
     skip: int = 0,
     limit: int = 100,
@@ -135,7 +139,14 @@ def get_users(
     """
     Get all users (admin only)
     """
-    users = AdminService(session).get_users(search, is_active, is_verified, skip, limit)
+    users = AdminService(session).get_users(
+        search=search,
+        is_active=is_active,
+        is_verified=is_verified,
+        has_questionnaire=has_questionnaire,
+        skip=skip,
+        limit=limit,
+    )
     return users
 
 
@@ -153,20 +164,18 @@ def get_user(
     return user
 
 
-@router.post("/users/{user_id}/ban", status_code=http_status.HTTP_200_OK)
+@router.put("/users/{user_id}/ban", response_model=UserOut)
 def ban_user(
     session: SessionDep,
     current_user: AdminViaTokenDep,
     user_id: UUID,
-    reason: str,
-) -> Any:
+    reason: Annotated[str, Body(embed=True)],
+) -> UserOut:
     """
     Ban a user (admin only)
     """
     admin_service = AdminService(session)
-    admin_service.ban_user(user_id, reason)
-
-    return {"message": "User banned successfully"}
+    return admin_service.ban_user(user_id, reason)
 
 
 @router.post("/users/{user_id}/unban", status_code=http_status.HTTP_200_OK)
@@ -179,12 +188,10 @@ def unban_user(
     Unban a user (admin only)
     """
     admin_service = AdminService(session)
-    admin_service.unban_user(user_id)
-
-    return {"message": "User unbanned successfully"}
+    return admin_service.unban_user(user_id)
 
 
-@router.get("/matches", response_model=List[Match])
+@router.get("/matches", response_model=List[MatchOut])
 def get_matches(
     session: SessionDep,
     current_user: AdminViaTokenDep,
@@ -194,15 +201,46 @@ def get_matches(
     ),
     skip: int = 0,
     limit: int = 100,
-) -> Any:
+) -> List[MatchOut]:
     """
     Get all matches (admin only)
     """
-    matches = AdminService(session).get_matches(status, min_compatibility, skip, limit)
-    return matches
+    admin_service = AdminService(session)
+    return admin_service.get_matches(status, min_compatibility, skip, limit)
 
 
-@router.get("/journeys", response_model=List[Journey])
+@router.post("/matches", response_model=MatchOut)
+def create_match(
+    session: SessionDep, current_user: AdminViaTokenDep, match_in: MatchCreate
+) -> MatchOut:
+    """
+    Create a match between 2 users (for testing):
+        - even if users didn't accept
+        - even if users don't have a Questionnaire
+    """
+    user_service = UserService(session)
+    user1 = user_service.get_user_by_id(match_in.user1_id)
+    user2 = user_service.get_user_by_id(match_in.user2_id)
+    if user1.id == user2.id:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=f"Can't create Match between same user: {user1} == {user2}",
+        )
+    match_service = MatchService(session)
+    existing_match = match_service.get_match_by_users(
+        match_in.user1_id, match_in.user2_id, raise_exc=False
+    )
+    if existing_match:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=f"There is already a Match between users: {user1} and {user2}",
+        )
+
+    new_match = match_service.create_match(match_in)
+    return new_match
+
+
+@router.get("/journeys", response_model=List[JourneyOut])
 def get_journeys(
     session: SessionDep,
     current_user: AdminViaTokenDep,
@@ -210,14 +248,33 @@ def get_journeys(
     is_completed: bool = Query(None, description="Filter by completion status"),
     skip: int = 0,
     limit: int = 100,
-) -> Any:
+) -> List[JourneyOut]:
     """
     Get all journeys (admin only)
     """
-    journeys = AdminService(session).get_journeys(
+    admin_service = AdminService(session)
+    return admin_service.get_journeys(
         is_completed=is_completed, current_step=current_step, skip=skip, limit=limit
     )
-    return journeys
+
+
+@router.post("/journeys", response_model=JourneyOut)
+def create_journey(
+    session: SessionDep,
+    current_user: AdminViaTokenDep,
+    journey_in: JourneyCreate,
+) -> JourneyOut:
+    """
+    Create a new Journey (Admin only)
+    """
+    journey_service = JourneyService(session)
+    existing_journey = journey_service.get_journey_by_match(journey_in.match_id, raise_exc=False)
+    if existing_journey:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=f"There is already a Journey linked to this match: {existing_journey}",
+        )
+    return journey_service.create_journey(journey_in)
 
 
 @router.get("/stats", status_code=http_status.HTTP_200_OK)
@@ -229,13 +286,13 @@ def get_stats(session: SessionDep, current_user: AdminViaTokenDep) -> Any:
     return stats
 
 
-@router.post("/moderate/message/{message_id}", status_code=http_status.HTTP_200_OK)
+@router.post("/messages/{message_id}/moderate", status_code=http_status.HTTP_200_OK)
 def moderate_message(
     session: SessionDep,
     current_user: AdminViaTokenDep,
     message_id: UUID,
     action: str,
-    reason: str = None,
+    reason: Annotated[str, Body(embed=True)] = None,
 ) -> Any:
     """
     Moderate a message (admin only)

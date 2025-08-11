@@ -27,19 +27,16 @@ scheduler = AsyncIOScheduler(
 )
 
 
-
-
 async def run_matching_job():
     """Run the matching algorithm for all users"""
     from app.services.matching_cron_service import MatchingCronService
-    
+
     try:
         matching_service = MatchingCronService()
         result = await matching_service.run_daily_matching()
         print(f"🎯 MATCHING JOB COMPLETED: {result['new_matches_created']} new matches created")
     except Exception as e:
         print(f"❌ MATCHING JOB ERROR: {str(e)}")
-
 
 
 # Matching job - runs every 10 minutes
@@ -50,4 +47,3 @@ matching_job = scheduler.add_job(
     minutes=10,
     replace_existing=True,
 )
-

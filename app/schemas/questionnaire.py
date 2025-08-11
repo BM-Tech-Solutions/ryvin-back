@@ -12,7 +12,7 @@ class QuestionnaireBase(BaseModel):
     Base schema for user questionnaire data
     """
 
-    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
+    model_config = ConfigDict(from_attributes=True)
 
     # profile
     first_name: Optional[str] = None
@@ -138,6 +138,7 @@ class QuestionnaireUpdate(QuestionnaireBase):
     """
     Schema for questionnaire update
     """
+
     @field_validator("number_of_children")
     @classmethod
     def validate_number_of_children_on_update(cls, v, info: ValidationInfo):
@@ -150,32 +151,20 @@ class QuestionnaireUpdate(QuestionnaireBase):
         return v
 
 
-class QuestionnaireInDBBase(QuestionnaireBase):
+class QuestionnaireOut(QuestionnaireBase):
     """
-    Base schema for questionnaire in DB
+    Schema for questionnaire Response
     """
 
     id: UUID
     user_id: UUID
-    completed_at: Optional[datetime] = None
+    completed_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
 
-
-class QuestionnaireInDB(QuestionnaireInDBBase):
-    """
-    Schema for questionnaire in DB (internal use)
-    """
-
-    pass
-
-
-class Questionnaire(QuestionnaireInDBBase):
-    """
-    Schema for questionnaire response
-    """
-
-    pass
+    @field_validator("number_of_children")
+    def validate_number_of_children(cls, v, info: ValidationInfo):
+        return v
 
 
 class QuestionnaireCompletion(BaseModel):
@@ -189,6 +178,7 @@ class QuestionnaireCompletion(BaseModel):
     has_primary_photo: bool = False
 
 
+# Questionnaire Field
 class FieldOut(BaseModel):
     name: str
     label: str
@@ -212,6 +202,7 @@ class FieldOut(BaseModel):
         return None
 
 
+# Questionnaire Category
 class CategoryOut(BaseModel):
     name: str
     label: str
