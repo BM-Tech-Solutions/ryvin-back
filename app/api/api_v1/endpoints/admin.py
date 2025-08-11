@@ -4,7 +4,6 @@ from uuid import UUID
 from fastapi import APIRouter, BackgroundTasks, Body, HTTPException, Query, Security
 from fastapi import status as http_status
 from pydantic import BaseModel, EmailStr
-from sqlalchemy.exc import IntegrityError
 
 from app.core.dependencies import AdminViaTokenDep, SessionDep
 from app.core.security import utc_now
@@ -13,7 +12,7 @@ from app.models.enums import MatchStatus
 from app.models.user import User
 from app.schemas.journey import JourneyCreate, JourneyOut
 from app.schemas.match import MatchCreate, MatchOut
-from app.schemas.user import TestUserCreate, UserOut
+from app.schemas.user import UserOut
 from app.services import AdminService, JourneyService, MatchService, UserService
 from app.services.matching_cron_service import MatchingCronService
 
@@ -149,30 +148,6 @@ def get_users(
         limit=limit,
     )
     return users
-
-
-@router.post("/users", response_model=UserOut)
-def create_user(session: SessionDep, user_in: TestUserCreate) -> UserOut:
-    """
-    Create a new user (Admin only)
-    """
-    user = session.query(User).filter(User.phone_number == user_in.phone_number).first()
-    if user:
-        raise HTTPException(
-            status_code=http_status.HTTP_400_BAD_REQUEST,
-            detail=f"User with phone number: '{user_in.phone_number}' already exists",
-        )
-    try:
-        user = User(**user_in.model_dump(exclude_unset=True))
-        session.add(user)
-        session.commit()
-        session.refresh(user)
-    except IntegrityError as e:
-        raise HTTPException(
-            status_code=http_status.HTTP_400_BAD_REQUEST,
-            detail={"args": e.args},
-        )
-    return user
 
 
 @router.get("/users/{user_id}", response_model=Optional[UserOut])
