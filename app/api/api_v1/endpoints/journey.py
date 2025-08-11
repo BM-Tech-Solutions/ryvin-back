@@ -1,7 +1,7 @@
 from typing import Annotated, List
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Query
+from fastapi import APIRouter, Body, HTTPException, Query
 from fastapi import status as http_status
 
 from app.core.dependencies import SessionDep, VerifiedUserDep
@@ -118,7 +118,12 @@ def get_messages(
     Get all messages for a journey
     """
     journey_service = JourneyService(session)
-    journey = journey_service.get_user_journey(current_user.id, journey_id)
+    journey = journey_service.get_journey_by_id(journey_id)
+    if current_user.id not in [journey.match.user1_id, journey.match.user2_id]:
+        raise HTTPException(
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            detail="User not related to this journey",
+        )
     message_service = MessageService(session)
     return message_service.get_journey_messages(journey.id, skip, limit)
 
@@ -140,7 +145,12 @@ def create_message(
     """
 
     journey_service = JourneyService(session)
-    journey = journey_service.get_user_journey(current_user.id, journey_id)
+    journey = journey_service.get_journey_by_id(journey_id)
+    if current_user.id not in [journey.match.user1_id, journey.match.user2_id]:
+        raise HTTPException(
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            detail="User not related to this journey",
+        )
     message_service = MessageService(session)
     return message_service.create_message(journey, current_user, message_in)
 

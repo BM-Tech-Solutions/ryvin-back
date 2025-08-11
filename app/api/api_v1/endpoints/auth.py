@@ -98,7 +98,8 @@ def phone_auth(
     """
     auth_service = AuthService(db)
     return auth_service.phone_auth(
-        phone_number=request.phone_number, device_info=request.device_info
+        phone_number=request.phone_number,
+        device_info=request.device_info,
     )
 
 
@@ -120,7 +121,8 @@ def google_auth(
     """
     auth_service = AuthService(db)
     return auth_service.google_auth(
-        google_token=request.google_token, device_info=request.device_info
+        google_token=request.google_token,
+        device_info=request.device_info,
     )
 
 
@@ -143,7 +145,10 @@ def complete_profile(
 
 
 @router.post("/refresh-token", response_model=TokenResponse)
-def refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_db)) -> Any:
+def refresh_token(
+    request: RefreshTokenRequest,
+    db: Session = Depends(get_db),
+) -> Any:
     """
     Refresh access token
     """
@@ -152,7 +157,10 @@ def refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_db)) -
 
 
 @router.post("/logout", response_model=LogoutResponse)
-def logout(request: RefreshTokenRequest, db: Session = Depends(get_db)) -> Any:
+def logout(
+    request: RefreshTokenRequest,
+    db: Session = Depends(get_db),
+) -> Any:
     """
     Logout user by revoking refresh token
     """
@@ -182,7 +190,9 @@ def get_test_token(
 
 @router.get("/test-google-token/{email}")
 async def get_test_google_token(
-    email: str, db: Session = Depends(get_db), api_key: str = Security(api_key_header)
+    email: str,
+    db: Session = Depends(get_db),
+    api_key: str = Security(api_key_header),
 ) -> Dict[str, Any]:
     """
     Generate a test Firebase ID token for a given email.
@@ -251,7 +261,9 @@ async def exchange_custom_token_for_id_token(custom_token: str) -> str:
 
 @router.get("/test-user/{user_id}")
 def get_user_data(
-    user_id: str, db: Session = Depends(get_db), api_key: str = Security(api_key_header)
+    user_id: str,
+    db: Session = Depends(get_db),
+    api_key: str = Security(api_key_header),
 ) -> Dict[str, Any]:
     """
     Get user data by ID for testing purposes.
