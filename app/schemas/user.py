@@ -16,11 +16,16 @@ class UserBase(BaseModel):
 
     model_config = ConfigDict(from_attributes=True, strict=False, validate_by_name=True)
 
-    phone_number: str
+    phone_number: Optional[str] = None
     email: Optional[EmailStr] = None
 
     @field_validator("phone_number")
     def validate_phone_number(cls, v):
+        if v is None:
+            return v
+        # Allow placeholder values set for Google-auth users
+        if isinstance(v, str) and v.startswith("google:"):
+            return v
         try:
             phone_number = phonenumbers.parse(v, None)
             if not phonenumbers.is_valid_number(phone_number):

@@ -661,7 +661,7 @@ class AuthService(BaseService):
             is_new_user = user is None
             
             if is_new_user:
-                # Create new user
+                # Create new user with no phone number (NULL). Requires DB column to be nullable.
                 user = User(
                     phone_number=None,
                     email=email,
