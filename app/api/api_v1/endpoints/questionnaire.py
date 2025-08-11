@@ -97,7 +97,11 @@ def complete_questionnaire(
     return quest
 
 
-@router.get("/all-fields", response_model=list[CategoryOut])
+@router.get(
+    "/all-fields",
+    response_model=list[CategoryOut],
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def get_all_fields(session: SessionDep, current_user: VerifiedUserDep) -> list[CategoryOut]:
     """
     Get all questionnaire questions organized by categories from the database
@@ -106,7 +110,11 @@ def get_all_fields(session: SessionDep, current_user: VerifiedUserDep) -> list[C
     return quest_service.get_questions_by_categories()
 
 
-@router.get("/null-fields", response_model=list[CategoryOut])
+@router.get(
+    "/me/null-fields",
+    response_model=list[CategoryOut],
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
 def get_null_field(session: SessionDep, current_user: VerifiedUserDep) -> list[CategoryOut]:
     """
     Get all null fields (not answered questions) by current user
