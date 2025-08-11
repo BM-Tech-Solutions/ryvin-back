@@ -4,6 +4,8 @@ services:
     # Use the entrypoint script with web service
     entrypoint: [ "/entrypoint.sh" ]
     command: [ "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
+    env_file:
+      - .env
     volumes:
       - .:/app
     ports:
@@ -21,12 +23,13 @@ services:
     # Use the entrypoint script with migrations parameter
     entrypoint: [ "/entrypoint.sh" ]
     command: [ "migrations" ]
+    env_file:
+      - .env
     volumes:
       - .:/app
     depends_on:
       db:
         condition: service_healthy
-        restart: true
     networks:
       - ryvin-network
 

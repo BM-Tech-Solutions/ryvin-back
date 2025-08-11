@@ -26,6 +26,9 @@ def upgrade() -> None:
     op.create_index(op.f("ix_user_name"), "user", ["name"], unique=True)
     op.create_index(op.f("ix_user_profile_image"), "user", ["profile_image"], unique=True)
 
+    # Make phone_number nullable to support Google-auth users without phones
+    op.alter_column("user", "phone_number", existing_type=sa.String(), nullable=True)
+
 
 def downgrade() -> None:
     # Drop indexes then columns
@@ -33,3 +36,6 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_user_name"), table_name="user")
     op.drop_column("user", "profile_image")
     op.drop_column("user", "name")
+
+    # Revert phone_number to NOT NULL
+    op.alter_column("user", "phone_number", existing_type=sa.String(), nullable=False)

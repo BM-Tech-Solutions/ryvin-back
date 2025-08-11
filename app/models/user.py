@@ -23,7 +23,7 @@ class User(Base):
 
     __tablename__ = "user"
 
-    phone_number: Mapped[str] = mapped_column(unique=True, index=True)
+    phone_number: Mapped[Optional[str]] = mapped_column(unique=True, index=True, nullable=True)
     email: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
     name: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
     profile_image: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
