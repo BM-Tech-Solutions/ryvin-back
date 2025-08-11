@@ -16,6 +16,15 @@ from app.core.security import utc_now
 from app.main import api_key_header
 from app.services.match_service import MatchService
 from app.services.matching_cron_service import MatchingCronService
+import json
+import os
+
+# Import seeding utilities
+from seed_users import create_test_users
+from seed_questionnaires import (
+    seed_questionnaires_from_file,
+    seed_questionnaires_from_db,
+)
 
 router = APIRouter()
 
@@ -71,6 +80,55 @@ def seed_admin(
         "phone_number": user.phone_number,
         "is_admin": user.is_admin,
     }
+
+
+
+
+class SeedUsersResponse(BaseModel):
+    created_count: int
+    users: list[dict]
+
+
+@router.post("/seed-users", status_code=http_status.HTTP_200_OK, response_model=SeedUsersResponse)
+def seed_users_endpoint(
+    session: SessionDep,
+    current_user: AdminViaTokenDep,
+) -> SeedUsersResponse:
+    """
+    Seed 60 test users (30 male, 30 female).
+    Also writes created_users.json for questionnaire seeding.
+    """
+    users = create_test_users() or []
+    try:
+        with open("created_users.json", "w", encoding="utf-8") as f:
+            json.dump(users, f, ensure_ascii=False, indent=2, default=str)
+    except Exception:
+        # Non-fatal if file write fails; still return created users
+        pass
+    return SeedUsersResponse(created_count=len(users), users=users)
+
+
+class SeedQuestionnairesResponse(BaseModel):
+    success: bool
+    mode: str
+
+
+@router.post("/seed-questionnaires", status_code=http_status.HTTP_200_OK, response_model=SeedQuestionnairesResponse)
+def seed_questionnaires_endpoint(
+    session: SessionDep,
+    current_user: AdminViaTokenDep,
+) -> SeedQuestionnairesResponse:
+    """
+    Seed questionnaires for users.
+    Tries created_users.json first, falls back to seeding directly from DB.
+    """
+    # Prefer file-based seeding if file exists
+    mode = "file"
+    success = seed_questionnaires_from_file()
+    if not success:
+        mode = "db"
+        success = seed_questionnaires_from_db()
+    return SeedQuestionnairesResponse(success=bool(success), mode=mode)
 
 @router.post("/matching/trigger", status_code=http_status.HTTP_200_OK)
 async def trigger_matching_all(

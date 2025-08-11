@@ -52,26 +52,35 @@ def custom_openapi():
         routes=app.routes,
     )
 
-    # Add security schemes (API key and Bearer JWT)
-    openapi_schema["components"] = openapi_schema.get("components", {})
-    openapi_schema["components"]["securitySchemes"] = {
-        "APIKeyHeader": {
+    # Merge security schemes (API key and Bearer JWT) without clobbering FastAPI defaults
+    components = openapi_schema.setdefault("components", {})
+    security_schemes = components.setdefault("securitySchemes", {})
+
+    # Ensure API key header scheme exists (keep existing if already present)
+    security_schemes.setdefault(
+        "APIKeyHeader",
+        {
             "type": "apiKey",
             "in": "header",
             "name": "API-Token",
             "description": "API token for protected endpoints",
         },
-        "BearerAuth": {
+    )
+
+    # Ensure Bearer scheme name matches FastAPI's default: 'HTTPBearer'
+    security_schemes.setdefault(
+        "HTTPBearer",
+        {
             "type": "http",
             "scheme": "bearer",
             "bearerFormat": "JWT",
             "description": "JWT Bearer token (Authorization: Bearer <token>)",
         },
-    }
+    )
 
     # Apply security globally as AND (require both API key and Bearer)
-    # In OpenAPI, a single object includes schemes that are ANDed together.
-    openapi_schema["security"] = [{"APIKeyHeader": [], "BearerAuth": []}]
+    # Use the exact scheme names present in components
+    openapi_schema["security"] = [{"APIKeyHeader": [], "HTTPBearer": []}]
 
     app.openapi_schema = openapi_schema
     return app.openapi_schema
