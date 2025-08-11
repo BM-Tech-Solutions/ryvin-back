@@ -6,6 +6,7 @@ from fastapi import status as http_status
 from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from pydantic import ValidationError
+import logging
 
 from app.core.config import settings
 from app.core.database import SessionDep
@@ -13,6 +14,8 @@ from app.models.user import User
 from app.schemas.token import TokenPayload
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
+
+logger = logging.getLogger(__name__)
 
 
 async def get_current_user(
@@ -57,10 +60,19 @@ async def get_current_user_flexible(
     # Prefer token provided via Swagger "Authorize" (HTTP Bearer)
     token: Optional[str] = None
     if credentials and credentials.credentials:
+        logger.debug(
+            "HTTPBearer credentials provided: scheme=%s, length=%s",
+            getattr(credentials, "scheme", None),
+            len(credentials.credentials) if credentials.credentials else 0,
+        )
         token = credentials.credentials
     else:
         # Fallback to raw Authorization header (if provided directly)
         header_val = request.headers.get("authorization") or request.headers.get("Authorization")
+        logger.debug(
+            "Authorization header present: %s",
+            bool(header_val),
+        )
         if not header_val:
             header_val = None
         raw = header_val.strip() if header_val else None
@@ -70,6 +82,11 @@ async def get_current_user_flexible(
                 token = raw.split(" ", 1)[1].strip()
             else:
                 token = raw
+
+    if token:
+        logger.debug("Extracted token (masked): %s... (len=%d)", token[:8], len(token))
+    else:
+        logger.debug("No Bearer token extracted from request")
 
     credentials_exception = HTTPException(
         status_code=http_status.HTTP_401_UNAUTHORIZED,
