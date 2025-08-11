@@ -170,7 +170,9 @@ def logout(
 
 @router.get("/test-token/{phone_number}")
 def get_test_token(
-    phone_number: str, db: Session = Depends(get_db), api_key: str = Security(api_key_header)
+    phone_number: str,
+    db: Session = Depends(get_db),
+    api_key: str = Security(api_key_header),
 ) -> Dict[str, str]:
     """
     Generate a test token for a given phone number.
@@ -250,7 +252,10 @@ async def exchange_custom_token_for_id_token(custom_token: str) -> str:
 
     url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key={settings.FIREBASE_API_KEY}"
 
-    payload = {"token": custom_token, "returnSecureToken": True}
+    payload = {
+        "token": custom_token,
+        "returnSecureToken": True,
+    }
 
     async with httpx.AsyncClient() as client:
         response = await client.post(url, json=payload)
@@ -272,7 +277,10 @@ def get_user_data(
         user = db.query(User).filter(User.id == user_id).first()
 
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
 
         # Convert user object to dictionary
         user_data = {
