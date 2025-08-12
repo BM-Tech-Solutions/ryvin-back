@@ -1,30 +1,29 @@
+import json
 from typing import Any, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Query, Security, HTTPException, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Security
 from fastapi import status as http_status
 from pydantic import BaseModel, EmailStr
 
 from app.core.dependencies import AdminViaTokenDep, SessionDep
+from app.core.security import utc_now
+from app.main import api_key_header
 from app.models.enums import MatchStatus
+from app.models.user import User
 from app.schemas.journey import Journey
 from app.schemas.match import Match
 from app.schemas.user import UserOut
 from app.services.admin_service import AdminService
-from app.models.user import User
-from app.core.security import utc_now
-from app.main import api_key_header
 from app.services.match_service import MatchService
 from app.services.matching_cron_service import MatchingCronService
-import json
-import os
+from seed_questionnaires import (
+    seed_questionnaires_from_db,
+    seed_questionnaires_from_file,
+)
 
 # Import seeding utilities
 from seed_users import create_test_users
-from seed_questionnaires import (
-    seed_questionnaires_from_file,
-    seed_questionnaires_from_db,
-)
 
 router = APIRouter()
 
@@ -82,8 +81,6 @@ def seed_admin(
     }
 
 
-
-
 class SeedUsersResponse(BaseModel):
     created_count: int
     users: list[dict]
@@ -113,7 +110,11 @@ class SeedQuestionnairesResponse(BaseModel):
     mode: str
 
 
-@router.post("/seed-questionnaires", status_code=http_status.HTTP_200_OK, response_model=SeedQuestionnairesResponse)
+@router.post(
+    "/seed-questionnaires",
+    status_code=http_status.HTTP_200_OK,
+    response_model=SeedQuestionnairesResponse,
+)
 def seed_questionnaires_endpoint(
     session: SessionDep,
     current_user: AdminViaTokenDep,
@@ -129,6 +130,7 @@ def seed_questionnaires_endpoint(
         mode = "db"
         success = seed_questionnaires_from_db()
     return SeedQuestionnairesResponse(success=bool(success), mode=mode)
+
 
 @router.post("/matching/trigger", status_code=http_status.HTTP_200_OK)
 async def trigger_matching_all(
@@ -179,6 +181,7 @@ def admin_get_user_matches(
     """Get matches for a given user (admin)."""
     matches = MatchService(session).get_user_matches(user_id, status, skip, limit)
     return matches
+
 
 @router.get("/users", response_model=list[UserOut])
 def get_users(

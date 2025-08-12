@@ -2,19 +2,21 @@ from collections import defaultdict
 from typing import Optional
 from uuid import UUID
 
+from sqlalchemy.orm import Session
+
 from app.core.security import utc_now
 from app.models import Questionnaire, QuestionnaireCategory, QuestionnaireField
 from app.models.enums import FieldType
 from app.schemas.questionnaire import QuestionnaireCreate, QuestionnaireUpdate
 
 from .base_service import BaseService
-from sqlalchemy.orm import Session
 
 
 class QuestionnaireService(BaseService):
     """
     Service for questionnaire-related operations
     """
+
     def __init__(self, db: Session):
         super().__init__(db)
         self.session = db

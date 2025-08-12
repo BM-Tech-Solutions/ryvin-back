@@ -20,6 +20,7 @@ class MatchService(BaseService):
     """
     Service for match-related operations
     """
+
     def __init__(self, db: Session):
         # Initialize BaseService (sets self.db)
         super().__init__(db)

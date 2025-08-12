@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional
 
-from fastapi import Depends, Header, HTTPException, Request, status
+from fastapi import Header, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from jose import JWTError, jwt
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -90,7 +90,5 @@ class CombinedAuthMiddleware(BaseHTTPMiddleware):
         # Neither valid API-Token nor valid JWT provided
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            content={
-                "detail": "Invalid or missing credentials (API-Token or Bearer JWT required)"
-            },
+            content={"detail": "Invalid or missing credentials (API-Token or Bearer JWT required)"},
         )

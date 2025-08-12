@@ -1,10 +1,10 @@
 from typing import Any, List
 from uuid import UUID
 
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi import status as http_status
 
-from app.core.dependencies import SessionDep, FlexUserDep
+from app.core.dependencies import FlexUserDep, SessionDep
 from app.schemas.match import Match
 from app.services.match_service import MatchService
 from app.services.matching_cron_service import MatchingCronService

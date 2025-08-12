@@ -17,11 +17,7 @@ router = APIRouter()
 
 @router.get(
     "/me",
-    openapi_extra={
-        "security": [
-            {"APIKeyHeader": [], "BearerAuth": []}
-        ]
-    },
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
 )
 def get_questionnaire(
     session: SessionDep,
@@ -41,11 +37,7 @@ def get_questionnaire(
 
 @router.put(
     "/me",
-    openapi_extra={
-        "security": [
-            {"APIKeyHeader": [], "BearerAuth": []}
-        ]
-    },
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
 )
 def update_questionnaire(
     session: SessionDep,
@@ -63,11 +55,7 @@ def update_questionnaire(
 
 @router.post(
     "/me",
-    openapi_extra={
-        "security": [
-            {"APIKeyHeader": [], "BearerAuth": []}
-        ]
-    },
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
 )
 def create_questionnaire(
     session: SessionDep,
@@ -90,11 +78,7 @@ def create_questionnaire(
 @router.post(
     "/complete",
     status_code=http_status.HTTP_200_OK,
-    openapi_extra={
-        "security": [
-            {"APIKeyHeader": [], "BearerAuth": []}
-        ]
-    },
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
 )
 def complete_questionnaire(
     session: SessionDep,
