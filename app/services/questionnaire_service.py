@@ -2,19 +2,21 @@ from collections import defaultdict
 from typing import Optional
 from uuid import UUID
 
+from sqlalchemy.orm import Session
+
 from app.core.security import utc_now
 from app.models import Questionnaire, QuestionnaireCategory, QuestionnaireField
 from app.models.enums import FieldType
 from app.schemas.questionnaire import QuestionnaireCreate, QuestionnaireUpdate
 
 from .base_service import BaseService
-from sqlalchemy.orm import Session
 
 
 class QuestionnaireService(BaseService):
     """
     Service for questionnaire-related operations
     """
+
     def __init__(self, db: Session):
         super().__init__(db)
         self.session = db
@@ -42,7 +44,11 @@ class QuestionnaireService(BaseService):
         """
         questionnaire = self.get_questionnaire(user_id)
         if not questionnaire:
-            questionnaire = self.create_questionnaire(user_id)
+            # Create an empty questionnaire with default values
+            questionnaire = Questionnaire(user_id=user_id)
+            self.session.add(questionnaire)
+            self.session.commit()
+            self.session.refresh(questionnaire)
         return questionnaire
 
     def update_questionnaire(
@@ -163,3 +169,23 @@ class QuestionnaireService(BaseService):
             for field in self.get_required_fields()
             if getattr(quest, field.name, None) in (None, "")
         ]
+
+    def get_null_fields(self, quest: Questionnaire) -> list[str]:
+        """
+        Return the list of questionnaire field names (based on SQLAlchemy mapped columns)
+        that currently have a null (None) value. Excludes metadata columns.
+        """
+        # Columns defined on the model
+        column_names = [col.key for col in Questionnaire.__mapper__.columns]
+        # Exclude metadata/foreign key and timestamps
+        exclude = {"id", "user_id", "created_at", "updated_at", "completed_at"}
+        result: list[str] = []
+        for name in column_names:
+            if name in exclude:
+                continue
+            # Only check attributes that exist
+            if hasattr(quest, name):
+                val = getattr(quest, name, None)
+                if val is None or (isinstance(val, str) and val.strip() == ""):
+                    result.append(name)
+        return result

@@ -1,9 +1,10 @@
+import logging
 from typing import Annotated, Optional
 from uuid import UUID
 
 from fastapi import Depends, Header, HTTPException, Request
 from fastapi import status as http_status
-from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, OAuth2PasswordBearer
 from jose import JWTError, jwt
 from pydantic import ValidationError
 import logging
@@ -117,6 +118,7 @@ async def get_current_user_flexible(
 
 FlexUserDep = Annotated[User, Depends(get_current_user_flexible)]
 
+
 async def get_current_active_user(current_user: FlexUserDep) -> User:
     """
     Get the current active user
@@ -158,6 +160,7 @@ async def get_current_admin_user(current_user: VerifiedUserDep) -> User:
 
 AdminUserDep = Annotated[User, Depends(get_current_admin_user)]
 
+
 # Admin via API-Token + Admin-ID (no user Authorization required)
 async def get_admin_via_api_token(
     session: SessionDep,
@@ -181,6 +184,7 @@ async def get_admin_via_api_token(
             detail="Admin privileges required",
         )
     return admin
+
 
 # Alternative admin dependency for admin router
 AdminViaTokenDep = Annotated[User, Depends(get_admin_via_api_token)]

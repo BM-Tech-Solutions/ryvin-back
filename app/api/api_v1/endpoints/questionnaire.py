@@ -17,11 +17,7 @@ router = APIRouter()
 
 @router.get(
     "/me",
-    openapi_extra={
-        "security": [
-            {"APIKeyHeader": [], "BearerAuth": []}
-        ]
-    },
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_questionnaire(
     session: SessionDep,
@@ -39,13 +35,42 @@ def get_questionnaire(
     return QuestionnaireInDB.model_validate(questionnaire).model_dump()
 
 
+@router.get(
+    "/me/status",
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
+)
+def get_questionnaire_status(
+    session: SessionDep,
+    current_user: VerifiedUserDep,
+) -> dict[str, Any]:
+    """
+    Get current user's questionnaire completion status.
+
+    Returns:
+        {
+            "is_completed": bool,
+            "questions_to_complete": list[str]
+        }
+    """
+    quest_service = QuestionnaireService(session)
+    quest = quest_service.get_questionnaire(current_user.id)
+    if not quest:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND, detail="Questionnaire not found"
+        )
+
+    # Consider any field that is None as not completed
+    missing = quest_service.get_null_fields(quest)
+    is_completed = len(missing) == 0
+    return {
+        "is_completed": is_completed,
+        "questions_to_complete": [] if is_completed else missing,
+    }
+
+
 @router.put(
     "/me",
-    openapi_extra={
-        "security": [
-            {"APIKeyHeader": [], "BearerAuth": []}
-        ]
-    },
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def update_questionnaire(
     session: SessionDep,
@@ -63,11 +88,7 @@ def update_questionnaire(
 
 @router.post(
     "/me",
-    openapi_extra={
-        "security": [
-            {"APIKeyHeader": [], "BearerAuth": []}
-        ]
-    },
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def create_questionnaire(
     session: SessionDep,
@@ -90,11 +111,7 @@ def create_questionnaire(
 @router.post(
     "/complete",
     status_code=http_status.HTTP_200_OK,
-    openapi_extra={
-        "security": [
-            {"APIKeyHeader": [], "BearerAuth": []}
-        ]
-    },
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def complete_questionnaire(
     session: SessionDep,
@@ -110,7 +127,7 @@ def complete_questionnaire(
             status_code=http_status.HTTP_404_NOT_FOUND, detail="Questionnaire not found"
         )
 
-    quest = quest_service.complete_questionnaire(current_user.id)
+    quest = quest_service.complete_questionnaire(quest)
 
     if not quest.is_complete():
         raise HTTPException(
@@ -124,7 +141,11 @@ def complete_questionnaire(
     }
 
 
-@router.get("/categories", response_model=list[CategoryOut])
+@router.get(
+    "/categories",
+    response_model=list[CategoryOut],
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
+)
 def get_questions_by_categories(session: SessionDep):
     """
     Get all questionnaire questions organized by categories from the database

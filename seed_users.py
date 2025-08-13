@@ -3,36 +3,40 @@
 Seed script to create 60 test users (30 male, 30 female) for the Ryvin dating app
 """
 
-import sys
 import os
 import random
-from datetime import datetime, timedelta
+import sys
+from datetime import timedelta
+
+from app.core.security import utc_now
 
 # Add the app directory to the path
-sys.path.append(os.path.join(os.path.dirname(__file__), 'app'))
+sys.path.append(os.path.join(os.path.dirname(__file__), "app"))
 
 from app.core.database import get_session
-from app.models.user import User
 from app.models.enums import SubscriptionType
+from app.models.user import User
 
 
 def create_test_users():
     """Create 60 test users with realistic French names and data"""
-    
+
     print("🚀 Starting user seeding process...")
-    
+
     session = next(get_session())
-    
+
+    # ignore formatting for these lists
+    # fmt: off
     # Extended French male names
     male_names = [
-        "Alexandre", "Antoine", "Baptiste", "Benjamin", "Clément", 
+        "Alexandre", "Antoine", "Baptiste", "Benjamin", "Clément",
         "David", "Étienne", "Fabien", "Guillaume", "Hugo",
         "Julien", "Lucas", "Maxime", "Nicolas", "Pierre",
         "Raphaël", "Sébastien", "Thomas", "Vincent", "Xavier",
         "Adrien", "Arthur", "Aurélien", "Bastien", "Cédric",
         "Damien", "Florian", "Jérémie", "Loïc", "Mathieu"
     ]
-    
+
     # Extended French female names
     female_names = [
         "Amélie", "Camille", "Charlotte", "Élise", "Emma",
@@ -42,7 +46,7 @@ def create_test_users():
         "Laure", "Manon", "Nathalie", "Pauline", "Romane",
         "Sarah", "Tiffany", "Valérie", "Yasmine", "Zoé"
     ]
-    
+
     # Extended French surnames
     surnames = [
         "Martin", "Bernard", "Dubois", "Thomas", "Robert",
@@ -56,16 +60,17 @@ def create_test_users():
         "Morin", "Mathieu", "Clement", "Gauthier", "Dumont",
         "Lopez", "Fontaine", "Chevalier", "Robin", "Masson"
     ]
-    
+    # fmt: on
+
     created_users = []
-    
+
     try:
         # Create 30 male users
         print("👨 Creating 30 male users...")
         for i in range(30):
             first_name = male_names[i]
             last_name = random.choice(surnames)
-            
+
             user = User(
                 phone_number=f"+336{random.randint(10000000, 99999999)}",
                 email=f"{first_name.lower()}.{last_name.lower()}@example.fr",
@@ -73,28 +78,30 @@ def create_test_users():
                 is_verified=True,
                 has_completed_questionnaire=False,  # Will be set to True when questionnaire is completed
                 subscription_type=random.choice([SubscriptionType.FREE, SubscriptionType.PREMIUM]),
-                last_login=datetime.utcnow() - timedelta(days=random.randint(0, 7)),
-                verified_at=datetime.utcnow() - timedelta(days=random.randint(1, 30))
+                last_login=utc_now() - timedelta(days=random.randint(0, 7)),
+                verified_at=utc_now() - timedelta(days=random.randint(1, 30)),
             )
-            
+
             session.add(user)
             session.flush()  # Get the ID
-            created_users.append({
-                'id': user.id,
-                'name': f"{first_name} {last_name}",
-                'email': user.email,
-                'phone': user.phone_number,
-                'gender': 'homme'
-            })
-            
+            created_users.append(
+                {
+                    "id": user.id,
+                    "name": f"{first_name} {last_name}",
+                    "email": user.email,
+                    "phone": user.phone_number,
+                    "gender": "homme",
+                }
+            )
+
             print(f"  ✅ Created male user: {first_name} {last_name} ({user.email})")
-        
+
         # Create 30 female users
         print("👩 Creating 30 female users...")
         for i in range(30):
             first_name = female_names[i]
             last_name = random.choice(surnames)
-            
+
             user = User(
                 phone_number=f"+336{random.randint(10000000, 99999999)}",
                 email=f"{first_name.lower()}.{last_name.lower()}@example.fr",
@@ -102,35 +109,35 @@ def create_test_users():
                 is_verified=True,
                 has_completed_questionnaire=False,  # Will be set to True when questionnaire is completed
                 subscription_type=random.choice([SubscriptionType.FREE, SubscriptionType.PREMIUM]),
-                last_login=datetime.utcnow() - timedelta(days=random.randint(0, 7)),
-                verified_at=datetime.utcnow() - timedelta(days=random.randint(1, 30))
+                last_login=utc_now() - timedelta(days=random.randint(0, 7)),
+                verified_at=utc_now() - timedelta(days=random.randint(1, 30)),
             )
-            
+
             session.add(user)
             session.flush()  # Get the ID
-            created_users.append({
-                'id': user.id,
-                'name': f"{first_name} {last_name}",
-                'email': user.email,
-                'phone': user.phone_number,
-                'gender': 'femme'
-            })
-            
+            created_users.append(
+                {
+                    "id": user.id,
+                    "name": f"{first_name} {last_name}",
+                    "email": user.email,
+                    "phone": user.phone_number,
+                    "gender": "femme",
+                }
+            )
+
             print(f"  ✅ Created female user: {first_name} {last_name} ({user.email})")
-        
+
         # Commit all users
         session.commit()
-        
+
         print(f"\n🎉 Successfully created {len(created_users)} users!")
         print("\n📋 User Summary:")
-        print(f"   👨 Male users: 30")
-        print(f"   👩 Female users: 30")
-        print(f"   📧 All users verified and active")
-        
-    
-        
+        print("   👨 Male users: 30")
+        print("   👩 Female users: 30")
+        print("   📧 All users verified and active")
+
         return created_users
-        
+
     except Exception as e:
         print(f"❌ Error creating users: {str(e)}")
         session.rollback()
@@ -141,24 +148,24 @@ def create_test_users():
 
 def list_existing_users():
     """List existing users in the database"""
-    
+
     print("📋 Checking existing users...")
-    
+
     session = next(get_session())
-    
+
     try:
-        users = session.query(User).filter(User.is_active == True).all()
-        
+        users = session.query(User).filter(User.is_active.is_(True)).all()
+
         if not users:
             print("   No users found in database")
             return []
-        
+
         print(f"   Found {len(users)} existing users:")
         for user in users:
             print(f"   - {user.email} ({user.phone_number})")
-        
+
         return users
-        
+
     except Exception as e:
         print(f"❌ Error listing users: {str(e)}")
         return []
@@ -168,22 +175,24 @@ def list_existing_users():
 
 def main():
     """Main function to run the user seeding"""
-    
+
     print("🌱 RYVIN DATING APP - USER SEEDING SCRIPT")
     print("=" * 50)
-    
+
     # Check existing users
     existing_users = list_existing_users()
-    
+
     if existing_users:
-        response = input(f"\n⚠️  Found {len(existing_users)} existing users. Continue anyway? (y/N): ")
-        if response.lower() != 'y':
+        response = input(
+            f"\n⚠️  Found {len(existing_users)} existing users. Continue anyway? (y/N): "
+        )
+        if response.lower() != "y":
             print("❌ Seeding cancelled")
             return
-    
+
     # Create new users
     created_users = create_test_users()
-    
+
     if created_users:
         print("\n🎯 Next Steps:")
         print("1. Run 'python seed_questionnaires.py' to complete questionnaires")

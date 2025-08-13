@@ -22,6 +22,7 @@ class AdminService(BaseService):
     """
     Service for admin-related operations
     """
+
     def __init__(self, db: Session):
         # Ensure BaseService initialization (sets self.db)
         super().__init__(db)

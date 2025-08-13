@@ -24,6 +24,7 @@ class JourneyService(BaseService):
     """
     Service for journey-related operations
     """
+
     def __init__(self, db: Session):
         super().__init__(db)
         self.session = db
