@@ -25,6 +25,7 @@ from seed_questionnaires import (
 # Import seeding utilities
 from seed_users import create_test_users
 
+
 router = APIRouter()
 
 
@@ -130,7 +131,6 @@ def seed_questionnaires_endpoint(
         mode = "db"
         success = seed_questionnaires_from_db()
     return SeedQuestionnairesResponse(success=bool(success), mode=mode)
-
 
 @router.post("/matching/trigger", status_code=http_status.HTTP_200_OK)
 async def trigger_matching_all(

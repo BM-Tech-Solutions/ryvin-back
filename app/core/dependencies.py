@@ -7,6 +7,7 @@ from fastapi import status as http_status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, OAuth2PasswordBearer
 from jose import JWTError, jwt
 from pydantic import ValidationError
+import logging
 
 from app.core.config import settings
 from app.core.database import SessionDep
