@@ -5,17 +5,17 @@ This service implements a sophisticated compatibility scoring system
 based on questionnaire responses across multiple categories.
 """
 
-from typing import Dict, Any, Optional, Tuple
-from uuid import UUID
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any, Dict, Tuple
 
-from app.models.questionnaire import Questionnaire
 from app.models.enums import Gender
+from app.models.questionnaire import Questionnaire
 
 
 class MatchingStrategy(Enum):
     """Different strategies for matching different types of fields"""
+
     EXACT_MATCH = "exact_match"
     PREFERENCE_MATCH = "preference_match"
     RANGE_MATCH = "range_match"
@@ -26,6 +26,7 @@ class MatchingStrategy(Enum):
 @dataclass
 class CategoryWeight:
     """Weights for different compatibility categories"""
+
     relationship_goals_values: float = 0.25
     religious_spiritual: float = 0.20
     lifestyle_compatibility: float = 0.15
@@ -39,6 +40,7 @@ class CategoryWeight:
 @dataclass
 class CompatibilityResult:
     """Result of compatibility calculation"""
+
     total_score: int
     category_scores: Dict[str, int]
     deal_breaker_failed: bool
@@ -58,17 +60,15 @@ class MatchingAlgorithmService:
         self.compatibility_matrices = self._initialize_compatibility_matrices()
 
     def calculate_compatibility(
-        self, 
-        questionnaire_1: Questionnaire, 
-        questionnaire_2: Questionnaire
+        self, questionnaire_1: Questionnaire, questionnaire_2: Questionnaire
     ) -> CompatibilityResult:
         """
         Main method to calculate compatibility between two questionnaires
-        
+
         Args:
             questionnaire_1: First user's questionnaire
             questionnaire_2: Second user's questionnaire
-            
+
         Returns:
             CompatibilityResult with detailed scoring breakdown
         """
@@ -79,9 +79,9 @@ class MatchingAlgorithmService:
                 category_scores={},
                 deal_breaker_failed=True,
                 deal_breaker_reasons=["Incomplete questionnaire"],
-                confidence_level=0.0
+                confidence_level=0.0,
             )
-        
+
         # Step 1.5: Validate gender compatibility (only male-female matching)
         gender_validation = self._validate_gender_compatibility(questionnaire_1, questionnaire_2)
         if not gender_validation[0]:
@@ -90,7 +90,7 @@ class MatchingAlgorithmService:
                 category_scores={},
                 deal_breaker_failed=True,
                 deal_breaker_reasons=gender_validation[1],
-                confidence_level=1.0
+                confidence_level=1.0,
             )
 
         # Step 2: Check deal breakers
@@ -101,7 +101,7 @@ class MatchingAlgorithmService:
                 category_scores={},
                 deal_breaker_failed=True,
                 deal_breaker_reasons=deal_breaker_result[1],
-                confidence_level=1.0
+                confidence_level=1.0,
             )
 
         # Step 3: Calculate category scores
@@ -118,41 +118,59 @@ class MatchingAlgorithmService:
             category_scores=category_scores,
             deal_breaker_failed=False,
             deal_breaker_reasons=[],
-            confidence_level=confidence
+            confidence_level=confidence,
         )
 
-    def _check_deal_breakers(
-        self, 
-        q1: Questionnaire, 
-        q2: Questionnaire
-    ) -> Tuple[bool, list[str]]:
+    def _check_deal_breakers(self, q1: Questionnaire, q2: Questionnaire) -> Tuple[bool, list[str]]:
         """
         Check for deal breakers that would eliminate compatibility
-        
+
         Returns:
             Tuple of (has_deal_breaker, list_of_reasons)
         """
         deal_breaker_reasons = []
 
         # Religious deal breakers
-        if q1.partner_must_share_religion == "oui" and q1.religion_spirituality != q2.religion_spirituality:
+        if (
+            q1.partner_must_share_religion == "oui"
+            and q1.religion_spirituality != q2.religion_spirituality
+        ):
             deal_breaker_reasons.append("Religious requirement not met")
 
-        if q2.partner_must_share_religion == "oui" and q2.religion_spirituality != q1.religion_spirituality:
+        if (
+            q2.partner_must_share_religion == "oui"
+            and q2.religion_spirituality != q1.religion_spirituality
+        ):
             deal_breaker_reasons.append("Partner's religious requirement not met")
 
         # Non-believer acceptance
-        if q1.accept_non_believer == "non" and q2.religion_spirituality in ["athée", "agnostique", "non_croyant"]:
+        if q1.accept_non_believer == "non" and q2.religion_spirituality in [
+            "athée",
+            "agnostique",
+            "non_croyant",
+        ]:
             deal_breaker_reasons.append("Non-believer not accepted")
 
-        if q2.accept_non_believer == "non" and q1.religion_spirituality in ["athée", "agnostique", "non_croyant"]:
+        if q2.accept_non_believer == "non" and q1.religion_spirituality in [
+            "athée",
+            "agnostique",
+            "non_croyant",
+        ]:
             deal_breaker_reasons.append("Partner doesn't accept non-believers")
 
         # Children deal breakers
-        if q1.wants_children == "oui" and q1.partner_must_want_children == "oui" and q2.wants_children == "non":
+        if (
+            q1.wants_children == "oui"
+            and q1.partner_must_want_children == "oui"
+            and q2.wants_children == "non"
+        ):
             deal_breaker_reasons.append("Children requirement not met")
 
-        if q2.wants_children == "oui" and q2.partner_must_want_children == "oui" and q1.wants_children == "non":
+        if (
+            q2.wants_children == "oui"
+            and q2.partner_must_want_children == "oui"
+            and q1.wants_children == "non"
+        ):
             deal_breaker_reasons.append("Partner's children requirement not met")
 
         # Smoking deal breakers
@@ -171,13 +189,9 @@ class MatchingAlgorithmService:
 
         return len(deal_breaker_reasons) > 0, deal_breaker_reasons
 
-    def _calculate_category_scores(
-        self, 
-        q1: Questionnaire, 
-        q2: Questionnaire
-    ) -> Dict[str, int]:
+    def _calculate_category_scores(self, q1: Questionnaire, q2: Questionnaire) -> Dict[str, int]:
         """Calculate scores for each compatibility category"""
-        
+
         category_scores = {}
 
         # 1. Relationship Goals & Values (25%)
@@ -263,8 +277,11 @@ class MatchingAlgorithmService:
 
         # Sport frequency compatibility (20 points)
         score += self._score_lifestyle_preference_match(
-            q1.sport_frequency, q2.sport_frequency,
-            q1.partner_sport_frequency, q2.partner_sport_frequency, 20
+            q1.sport_frequency,
+            q2.sport_frequency,
+            q1.partner_sport_frequency,
+            q2.partner_sport_frequency,
+            20,
         )
 
         # Dietary habits (20 points)
@@ -275,8 +292,11 @@ class MatchingAlgorithmService:
 
         # Cleanliness and hygiene (20 points)
         score += self._score_lifestyle_preference_match(
-            q1.hygiene_tidiness_approach, q2.hygiene_tidiness_approach,
-            q1.partner_cleanliness_importance, q2.partner_cleanliness_importance, 20
+            q1.hygiene_tidiness_approach,
+            q2.hygiene_tidiness_approach,
+            q1.partner_cleanliness_importance,
+            q2.partner_cleanliness_importance,
+            20,
         )
 
         # Social vs homebody balance (20 points)
@@ -334,7 +354,9 @@ class MatchingAlgorithmService:
         # Conflict management (25 points)
         if q1.conflict_management == q2.conflict_management:
             score += 25
-        elif self._are_complementary_conflict_styles(q1.conflict_management, q2.conflict_management):
+        elif self._are_complementary_conflict_styles(
+            q1.conflict_management, q2.conflict_management
+        ):
             score += 15
 
         # Greatest quality alignment (20 points)
@@ -399,7 +421,10 @@ class MatchingAlgorithmService:
         # Political orientation (60 points)
         if q1.political_orientation == q2.political_orientation:
             score += 60
-        elif q1.partner_share_convictions_importance == "peu_important" and q2.partner_share_convictions_importance == "peu_important":
+        elif (
+            q1.partner_share_convictions_importance == "peu_important"
+            and q2.partner_share_convictions_importance == "peu_important"
+        ):
             score += 30  # Both don't care much about political alignment
 
         # Importance of sharing convictions (40 points)
@@ -410,7 +435,9 @@ class MatchingAlgorithmService:
 
     # Helper methods for specific compatibility calculations
 
-    def _score_age_compatibility(self, q1: Questionnaire, q2: Questionnaire, max_points: int) -> int:
+    def _score_age_compatibility(
+        self, q1: Questionnaire, q2: Questionnaire, max_points: int
+    ) -> int:
         """Score age compatibility based on preferences and actual ages"""
         # This would need actual age calculation from age field
         # For now, return partial score if both have age preferences
@@ -419,53 +446,54 @@ class MatchingAlgorithmService:
         return 0
 
     def _score_lifestyle_preference_match(
-        self, 
-        trait1: str, trait2: str, 
-        preference1: str, preference2: str, 
-        max_points: int
+        self, trait1: str, trait2: str, preference1: str, preference2: str, max_points: int
     ) -> int:
         """Score mutual lifestyle preference matching"""
         score = 0
-        
+
         # If traits match exactly
         if trait1 == trait2:
             score += max_points // 2
-            
+
         # If preferences are met mutually
         if preference1 == trait2:
             score += max_points // 4
         if preference2 == trait1:
             score += max_points // 4
-            
+
         return min(score, max_points)
 
-    def _score_pet_compatibility(self, q1: Questionnaire, q2: Questionnaire, max_points: int) -> int:
+    def _score_pet_compatibility(
+        self, q1: Questionnaire, q2: Questionnaire, max_points: int
+    ) -> int:
         """Score pet-related compatibility"""
         score = 0
-        
+
         # If both have pets or both don't have pets
         if q1.has_pet == q2.has_pet:
             score += max_points // 2
-            
+
         # Check readiness to live with pets
         if q1.has_pet == "oui" and q2.ready_to_live_with_pet == "oui":
             score += max_points // 4
         if q2.has_pet == "oui" and q1.ready_to_live_with_pet == "oui":
             score += max_points // 4
-            
+
         # Check allergies
         if q1.allergic_to_animals == "oui" and q2.has_pet == "oui":
             score -= max_points // 2
         if q2.allergic_to_animals == "oui" and q1.has_pet == "oui":
             score -= max_points // 2
-            
+
         return max(0, min(score, max_points))
 
-    def _score_personality_type_compatibility(self, q1: Questionnaire, q2: Questionnaire, max_points: int) -> int:
+    def _score_personality_type_compatibility(
+        self, q1: Questionnaire, q2: Questionnaire, max_points: int
+    ) -> int:
         """Score personality type compatibility"""
         if not q1.personality_type or not q2.personality_type:
             return 0
-            
+
         # Check if personality types are complementary or similar based on preferences
         if q1.partner_personality_preference == q2.personality_type:
             return max_points
@@ -480,75 +508,83 @@ class MatchingAlgorithmService:
         """Check if religious practice levels are compatible"""
         if not practice1 or not practice2:
             return False
-            
+
         # Define compatibility matrix for practice levels
         compatible_practices = {
             "tres_pratiquant": ["pratiquant", "moderement_pratiquant"],
             "pratiquant": ["tres_pratiquant", "moderement_pratiquant"],
             "moderement_pratiquant": ["pratiquant", "peu_pratiquant"],
             "peu_pratiquant": ["moderement_pratiquant", "non_pratiquant"],
-            "non_pratiquant": ["peu_pratiquant"]
+            "non_pratiquant": ["peu_pratiquant"],
         }
-        
+
         return practice2 in compatible_practices.get(practice1, [])
 
     def _are_complementary_conflict_styles(self, style1: str, style2: str) -> bool:
         """Check if conflict management styles are complementary"""
         if not style1 or not style2:
             return False
-            
+
         # Some conflict styles work well together
         complementary_pairs = [
             ("direct", "diplomatique"),
             ("calme", "expressif"),
-            ("analytique", "emotionnel")
+            ("analytique", "emotionnel"),
         ]
-        
+
         return (style1, style2) in complementary_pairs or (style2, style1) in complementary_pairs
 
     def _are_compatible_education_levels(self, edu1: str, edu2: str) -> bool:
         """Check if education levels are compatible"""
         if not edu1 or not edu2:
             return False
-            
+
         # Define education level hierarchy
-        education_hierarchy = {
-            "doctorat": 5,
-            "master": 4,
-            "licence": 3,
-            "bac": 2,
-            "college": 1
-        }
-        
+        education_hierarchy = {"doctorat": 5, "master": 4, "licence": 3, "bac": 2, "college": 1}
+
         level1 = education_hierarchy.get(edu1, 0)
         level2 = education_hierarchy.get(edu2, 0)
-        
+
         # Compatible if within 1-2 levels
         return abs(level1 - level2) <= 2
 
     def _calculate_weighted_total(self, category_scores: Dict[str, int]) -> float:
         """Calculate weighted total score from category scores"""
         total = 0.0
-        
-        total += category_scores.get("relationship_goals_values", 0) * self.category_weights.relationship_goals_values
-        total += category_scores.get("religious_spiritual", 0) * self.category_weights.religious_spiritual
-        total += category_scores.get("lifestyle_compatibility", 0) * self.category_weights.lifestyle_compatibility
+
+        total += (
+            category_scores.get("relationship_goals_values", 0)
+            * self.category_weights.relationship_goals_values
+        )
+        total += (
+            category_scores.get("religious_spiritual", 0)
+            * self.category_weights.religious_spiritual
+        )
+        total += (
+            category_scores.get("lifestyle_compatibility", 0)
+            * self.category_weights.lifestyle_compatibility
+        )
         total += category_scores.get("family_children", 0) * self.category_weights.family_children
-        total += category_scores.get("personality_communication", 0) * self.category_weights.personality_communication
-        total += category_scores.get("physical_intimacy", 0) * self.category_weights.physical_intimacy
+        total += (
+            category_scores.get("personality_communication", 0)
+            * self.category_weights.personality_communication
+        )
+        total += (
+            category_scores.get("physical_intimacy", 0) * self.category_weights.physical_intimacy
+        )
         total += category_scores.get("socio_economic", 0) * self.category_weights.socio_economic
         total += category_scores.get("political_social", 0) * self.category_weights.political_social
-        
+
         return total
 
     def _calculate_confidence_level(self, q1: Questionnaire, q2: Questionnaire) -> float:
         """Calculate confidence level based on questionnaire completeness"""
         # Count non-null fields for both questionnaires
         total_fields = 50  # Approximate number of important fields
-        
+
         q1_filled = sum(1 for field in vars(q1).values() if field is not None and field != "")
         q2_filled = sum(1 for field in vars(q2).values() if field is not None and field != "")
-        
+
         avg_completeness = (q1_filled + q2_filled) / (2 * total_fields)
         return min(1.0, avg_completeness)
 
@@ -556,49 +592,47 @@ class MatchingAlgorithmService:
         """Get list of fields that can be deal breakers"""
         return [
             "partner_must_share_religion",
-            "accept_non_believer", 
+            "accept_non_believer",
             "partner_must_want_children",
             "accept_smoker_partner",
             "accept_alcohol_consumer_partner",
-            "allergic_to_animals"
+            "allergic_to_animals",
         ]
 
-    def _validate_gender_compatibility(self, q1: Questionnaire, q2: Questionnaire) -> Tuple[bool, list[str]]:
+    def _validate_gender_compatibility(
+        self, q1: Questionnaire, q2: Questionnaire
+    ) -> Tuple[bool, list[str]]:
         """
         Validate that users have different genders (male-female matching only)
-        
+
         Args:
             q1: First user's questionnaire
             q2: Second user's questionnaire
-            
+
         Returns:
             Tuple of (is_compatible, list_of_reasons)
         """
         reasons = []
-        
+
         # Check if both users have gender specified
         if not q1.gender or not q2.gender:
             reasons.append("Gender not specified for one or both users")
             return False, reasons
-        
+
         # Check if both genders are valid (homme or femme)
         valid_genders = [Gender.HOMME, Gender.FEMME]
         if q1.gender not in valid_genders or q2.gender not in valid_genders:
             reasons.append("Invalid gender specification")
             return False, reasons
-        
+
         # Check if genders are different (no same-sex matching)
         if q1.gender == q2.gender:
             reasons.append("Same-sex matching not supported")
             return False, reasons
-        
+
         # Valid male-female pairing
         return True, []
 
     def _initialize_compatibility_matrices(self) -> Dict[str, Any]:
         """Initialize compatibility matrices for complex matching"""
-        return {
-            "personality_types": {},
-            "conflict_styles": {},
-            "education_levels": {}
-        }
+        return {"personality_types": {}, "conflict_styles": {}, "education_levels": {}}

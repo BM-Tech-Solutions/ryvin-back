@@ -2,14 +2,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
 from fastapi.openapi.utils import get_openapi
 from fastapi.security import APIKeyHeader, HTTPBearer
 
 from firebase import init_firebase
 
-from .core.config import settings
 from .core.auth import CombinedAuthMiddleware
+from .core.config import settings
 from .cron_jobs import scheduler
 
 # Define security schemes for Swagger docs

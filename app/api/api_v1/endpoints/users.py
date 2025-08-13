@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Security
+from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
 from app.core.dependencies import FlexUserDep
-from app.core.security import create_access_token
 from app.main import api_key_header, http_bearer
-from fastapi.security import HTTPAuthorizationCredentials
 
 router = APIRouter()
 
@@ -16,7 +15,6 @@ class CurrentUserResponse(BaseModel):
     email: str | None = None
     is_admin: bool
     is_verified: bool
-
 
 
 @router.get("/get_current_user", response_model=CurrentUserResponse)

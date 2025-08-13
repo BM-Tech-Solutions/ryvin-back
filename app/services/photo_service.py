@@ -5,17 +5,18 @@ from uuid import UUID
 
 from fastapi import HTTPException, UploadFile
 from fastapi import status as http_status
+from sqlalchemy.orm import Session
 
 from app.models import Photo
 
 from .base_service import BaseService
-from sqlalchemy.orm import Session
 
 
 class PhotoService(BaseService):
     """
     Service for User Photos operations
     """
+
     def __init__(self, db: Session):
         super().__init__(db)
         self.session = db
