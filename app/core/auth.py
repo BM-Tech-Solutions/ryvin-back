@@ -22,6 +22,14 @@ def _is_protected_path(path: str) -> bool:
     return path.startswith(f"{settings.API_V1_STR}/")
 
 
+def _is_auth_path(path: str) -> bool:
+    """
+    Paths under the authentication router should not require a Bearer JWT.
+    They still require the API token header.
+    """
+    return path.startswith(f"{settings.API_V1_STR}/auth")
+
+
 def decode_jwt_token(token: str) -> Dict[str, Any]:
     """
     Decode and validate a JWT token using HS256 and SECRET_KEY from settings.
@@ -77,23 +85,25 @@ class CombinedAuthMiddleware(BaseHTTPMiddleware):
                 content={"detail": "Invalid or missing API-Token"},
             )
 
-        # Then validate Authorization: Bearer <JWT>
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={"detail": "Missing Bearer token"},
-            )
+        # For auth routes, skip JWT requirement (only API token is required)
+        if not _is_auth_path(request.url.path):
+            # Then validate Authorization: Bearer <JWT>
+            auth_header = request.headers.get("Authorization")
+            if not auth_header or not auth_header.startswith("Bearer "):
+                return JSONResponse(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    content={"detail": "Missing Bearer token"},
+                )
 
-        token = auth_header.split(" ", 1)[1].strip()
-        try:
-            payload = decode_jwt_token(token)
-            # attach payload for downstream usage if needed
-            request.state.jwt_payload = payload
-        except HTTPException as exc:
-            return JSONResponse(
-                status_code=exc.status_code if hasattr(exc, "status_code") else status.HTTP_401_UNAUTHORIZED,
-                content={"detail": "Invalid or expired JWT token"},
-            )
+            token = auth_header.split(" ", 1)[1].strip()
+            try:
+                payload = decode_jwt_token(token)
+                # attach payload for downstream usage if needed
+                request.state.jwt_payload = payload
+            except HTTPException as exc:
+                return JSONResponse(
+                    status_code=exc.status_code if hasattr(exc, "status_code") else status.HTTP_401_UNAUTHORIZED,
+                    content={"detail": "Invalid or expired JWT token"},
+                )
 
         return await call_next(request)
