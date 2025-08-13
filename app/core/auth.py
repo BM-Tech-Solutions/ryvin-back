@@ -57,11 +57,11 @@ async def get_jwt_payload(
 
 class CombinedAuthMiddleware(BaseHTTPMiddleware):
     """
-    Middleware that authorizes requests to protected paths if EITHER:
-    - a valid API-Token/X-API-Key header equals settings.API_TOKEN (backward compatible), OR
+    Middleware that authorizes requests to protected paths ONLY IF BOTH are provided:
+    - a valid API-Token/X-API-Key header equals settings.API_TOKEN, AND
     - a valid Authorization: Bearer <JWT> signed with SECRET_KEY (HS256).
 
-    On successful JWT validation, the decoded payload is attached to request.state.jwt_payload.
+    On successful validation, the decoded JWT payload is attached to request.state.jwt_payload.
     """
 
     async def dispatch(self, request: Request, call_next):
@@ -69,26 +69,31 @@ class CombinedAuthMiddleware(BaseHTTPMiddleware):
         if not _is_protected_path(request.url.path):
             return await call_next(request)
 
-        # 1) API-Token compatibility path
+        # Validate API-Token (or X-API-Key) first
         api_token = request.headers.get("API-Token") or request.headers.get("X-API-Key")
-        if api_token and api_token == settings.API_TOKEN:
-            return await call_next(request)
+        if not api_token or api_token != settings.API_TOKEN:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={"detail": "Invalid or missing API-Token"},
+            )
 
-        # 2) Authorization: Bearer <JWT>
+        # Then validate Authorization: Bearer <JWT>
         auth_header = request.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            token = auth_header.split(" ", 1)[1].strip()
-            try:
-                payload = decode_jwt_token(token)
-                # attach payload for downstream usage if needed
-                request.state.jwt_payload = payload
-                return await call_next(request)
-            except HTTPException:
-                # fall through to 401 below
-                pass
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={"detail": "Missing Bearer token"},
+            )
 
-        # Neither valid API-Token nor valid JWT provided
-        return JSONResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content={"detail": "Invalid or missing credentials (API-Token or Bearer JWT required)"},
-        )
+        token = auth_header.split(" ", 1)[1].strip()
+        try:
+            payload = decode_jwt_token(token)
+            # attach payload for downstream usage if needed
+            request.state.jwt_payload = payload
+        except HTTPException as exc:
+            return JSONResponse(
+                status_code=exc.status_code if hasattr(exc, "status_code") else status.HTTP_401_UNAUTHORIZED,
+                content={"detail": "Invalid or expired JWT token"},
+            )
+
+        return await call_next(request)

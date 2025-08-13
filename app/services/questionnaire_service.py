@@ -44,7 +44,11 @@ class QuestionnaireService(BaseService):
         """
         questionnaire = self.get_questionnaire(user_id)
         if not questionnaire:
-            questionnaire = self.create_questionnaire(user_id)
+            # Create an empty questionnaire with default values
+            questionnaire = Questionnaire(user_id=user_id)
+            self.session.add(questionnaire)
+            self.session.commit()
+            self.session.refresh(questionnaire)
         return questionnaire
 
     def update_questionnaire(
@@ -165,3 +169,23 @@ class QuestionnaireService(BaseService):
             for field in self.get_required_fields()
             if getattr(quest, field.name, None) in (None, "")
         ]
+
+    def get_null_fields(self, quest: Questionnaire) -> list[str]:
+        """
+        Return the list of questionnaire field names (based on SQLAlchemy mapped columns)
+        that currently have a null (None) value. Excludes metadata columns.
+        """
+        # Columns defined on the model
+        column_names = [col.key for col in Questionnaire.__mapper__.columns]
+        # Exclude metadata/foreign key and timestamps
+        exclude = {"id", "user_id", "created_at", "updated_at", "completed_at"}
+        result: list[str] = []
+        for name in column_names:
+            if name in exclude:
+                continue
+            # Only check attributes that exist
+            if hasattr(quest, name):
+                val = getattr(quest, name, None)
+                if val is None or (isinstance(val, str) and val.strip() == ""):
+                    result.append(name)
+        return result

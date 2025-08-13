@@ -15,7 +15,7 @@ router = APIRouter()
 @router.get(
     "/me",
     response_model=List[Match],
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_my_matches(
     session: SessionDep,
@@ -35,7 +35,7 @@ def get_my_matches(
 @router.get(
     "/{match_id}",
     response_model=Match,
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_specific_match(session: SessionDep, current_user: FlexUserDep, match_id: UUID) -> Any:
     """
@@ -61,7 +61,7 @@ def get_specific_match(session: SessionDep, current_user: FlexUserDep, match_id:
     "/{match_id}/accept",
     response_model=Match,
     status_code=http_status.HTTP_200_OK,
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def accept_match(
     session: SessionDep,
@@ -80,7 +80,7 @@ def accept_match(
     "/{match_id}/decline",
     response_model=Match,
     status_code=http_status.HTTP_200_OK,
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def decline_match(
     session: SessionDep,
@@ -98,7 +98,7 @@ def decline_match(
 @router.post(
     "/refresh",
     status_code=http_status.HTTP_200_OK,
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 async def refresh_my_matches(
     session: SessionDep,
