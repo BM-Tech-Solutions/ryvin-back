@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   web:
     build: .
@@ -31,6 +33,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    restart: "no"
     networks:
       - ryvin-network
 

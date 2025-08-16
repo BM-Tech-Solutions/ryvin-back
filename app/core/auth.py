@@ -30,6 +30,14 @@ def _is_auth_path(path: str) -> bool:
     return path.startswith(f"{settings.API_V1_STR}/auth")
 
 
+def _is_admin_path(path: str) -> bool:
+    """
+    Admin endpoints should only require API token header.
+    No Bearer JWT is required for paths under the admin router.
+    """
+    return path.startswith(f"{settings.API_V1_STR}/admin")
+
+
 def decode_jwt_token(token: str) -> Dict[str, Any]:
     """
     Decode and validate a JWT token using HS256 and SECRET_KEY from settings.
@@ -85,8 +93,8 @@ class CombinedAuthMiddleware(BaseHTTPMiddleware):
                 content={"detail": "Invalid or missing API-Token"},
             )
 
-        # For auth routes, skip JWT requirement (only API token is required)
-        if not _is_auth_path(request.url.path):
+        # For auth and admin routes, skip JWT requirement (only API token is required)
+        if not (_is_auth_path(request.url.path) or _is_admin_path(request.url.path)):
             # Then validate Authorization: Bearer <JWT>
             auth_header = request.headers.get("Authorization")
             if not auth_header or not auth_header.startswith("Bearer "):
