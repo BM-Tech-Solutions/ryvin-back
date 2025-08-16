@@ -126,11 +126,33 @@ class QuestionnaireService(BaseService):
             .all()
         )
 
+    def get_categories_by_ids(self, ids: list[UUID]) -> list[QuestionnaireCategory]:
+        if not ids:
+            return []
+        return (
+            self.session.query(QuestionnaireCategory)
+            .filter(QuestionnaireCategory.id.in_(ids))
+            .order_by(QuestionnaireCategory.order_position)
+            .all()
+        )
+
     def get_category_fields(self, category_id: UUID) -> list[QuestionnaireField]:
         return (
             self.session.query(QuestionnaireField)
             .filter(QuestionnaireField.category_id == category_id)
             .order_by(QuestionnaireField.order_position)
+            .all()
+        )
+
+    def get_fields_by_names(self, names: list[str]) -> list[QuestionnaireField]:
+        """
+        Fetch questionnaire fields whose name is in the provided list.
+        """
+        if not names:
+            return []
+        return (
+            self.session.query(QuestionnaireField)
+            .filter(QuestionnaireField.name.in_(names))
             .all()
         )
 
