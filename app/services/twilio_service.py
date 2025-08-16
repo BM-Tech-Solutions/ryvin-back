@@ -100,7 +100,13 @@ class TwilioService:
             return webhook
         except TwilioRestException as e:
             print("Twilio Webhook Registration Failed:")
+            print(f"Error: {e}")
             print(f"webhook url: '{settings.TWILIO_WEBHOOK_URL}'")
             print(f"events: {events}")
             print(e.status)
             print(e.msg)
+        except Exception as e:
+            print("Twilio Webhook Registration Failed:")
+            print(f"Error: {e}")
+            print(f"webhook url: '{settings.TWILIO_WEBHOOK_URL}'")
+            print(f"events: {events}")
