@@ -9,6 +9,7 @@ from app.models.user import User
 from app.schemas.user import UserUpdate
 
 from .base_service import BaseService
+from .twilio_service import TwilioService
 
 
 class UserService(BaseService):
@@ -49,6 +50,13 @@ class UserService(BaseService):
         self.session.commit()
         self.session.refresh(user)
         return user
+
+    def create_twilio_user(self, user: User):
+        twilio_service = TwilioService()
+        twilio_user = twilio_service.get_user(str(user.id))
+        if not twilio_user:
+            twilio_user = twilio_service.create_user(str(user.id))
+        return twilio_user
 
     def verify_user(self, user: User) -> User:
         """

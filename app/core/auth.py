@@ -16,6 +16,7 @@ def _is_protected_path(path: str) -> bool:
         path.endswith("/docs")
         or path.endswith("/openapi.json")
         or path.endswith("/redoc")
+        or path.endswith("/twilio/webhook")
         or path == "/"
     ):
         return False
@@ -102,7 +103,9 @@ class CombinedAuthMiddleware(BaseHTTPMiddleware):
                 request.state.jwt_payload = payload
             except HTTPException as exc:
                 return JSONResponse(
-                    status_code=exc.status_code if hasattr(exc, "status_code") else status.HTTP_401_UNAUTHORIZED,
+                    status_code=exc.status_code
+                    if hasattr(exc, "status_code")
+                    else status.HTTP_401_UNAUTHORIZED,
                     content={"detail": "Invalid or expired JWT token"},
                 )
 

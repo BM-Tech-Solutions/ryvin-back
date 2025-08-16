@@ -34,12 +34,13 @@ class MessageInDBBase(MessageBase):
     """
 
     id: UUID
-    sender_id: UUID
+    sender_id: UUID | None
     journey_id: UUID
     is_read: bool = False
     sent_at: datetime
     created_at: datetime
     updated_at: datetime
+    twilio_msg_id: str | None
 
 
 class MessageInDB(MessageInDBBase):
@@ -74,19 +75,27 @@ class MessageOut(BaseModel):
 
     id: UUID
     journey_id: UUID
-    sender_id: UUID
+    sender_id: UUID | None
     content: str
     message_type: str
     is_read: bool
     sent_at: datetime
     created_at: datetime
     updated_at: datetime
+    twilio_msg_id: str | None
     sender: Sender
 
     @field_validator("sender", mode="before")
     @classmethod
     def validate_sender(cls, value, info: ValidationInfo):
         sender_id = info.data.get("sender_id")
+        # check because sender_id is nullable
+        if not sender_id:
+            return {
+                "first_name": "system",
+                "avatar": "url for system avatar",
+            }
+
         with Session() as sess:
             quest = sess.query(Questionnaire).filter(Questionnaire.user_id == sender_id).first()
             primary_photo = (

@@ -73,6 +73,16 @@ class Settings(BaseSettings):
     # API SECURITY
     API_TOKEN: str
 
+    # Twilio
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_API_KEY_SID: str = ""
+    TWILIO_API_KEY_SECRET: str = ""
+    TWILIO_SERVICE_SID: str = ""
+    TWILIO_SERVICE_ROLE_SID: str = ""
+    TWILIO_CHANNEL_ROLE_SID: str = ""
+    TWILIO_ACCESS_TOKEN_TTL_SECONDS: int = 60 * 60 * 24 * 7
+    TWILIO_WEBHOOK_URL: str = ""
+
     @field_validator("DATABASE_URI", mode="before")
     def assemble_db_connection(cls, v: Optional[str], info: ValidationInfo) -> Any:
         if isinstance(v, str):

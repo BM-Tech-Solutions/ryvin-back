@@ -6,12 +6,11 @@ from fastapi import status as http_status
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
-from app.core.security import utc_now
-from app.models.journey import Journey
-from app.models.match import Match
+from app.models.match import Match, MatchStatus
 from app.models.user import User
 
 from .base_service import BaseService
+from .journey_service import JourneyService
 from .notification_service import NotificationService
 from .questionnaire_service import QuestionnaireService
 
@@ -181,16 +180,12 @@ class MatchService(BaseService):
 
         # Check if both users have accepted
         if match.user1_accepted and match.user2_accepted:
-            match.status = "matched"
-            match.matched_at = utc_now()
+            match.status = MatchStatus.ACTIVE
 
             # Create a journey for the match
-            journey = Journey(
-                match_id=match.id,
-                current_step=1,  # First step: pre-compatibility
-                status="active",
-            )
-            self.session.add(journey)
+            journey_service = JourneyService(self.session)
+            if not match.journey:
+                match.journey = journey_service.create_journey(match_id)
 
             # Send notifications to both users
             user1 = self.session.get(User, match.user1_id)
