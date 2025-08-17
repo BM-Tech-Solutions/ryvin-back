@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.security import APIKeyHeader, HTTPBearer
+from fastapi.staticfiles import StaticFiles
 
 from firebase import init_firebase
 
@@ -100,6 +101,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount the media directory at the /media URL path
+app.mount("/media", StaticFiles(directory="media"), name="media")
 
 # Add combined auth middleware (accepts API-Token or Bearer JWT)
 app.add_middleware(CombinedAuthMiddleware)

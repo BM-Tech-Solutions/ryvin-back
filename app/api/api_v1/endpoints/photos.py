@@ -14,7 +14,7 @@ router = APIRouter()
 @router.get(
     "",
     status_code=http_status.HTTP_201_CREATED,
-    # openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
 )
 def get_photos(
     session: SessionDep,
@@ -34,7 +34,7 @@ def get_photos(
 @router.post(
     "",
     status_code=http_status.HTTP_201_CREATED,
-    # openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
 )
 async def upload_photo(
     session: SessionDep,
@@ -53,7 +53,7 @@ async def upload_photo(
 @router.post(
     "/set-primary/{photo_id}",
     status_code=http_status.HTTP_200_OK,
-    # openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
 )
 def set_primary_photo(
     session: SessionDep,
@@ -72,7 +72,7 @@ def set_primary_photo(
 @router.delete(
     "/{photo_id}",
     status_code=http_status.HTTP_200_OK,
-    # openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
 )
 def delete_photo(
     session: SessionDep,
