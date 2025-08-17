@@ -23,9 +23,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY . .
 
-# Make entrypoint script executable
+# Make entrypoint script executable and normalize line endings (handle CRLF from Windows)
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Remove potential Windows CRLF to avoid 'no such file or directory' at runtime
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 # Expose port
 EXPOSE 8000
