@@ -3,10 +3,12 @@ import uuid
 from typing import List, Optional
 from uuid import UUID
 
+import aiofiles
 from fastapi import HTTPException, UploadFile
 from fastapi import status as http_status
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models import Photo
 
 from .base_service import BaseService
@@ -43,7 +45,7 @@ class PhotoService(BaseService):
             .first()
         )
 
-    def upload_photo(self, user_id: UUID, file: UploadFile) -> Photo:
+    async def upload_photo(self, user_id: UUID, file: UploadFile) -> Photo:
         """
         Upload a photo
         """
@@ -66,10 +68,26 @@ class PhotoService(BaseService):
 
         # Generate unique filename
         filename = f"{uuid.uuid4()}{file_ext}"
+        file_path = f"media/photos/{filename}"
+        file_abs_path = settings.BASE_DIR / file_path
 
-        # In a real app, we would save the file to storage (S3, etc.)
-        # For now, we'll just pretend we saved it
-        file_path = f"uploads/photos/{filename}"
+        try:
+            # make sure media/photos exists
+            os.makedirs(file_abs_path.parent, exist_ok=True)
+
+            # Open the destination file in binary write mode (async)
+            async with aiofiles.open(file_abs_path, "wb") as dest_file:
+                while chunk := await file.read(8192):
+                    await dest_file.write(chunk)
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"There was an error uploading the file: {e}",
+            )
+        finally:
+            # Ensure the uploaded file's internal temporary file is closed
+            file.file.close()
 
         # Create photo record
         photo = Photo(
@@ -89,12 +107,23 @@ class PhotoService(BaseService):
         Delete a photo
         """
         photo = self.session.get(Photo, photo_id)
-        if not photo or photo.user_id != user_id:
-            return False
+        if not photo:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"no photo with id={photo_id}",
+            )
+        if photo.user_id != user_id:
+            raise HTTPException(
+                status_code=http_status.HTTP_401_UNAUTHORIZED,
+                detail=f"photo doesn't belong to user={user_id}",
+            )
 
         was_primary = photo.is_primary
 
-        # In a real app, we would delete the file from storage
+        try:
+            os.remove(settings.BASE_DIR / photo.file_path)
+        except FileNotFoundError:
+            print(f"Error: File at {photo.file_path} not found.")
 
         # Delete photo record
         self.session.delete(photo)
@@ -107,15 +136,21 @@ class PhotoService(BaseService):
                 next_photo.is_primary = True
                 self.session.commit()
 
-        return True
-
-    def set_primary_photo(self, user_id: UUID, photo_id: UUID) -> Optional[Photo]:
+    def set_primary_photo(self, user_id: UUID, photo_id: UUID) -> Photo:
         """
         Set a photo as primary
         """
         photo = self.session.get(Photo, photo_id)
-        if not photo or photo.user_id != user_id:
-            return None
+        if not photo:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"no photo with id={photo_id}",
+            )
+        if photo.user_id != user_id:
+            raise HTTPException(
+                status_code=http_status.HTTP_401_UNAUTHORIZED,
+                detail=f"photo doesn't belong to user={user_id}",
+            )
 
         # Clear primary flag on all user photos
         self.session.query(Photo).filter(Photo.user_id == user_id).update({"is_primary": False})

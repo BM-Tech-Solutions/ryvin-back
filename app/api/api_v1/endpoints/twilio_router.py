@@ -78,7 +78,7 @@ async def get_twilio_call_token(
     if not journey:
         raise HTTPException(
             status_code=http_status.HTTP_404_NOT_FOUND,
-            detail="Journey with not found",
+            detail=f"Journey with with id={journey_id} not found",
         )
 
     if current_user.id not in [journey.match.user1_id, journey.match.user2_id]:
@@ -114,7 +114,7 @@ async def start_call(
     if not journey:
         raise HTTPException(
             status_code=http_status.HTTP_404_NOT_FOUND,
-            detail="Journey with not found",
+            detail=f"Journey with with id={journey_id} not found",
         )
 
     if current_user.id not in [journey.match.user1_id, journey.match.user2_id]:

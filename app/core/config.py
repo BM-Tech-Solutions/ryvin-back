@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, List, Optional
 
 from pydantic import PostgresDsn, ValidationInfo, field_validator
@@ -82,6 +83,9 @@ class Settings(BaseSettings):
     TWILIO_CHANNEL_ROLE_SID: str = ""
     TWILIO_ACCESS_TOKEN_TTL_SECONDS: int = 60 * 60 * 24 * 7
     TWILIO_WEBHOOK_URL: str = ""
+
+    # Base Directory
+    BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
 
     @field_validator("DATABASE_URI", mode="before")
     def assemble_db_connection(cls, v: Optional[str], info: ValidationInfo) -> Any:

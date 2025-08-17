@@ -89,6 +89,8 @@ class TwilioService:
             events = [event.value for event in TwilioEvent]
 
         try:
+            if not settings.TWILIO_WEBHOOK_URL.strip():
+                raise Exception("webhook url not provided")
             webhook = self.chat_service.configuration.webhooks().update(
                 pre_webhook_url=settings.TWILIO_WEBHOOK_URL,
                 post_webhook_url=settings.TWILIO_WEBHOOK_URL,

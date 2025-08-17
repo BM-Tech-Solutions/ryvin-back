@@ -289,6 +289,8 @@ class MessageService(BaseService):
                 sender_id = sender.id
             else:
                 sender_id = None
+        else:
+            sender_id = None
 
         # Create message
         message = Message(
