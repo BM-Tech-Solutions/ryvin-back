@@ -37,6 +37,7 @@ class APITokenMiddleware(BaseHTTPMiddleware):
             path.endswith("/docs")
             or path.endswith("/openapi.json")
             or path.endswith("/redoc")
+            or path.endswith("/twilio/webhook")
             or path == "/"
         ):
             return False

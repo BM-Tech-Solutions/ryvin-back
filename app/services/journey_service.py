@@ -7,17 +7,17 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.core.security import utc_now
-from app.models.enums import JourneyStatus, MeetingStatus
+from app.models.enums import JourneyStatus, JourneyStep, MeetingStatus
 from app.models.journey import Journey
 from app.models.match import Match
 from app.models.meeting import MeetingFeedback, MeetingRequest
 from app.models.message import Message
 from app.models.user import User
 from app.schemas.meeting import MeetingFeedbackCreate, MeetingRequestCreate
-from app.schemas.message import MessageCreate
 
 from .base_service import BaseService
 from .notification_service import NotificationService
+from .twilio_service import TwilioService
 
 
 class JourneyService(BaseService):
@@ -40,6 +40,19 @@ class JourneyService(BaseService):
         Get journey by match ID
         """
         return self.session.query(Journey).filter(Journey.match_id == match_id).first()
+
+    def create_journey(self, match_id: UUID) -> Journey:
+        journey = Journey(
+            match_id=match_id,
+            current_step=JourneyStep.PRE_COMPATIBILITY,
+            status=JourneyStatus.ACTIVE,
+        )
+        self.session.add(journey)
+        self.session.commit()
+        self.session.refresh(journey)
+        twilio_service = TwilioService()
+        twilio_service.create_conversation(journey)
+        return journey
 
     def get_journeys(
         self,
@@ -235,38 +248,101 @@ class MessageService(BaseService):
             .first()
         )
 
-    def create_message(
-        self, journey_id: UUID, sender_id: UUID, message_in: MessageCreate
-    ) -> Message:
+    def create_message(self, msg_data: dict) -> Message:
         """
-        Create a new message in a journey
+        Create a new message in a journey (from twilio webhook) (only "Text" messages for now)
         """
-        msg_data = message_in.model_dump(exclude_unset=True)
+        conv_id = msg_data.get("ConversationSid")
+        msg_id = msg_data.get("MessageSid")
+        participant_id = msg_data.get("ParticipantSid")
+        content = msg_data.get("Body")
+
+        twilio_service = TwilioService()
+        journey_service = JourneyService(self.session)
+
+        conv = twilio_service.get_conversation(conv_id)
+        if not conv:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"Journey with conv: '{conv_id}' not found",
+            )
+        journey = journey_service.get_journey_by_id(conv.unique_name)
+        if not journey:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"Journey with conv_id='{conv_id}' not found",
+            )
+        if participant_id:
+            try:
+                participant = (
+                    twilio_service.chat_service.conversations(conv_id)
+                    .participants(participant_id)
+                    .fetch()
+                )
+            except Exception:
+                raise HTTPException(
+                    status_code=http_status.HTTP_404_NOT_FOUND,
+                    detail=f"Participant with id={participant_id} not Found on Twilio",
+                )
+            sender = self.session.get(User, participant.identity)
+            if sender:
+                sender_id = sender.id
+            else:
+                sender_id = None
+        else:
+            sender_id = None
+
         # Create message
         message = Message(
-            journey_id=journey_id,
+            journey_id=journey.id,
             sender_id=sender_id,
-            **msg_data,
+            twilio_msg_id=msg_id,
+            content=content,
         )
 
         self.session.add(message)
         self.session.commit()
         self.session.refresh(message)
 
-        # Get journey and other user for notification
-        journey = self.session.get(Journey, journey_id)
-        if journey:
-            match = journey.match
-            other_user_id = match.user1_id if match.user1_id != sender_id else match.user2_id
+        return message
 
-            other_user = self.session.get(User, other_user_id)
-            sender = self.session.get(User, sender_id)
+    def update_message(self, msg_data: dict) -> Message:
+        """
+        Update message (from twilio webhook)
+        """
+        msg_id = msg_data.get("MessageSid")
+        content = msg_data.get("Body")
 
-            if other_user and sender:
-                sender_name = sender.questionnaire.first_name
-                NotificationService().send_new_message_notification(
-                    other_user, message, sender_name
-                )
+        message = self.session.query(Message).filter(Message.twilio_msg_id == msg_id).first()
+        if not message:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"Message with twilio_msg_id={msg_id} not Found.",
+            )
+
+        message.content = content
+        self.session.commit()
+        self.session.refresh(message)
+
+        return message
+
+    def delete_message(self, msg_data: dict) -> Message:
+        """
+        Set message as deleted (don't really delete the message)  (from twilio webhook)
+        """
+        msg_id = msg_data.get("MessageSid")
+
+        message = self.session.query(Message).filter(Message.twilio_msg_id == msg_id).first()
+        if not message:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"Message with twilio_msg_id={msg_id} not Found.",
+            )
+
+        message.is_deleted = True
+        message.deleted_at = utc_now()
+        self.session.commit()
+        self.session.refresh(message)
 
         return message
 

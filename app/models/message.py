@@ -26,7 +26,9 @@ class Message(Base):
         pgUUID(as_uuid=True), ForeignKey("journey.id"), index=True
     )
 
-    sender_id: Mapped[UUID] = mapped_column(pgUUID(as_uuid=True), ForeignKey("user.id"))
+    sender_id: Mapped[Optional[UUID]] = mapped_column(
+        pgUUID(as_uuid=True), ForeignKey("user.id"), nullable=True
+    )
 
     content: Mapped[str] = mapped_column(Text)
     message_type: Mapped[str] = mapped_column(default=MessageType.TEXT)
@@ -37,10 +39,13 @@ class Message(Base):
     moderated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     is_deleted: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    twilio_msg_id: Mapped[str | None]
 
     # Relationships
     journey: Mapped["Journey"] = relationship(back_populates="messages", foreign_keys=[journey_id])
-    sender: Mapped["User"] = relationship(back_populates="sent_messages", foreign_keys=[sender_id])
+    sender: Mapped[Optional["User"]] = relationship(
+        back_populates="sent_messages", foreign_keys=[sender_id]
+    )
 
     def __repr__(self):
         return f"<Message {self.id}: Journey {self.journey_id}, Sender {self.sender_id}>"

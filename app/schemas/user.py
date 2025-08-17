@@ -88,7 +88,7 @@ class UserOut(UserInDBBase):
 
 
 class TestUserCreate(BaseModel):
-    phone_number: str = Field(default="+442083661177")
+    phone_number: str = Field(examples="+442083661177")
     email: Optional[EmailStr] = None
     is_verified: bool = True
     has_completed_questionnaire: bool = False
