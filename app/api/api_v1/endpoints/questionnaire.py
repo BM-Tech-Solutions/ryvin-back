@@ -1,7 +1,7 @@
-import uuid
-from typing import Any
-from pathlib import Path
 import json
+import uuid
+from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from fastapi import status as http_status
@@ -279,7 +279,9 @@ def get_questionnaire_status(
 
             # Minimal debug prints in server logs to help diagnose if needed
             if not field_id_map:
-                print("[questionnaire_status] hydration: no field ids found for names:", unique_names)
+                print(
+                    "[questionnaire_status] hydration: no field ids found for names:", unique_names
+                )
             if not cat_id_map:
                 print("[questionnaire_status] hydration: no category ids available in DB")
 
