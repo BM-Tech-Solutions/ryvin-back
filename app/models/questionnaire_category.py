@@ -19,6 +19,7 @@ class QuestionnaireCategory(Base):
     name: Mapped[str] = mapped_column(unique=True)
     label: Mapped[str]
     description: Mapped[str] = mapped_column(Text, default="")
+    picture_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     order_position: Mapped[int] = mapped_column(default=0)
     step: Mapped[int]
 

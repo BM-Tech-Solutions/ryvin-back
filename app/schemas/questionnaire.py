@@ -219,4 +219,5 @@ class CategoryOut(BaseModel):
     description: str = ""
     order_position: int
     step: int
+    picture_url: Optional[str] = None
     fields: list[FieldOut] = []
