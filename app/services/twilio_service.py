@@ -89,26 +89,26 @@ class TwilioService:
             events = [event.value for event in TwilioEvent]
 
         try:
-            if not settings.TWILIO_WEBHOOK_URL.strip():
+            if not settings.TWILIO_CHAT_WEBHOOK_URL.strip():
                 raise Exception("webhook url not provided")
             webhook = self.chat_service.configuration.webhooks().update(
-                pre_webhook_url=settings.TWILIO_WEBHOOK_URL,
-                post_webhook_url=settings.TWILIO_WEBHOOK_URL,
+                pre_webhook_url=settings.TWILIO_CHAT_WEBHOOK_URL,
+                post_webhook_url=settings.TWILIO_CHAT_WEBHOOK_URL,
                 filters=events,
                 method="POST",
             )
             print("Twilio Webhook Registration Success:")
-            print(f"webhook url: '{settings.TWILIO_WEBHOOK_URL}'")
+            print(f"webhook url: '{settings.TWILIO_CHAT_WEBHOOK_URL}'")
             return webhook
         except TwilioRestException as e:
             print("Twilio Webhook Registration Failed:")
             print(f"Error: {e}")
-            print(f"webhook url: '{settings.TWILIO_WEBHOOK_URL}'")
+            print(f"webhook url: '{settings.TWILIO_CHAT_WEBHOOK_URL}'")
             print(f"events: {events}")
             print(e.status)
             print(e.msg)
         except Exception as e:
             print("Twilio Webhook Registration Failed:")
             print(f"Error: {e}")
-            print(f"webhook url: '{settings.TWILIO_WEBHOOK_URL}'")
+            print(f"webhook url: '{settings.TWILIO_CHAT_WEBHOOK_URL}'")
             print(f"events: {events}")

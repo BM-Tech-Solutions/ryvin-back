@@ -82,7 +82,8 @@ class Settings(BaseSettings):
     TWILIO_SERVICE_ROLE_SID: str = ""
     TWILIO_CHANNEL_ROLE_SID: str = ""
     TWILIO_ACCESS_TOKEN_TTL_SECONDS: int = 60 * 60 * 24 * 7
-    TWILIO_WEBHOOK_URL: str = ""
+    TWILIO_CHAT_WEBHOOK_URL: str = ""
+    TWILIO_VIDEO_WEBHOOK_URL: str = ""
 
     # Base Directory
     BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
