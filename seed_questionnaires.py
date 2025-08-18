@@ -194,7 +194,19 @@ def get_realistic_questionnaire_data(gender: str, user_name: str):
         "wants_children": random.choice(["oui", "non", "peut_etre"]),
         "partner_must_want_children": random.choice(["oui", "non", "peu_importe"]),
         "accept_partner_with_children": random.choice(["oui", "non", "ca_depend"]),
-        # Description fields
+        "conflict_management": "Communication ouverte et respect mutuel.",
+        "physical_description": "Taille moyenne, style naturel.",
+        "clothing_style": random.choice(["classique", "decontracte", "urbain", "changeant"]),
+        "appearance_importance": random.choice(["tres_importante", "moyenne", "peu_importante"]),
+        "partner_hygiene_appearance_importance": random.choice(["tres_importante", "moyenne", "faible"]),
+        "partner_sexual_values_alignment": random.choice(["oui", "non_communication", "peu_importe"]),
+        "ideal_sexuality_vision": "Une intimité basée sur la complicité et le respect.",
+        "money_approach_in_couple": "Partage équitable et communication transparente.",
+        "educational_approach": "Éducation bienveillante et valeurs fortes.",
+        "share_same_educational_values": random.choice(["oui", "non"]),
+        "partner_personality_preference": random.choice(["introverti", "extraverti", "peu_importe"]),
+        "partner_same_love_language": random.choice(["oui", "non"]),
+        # Descriptions
         "lessons_from_past_relationships": "J'ai appris l'importance de la communication.",
         "greatest_quality_in_relationship": "L'honnêteté et la bienveillance.",
         "what_attracts_you": "L'intelligence et l'humour.",
@@ -264,25 +276,38 @@ def create_questionnaire_for_user(user_id: int, gender: str, user_name: str):
             ready_to_live_with_pet=data["ready_to_live_with_pet"],
             # Personality
             personality_type=data["personality_type"],
+            partner_personality_preference=data["partner_personality_preference"],
             primary_love_language=data["primary_love_language"],
+            partner_same_love_language=data["partner_same_love_language"],
             friends_visit_frequency=data["friends_visit_frequency"],
             tolerance_social_vs_homebody=data["tolerance_social_vs_homebody"],
-            # Physical & Intimacy
+            conflict_management=data["conflict_management"],
+            # Physical & Attraction
+            physical_description=data["physical_description"],
+            clothing_style=data["clothing_style"],
+            appearance_importance=data["appearance_importance"],
+            partner_hygiene_appearance_importance=data["partner_hygiene_appearance_importance"],
+            # Sexuality & Intimacy
             importance_of_sexuality=data["importance_of_sexuality"],
             ideal_intimate_frequency=data["ideal_intimate_frequency"],
             comfort_level_talking_sexuality=data["comfort_level_talking_sexuality"],
+            partner_sexual_values_alignment=data["partner_sexual_values_alignment"],
             comfortable_public_affection=data["comfortable_public_affection"],
+            ideal_sexuality_vision=data["ideal_sexuality_vision"],
             # Compatibility
             partner_similarity_preference=data["partner_similarity_preference"],
             partner_age_range=data["partner_age_range"],
             # Socio-economic
             importance_financial_situation_partner=data["importance_financial_situation_partner"],
             ideal_partner_education_profession=data["ideal_partner_education_profession"],
+            money_approach_in_couple=data["money_approach_in_couple"],
             # Children & Family
             has_children=data["has_children"],
             wants_children=data["wants_children"],
             partner_must_want_children=data["partner_must_want_children"],
+            educational_approach=data["educational_approach"],
             accept_partner_with_children=data["accept_partner_with_children"],
+            share_same_educational_values=data["share_same_educational_values"],
             # Descriptions
             lessons_from_past_relationships=data["lessons_from_past_relationships"],
             greatest_quality_in_relationship=data["greatest_quality_in_relationship"],

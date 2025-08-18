@@ -6,6 +6,7 @@ from .match_service import MatchService
 from .notification_service import NotificationService
 from .photo_service import PhotoService
 from .questionnaire_service import QuestionnaireService
+from .twilio_service import TwilioService
 from .user_service import UserService
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "NotificationService",
     "AdminService",
     "PhotoService",
+    "TwilioService",
 ]

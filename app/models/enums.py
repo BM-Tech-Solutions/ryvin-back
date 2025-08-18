@@ -379,6 +379,29 @@ class FieldUnit(BaseStrEnum):
     CM = "cm", "Cm"
 
 
+class TwilioEvent(BaseStrEnum):
+    ON_PARTICIPANT_ADD = "onParticipantAdd"
+    ON_PARTICIPANT_ADDED = "onParticipantAdded"
+    ON_PARTICIPANT_UPDATE = "onParticipantUpdate"
+    ON_PARTICIPANT_UPDATED = "onParticipantUpdated"
+    ON_PARTICIPANT_REMOVE = "onParticipantRemove"
+    ON_PARTICIPANT_REMOVED = "onParticipantRemoved"
+    ON_CONVERSATION_ADD = "onConversationAdd"
+    ON_CONVERSATION_ADDED = "onConversationAdded"
+    ON_CONVERSATION_UPDATE = "onConversationUpdate"
+    ON_CONVERSATION_UPDATED = "onConversationUpdated"
+    ON_CONVERSATION_REMOVE = "onConversationRemove"
+    ON_CONVERSATION_REMOVED = "onConversationRemoved"
+    ON_MESSAGE_ADD = "onMessageAdd"
+    ON_MESSAGE_ADDED = "onMessageAdded"
+    ON_MESSAGE_REMOVE = "onMessageRemove"
+    ON_MESSAGE_REMOVED = "onMessageRemoved"
+    ON_MESSAGE_UPDATE = "onMessageUpdate"
+    ON_MESSAGE_UPDATED = "onMessageUpdated"
+    ON_DELIVERY_UPDATED = "onDeliveryUpdated"
+    ON_CONVERSATION_STATE_UPDATED = "onConversationStateUpdated"
+
+
 def get_field_enum(field_name: str) -> BaseStrEnum | None:
     return fields_enums.get(field_name)
 

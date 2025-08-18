@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from sqlalchemy import ForeignKey, UniqueConstraint
@@ -31,7 +31,7 @@ class Match(Base):
     # Relationships
     user1: Mapped["User"] = relationship(back_populates="matches_as_user1", foreign_keys=[user1_id])
     user2: Mapped["User"] = relationship(back_populates="matches_as_user2", foreign_keys=[user2_id])
-    journey: Mapped["Journey"] = relationship(
+    journey: Mapped[Optional["Journey"]] = relationship(
         back_populates="match", uselist=False, foreign_keys="Journey.match_id"
     )
 

@@ -12,7 +12,7 @@ from app.schemas.meeting import (
     MeetingRequestCreate,
     MeetingRequestOut,
 )
-from app.schemas.message import MessageCreate, MessageOut
+from app.schemas.message import MessageOut
 from app.services import JourneyService, MeetingService, MessageService
 
 router = APIRouter()
@@ -126,35 +126,6 @@ def get_messages(
     message_service = MessageService(session)
     messages = message_service.get_messages(journey_id, current_user.id, skip, limit)
     return messages
-
-
-@router.post(
-    "/{journey_id}/messages",
-    response_model=MessageOut,
-    status_code=http_status.HTTP_201_CREATED,
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
-)
-def create_message(
-    session: SessionDep,
-    current_user: VerifiedUserDep,
-    journey_id: UUID,
-    message_in: MessageCreate,
-) -> Any:
-    """
-    Create a new message in a journey
-    """
-
-    journey_service = JourneyService(session)
-    journey = journey_service.get_journey_by_id(journey_id)
-    if current_user.id not in [journey.match.user1_id, journey.match.user2_id]:
-        raise HTTPException(
-            status_code=http_status.HTTP_401_UNAUTHORIZED,
-            detail="User not related to this journey",
-        )
-
-    message_service = MessageService(session)
-    message = message_service.create_message(journey_id, current_user.id, message_in)
-    return message
 
 
 @router.delete(

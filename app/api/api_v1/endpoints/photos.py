@@ -1,7 +1,7 @@
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, UploadFile
 from fastapi import status as http_status
 
 from app.core.dependencies import SessionDep, VerifiedUserDep
@@ -36,16 +36,16 @@ def get_photos(
     status_code=http_status.HTTP_201_CREATED,
     openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
 )
-def upload_photo(
+async def upload_photo(
     session: SessionDep,
     current_user: VerifiedUserDep,
-    file: UploadFile = File(...),
+    file: UploadFile,
 ) -> PhotoOut:
     """
     Upload a user's photo
     """
     photo_service = PhotoService(session)
-    photo = photo_service.upload_photo(current_user.id, file)
+    photo = await photo_service.upload_photo(current_user.id, file)
 
     return photo
 
@@ -59,20 +59,14 @@ def set_primary_photo(
     session: SessionDep,
     current_user: VerifiedUserDep,
     photo_id: UUID,
-) -> Any:
+) -> PhotoOut:
     """
     Set a photo as primary for user
     """
     photo_service = PhotoService(session)
     photo = photo_service.set_primary_photo(current_user.id, photo_id)
 
-    if not photo:
-        raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail="Photo not found",
-        )
-
-    return {"message": "Primary photo set successfully"}
+    return photo
 
 
 @router.delete(
@@ -89,12 +83,6 @@ def delete_photo(
     Delete a user's photo
     """
     photo_service = PhotoService(session)
-    success = photo_service.delete_photo(current_user.id, photo_id)
-
-    if not success:
-        raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail="Photo not found",
-        )
+    photo_service.delete_photo(current_user.id, photo_id)
 
     return {"message": "Photo deleted successfully"}

@@ -47,7 +47,7 @@ sess = SessionLocal()
 try:
     count = sess.query(QuestionnaireCategory).count()
     if count == 0:
-        print("Seeding questionnaire categories and fields from resources/form_fields.json ...")
+        print("Seeding questionnaire categories and fields from resources/form_fields_updated.json ...")
         import importlib.util, sys
         script_path = os.path.join(os.getcwd(), "insert_fields.py")
         if not os.path.exists(script_path):

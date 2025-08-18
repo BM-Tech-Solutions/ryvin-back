@@ -4,12 +4,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.security import APIKeyHeader, HTTPBearer
+from fastapi.staticfiles import StaticFiles
 
 from firebase import init_firebase
 
 from .core.auth import CombinedAuthMiddleware
 from .core.config import settings
 from .cron_jobs import scheduler
+from .services.twilio_service import TwilioService
 
 # Define security schemes for Swagger docs
 api_key_header = APIKeyHeader(name="API-Token", auto_error=False)
@@ -22,6 +24,10 @@ async def lifespan(app: FastAPI):
     # firebase
     init_firebase()
     print("firebase initialized successfuly")
+
+    # register twilio webhook
+    twilio_service = TwilioService()
+    twilio_service.register_webhook()
 
     # periodic jobs schedule
     scheduler.start()
@@ -95,6 +101,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount the media directory at the /media URL path
+app.mount("/media", StaticFiles(directory="media"), name="media")
 
 # Add combined auth middleware (accepts API-Token or Bearer JWT)
 app.add_middleware(CombinedAuthMiddleware)

@@ -1,6 +1,15 @@
 from fastapi import APIRouter, Security
 
-from app.api.api_v1.endpoints import admin, auth, journey, matches, photos, questionnaire, users
+from app.api.api_v1.endpoints import (
+    admin,
+    auth,
+    journey,
+    matches,
+    photos,
+    questionnaire,
+    twilio_router,
+    users,
+)
 from app.main import api_key_header, http_bearer
 
 api_router = APIRouter(
@@ -17,3 +26,4 @@ api_router.include_router(matches.router, prefix="/matches", tags=["matches"])
 api_router.include_router(journey.router, prefix="/journey", tags=["journey"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
+api_router.include_router(twilio_router.router, prefix="/twilio", tags=["twilio"], dependencies=[])

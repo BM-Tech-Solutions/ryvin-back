@@ -151,9 +151,7 @@ class QuestionnaireService(BaseService):
         if not names:
             return []
         return (
-            self.session.query(QuestionnaireField)
-            .filter(QuestionnaireField.name.in_(names))
-            .all()
+            self.session.query(QuestionnaireField).filter(QuestionnaireField.name.in_(names)).all()
         )
 
     def get_questions_by_categories(self) -> list[QuestionnaireCategory]:
