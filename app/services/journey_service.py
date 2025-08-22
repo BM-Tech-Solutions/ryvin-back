@@ -546,4 +546,4 @@ class MeetingService(BaseService):
         if len(feedbacks) != 2:
             return False
 
-        return all(feedback.want_to_continue for feedback in feedbacks)
+        return all(feedback.wants_to_continue for feedback in feedbacks)
