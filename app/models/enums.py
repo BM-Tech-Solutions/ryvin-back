@@ -343,11 +343,11 @@ class SubscriptionType(BaseStrEnum):
 
 
 class JourneyStep(IntEnum):
-    PRE_COMPATIBILITY = 1
-    VOICE_VIDEO_CALL = 2
-    PHOTOS_UNLOCKED = 3
-    PHYSICAL_MEETING = 4
-    MEETING_FEEDBACK = 5
+    STEP1_PRE_COMPATIBILITY = 1
+    STEP2_VOICE_VIDEO_CALL = 2
+    STEP3_PHOTOS_UNLOCKED = 3
+    STEP4_PHYSICAL_MEETING = 4
+    STEP5_MEETING_FEEDBACK = 5
 
 
 class MessageType(BaseStrEnum):

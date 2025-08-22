@@ -44,7 +44,7 @@ class JourneyService(BaseService):
     def create_journey(self, match_id: UUID) -> Journey:
         journey = Journey(
             match_id=match_id,
-            current_step=JourneyStep.PRE_COMPATIBILITY,
+            current_step=JourneyStep.STEP1_PRE_COMPATIBILITY,
             status=JourneyStatus.ACTIVE,
         )
         self.session.add(journey)
@@ -110,7 +110,7 @@ class JourneyService(BaseService):
             )
 
         # Check step-specific requirements
-        if journey.current_step == 1:
+        if journey.current_step == JourneyStep.STEP1_PRE_COMPATIBILITY:
             # Pre-compatibility to Voice/Video Call
             # Check if there are enough messages exchanged
             message_count = (
@@ -122,12 +122,12 @@ class JourneyService(BaseService):
                     detail="At least 5 messages must be exchanged before advancing",
                 )
 
-        elif journey.current_step == 2:
+        elif journey.current_step == JourneyStep.STEP2_VOICE_VIDEO_CALL:
             # Voice/Video Call to Photos Unlocked
             # In a real app, we might check for call duration or confirmation
             pass
 
-        elif journey.current_step == 3:
+        elif journey.current_step == JourneyStep.STEP3_PHOTOS_UNLOCKED:
             # Photos Unlocked to Physical Meeting
             # Check if both users have photos
             match = journey.match
@@ -140,7 +140,7 @@ class JourneyService(BaseService):
                     detail="Both users must upload photos before advancing",
                 )
 
-        elif journey.current_step == 4:
+        elif journey.current_step == JourneyStep.STEP4_PHYSICAL_MEETING:
             # Physical Meeting to Meeting Feedback
             # Check if meeting request exists and was accepted
             meeting_request = (
@@ -159,7 +159,7 @@ class JourneyService(BaseService):
                 )
 
         # Check if journey is already at the final step
-        if journey.current_step >= 5:
+        if journey.current_step >= JourneyStep.STEP5_MEETING_FEEDBACK:
             raise HTTPException(
                 status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail="Journey is already at the final step",
@@ -385,7 +385,10 @@ class MeetingService(BaseService):
         # Check if there's already an accepted meeting request
         existing_accepted = (
             self.session.query(MeetingRequest)
-            .filter(MeetingRequest.journey_id == journey_id, MeetingRequest.status == "accepted")
+            .filter(
+                MeetingRequest.journey_id == journey_id,
+                MeetingRequest.status == MeetingStatus.ACCEPTED,
+            )
             .first()
         )
 
@@ -400,7 +403,7 @@ class MeetingService(BaseService):
             journey_id=journey_id,
             requester_id=requester_id,
             proposed_date=meeting_data.proposed_date,
-            status="pending",
+            status=MeetingStatus.PROPOSED,
         )
 
         self.session.add(meeting_request)
@@ -430,14 +433,14 @@ class MeetingService(BaseService):
         Accept or decline a meeting request
         """
         # Check if meeting request is still pending
-        if meeting_request.status != "pending":
+        if meeting_request.status != MeetingStatus.PROPOSED:
             raise HTTPException(
                 status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail=f"Meeting request is already {meeting_request.status}",
             )
 
         # Update status
-        meeting_request.status = "accepted" if accept else "declined"
+        meeting_request.status = MeetingStatus.ACCEPTED if accept else MeetingStatus.REJECTED
         meeting_request.responded_at = utc_now()
         meeting_request.responder_id = user_id
 
