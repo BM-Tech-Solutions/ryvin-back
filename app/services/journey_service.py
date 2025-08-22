@@ -403,6 +403,7 @@ class MeetingService(BaseService):
             journey_id=journey_id,
             requester_id=requester_id,
             proposed_date=meeting_data.proposed_date,
+            proposed_location=meeting_data.proposed_location,
             status=MeetingStatus.PROPOSED,
         )
 
