@@ -50,9 +50,7 @@ def get_specific_match(session: SessionDep, current_user: FlexUserDep, match_id:
         )
 
     # Ownership check: user must be participant in the match
-    # Assuming Match has user1_id and user2_id fields
-    owner_ids = {getattr(match, "user1_id", None), getattr(match, "user2_id", None)}
-    if current_user.id not in owner_ids:
+    if current_user.id not in [match.user1_id, match.user2_id]:
         raise HTTPException(status_code=http_status.HTTP_403_FORBIDDEN, detail="Forbidden")
     return match
 
@@ -67,7 +65,7 @@ def accept_match(
     session: SessionDep,
     current_user: FlexUserDep,
     match_id: UUID,
-) -> Any:
+) -> MatchOut:
     """
     Accept a match belonging to the current user
     """
@@ -86,7 +84,7 @@ def decline_match(
     session: SessionDep,
     current_user: FlexUserDep,
     match_id: UUID,
-) -> Any:
+) -> MatchOut:
     """
     Decline a match belonging to the current user
     """

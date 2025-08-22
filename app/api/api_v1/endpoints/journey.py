@@ -61,6 +61,11 @@ def get_journey(
     """
     journey_service = JourneyService(session)
     journey = journey_service.get_journey_by_id(journey_id)
+    if not journey:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail=f"Journey with ID '{journey_id}' not found",
+        )
     return journey
 
 
@@ -124,7 +129,7 @@ def get_messages(
     Get all messages for a journey
     """
     message_service = MessageService(session)
-    messages = message_service.get_messages(journey_id, current_user.id, skip, limit)
+    messages = message_service.get_messages(journey_id, skip, limit)
     return messages
 
 
@@ -184,7 +189,7 @@ def get_meeting_requests(
     Get all meeting requests for a journey
     """
     meeting_service = MeetingService(session)
-    meeting_requests = meeting_service.get_meeting_requests(journey_id, current_user.id)
+    meeting_requests = meeting_service.get_meeting_requests(journey_id)
     return meeting_requests
 
 
@@ -222,12 +227,12 @@ def accept_meeting_request(
     meeting_request_id: UUID,
 ) -> Any:
     """
-    Accept a meeting request
+    Accept a meeting request (not implemented yet)
     """
-    meeting_service = MeetingService(session)
-    meeting_service.accept_meeting_request(journey_id, meeting_request_id, current_user.id)
+    # meeting_service = MeetingService(session)
+    # meeting_service.accept_meeting_request(journey_id, meeting_request_id, current_user.id)
 
-    return {"message": "Meeting request accepted successfully"}
+    return {"message": "not implemented yet"}
 
 
 @router.post(
@@ -242,12 +247,12 @@ def decline_meeting_request(
     meeting_request_id: UUID,
 ) -> Any:
     """
-    Decline a meeting request
+    Decline a meeting request (not implemented yet)
     """
-    meeting_service = MeetingService(session)
-    meeting_service.decline_meeting_request(journey_id, meeting_request_id, current_user.id)
+    # meeting_service = MeetingService(session)
+    # meeting_service.decline_meeting_request(journey_id, meeting_request_id, current_user.id)
 
-    return {"message": "Meeting request declined successfully"}
+    return {"message": "not implemented yet"}
 
 
 # Meeting Feedback
@@ -266,6 +271,31 @@ def create_meeting_feedback(
     """
     Create feedback for a meeting
     """
+    journey_service = JourneyService(session)
+    journey = journey_service.get_journey_by_id(journey_id)
+    if not journey:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail=f"Journey with ID '{journey_id}' not found",
+        )
+    if current_user.id not in [journey.match.user1, journey.match.user2]:
+        raise HTTPException(
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            detail=f"User doesn't belong to Journey with ID '{journey_id}'",
+        )
+
     meeting_service = MeetingService(session)
-    feedback = meeting_service.create_meeting_feedback(journey_id, current_user.id, feedback_in)
+    meeting_request = meeting_service.get_meeting_request_by_id(feedback_in.meeting_request_id)
+    if not meeting_request:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail=f"Meeting Request with ID '{feedback_in.meeting_request_id}' not found",
+        )
+    if not meeting_request.journey_id != journey_id:
+        raise HTTPException(
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            detail="Meeting Request doesn't belong to this journey",
+        )
+
+    feedback = meeting_service.create_meeting_feedback(current_user.id, feedback_in)
     return feedback

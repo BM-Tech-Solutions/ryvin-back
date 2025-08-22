@@ -70,9 +70,9 @@ class JourneyService(BaseService):
             query = query.join(Match).filter(
                 or_(Match.user1_id == user_id, Match.user2_id == user_id)
             )
-        if current_step:
+        if current_step is not None:
             query = query.filter(Journey.current_step == current_step)
-        if is_completed:
+        if is_completed is not None:
             query = query.filter(Journey.is_completed == is_completed)
 
         return query.offset(skip).limit(limit).all()
@@ -195,10 +195,17 @@ class JourneyService(BaseService):
         self.session.refresh(journey)
         return journey
 
-    def end_journey(self, journey: Journey, user_id: UUID, reason: str) -> Journey:
+    def end_journey(self, journey_id: UUID, user_id: UUID, reason: str) -> Journey:
         """
         End a journey prematurely
         """
+        journey = self.get_journey_by_id(journey_id)
+        if not journey:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"No Journey with id: '{journey_id}'",
+            )
+
         journey.status = JourneyStatus.ENDED
         journey.ended_at = utc_now()
         journey.ended_by = user_id
@@ -393,10 +400,6 @@ class MeetingService(BaseService):
             journey_id=journey_id,
             requester_id=requester_id,
             proposed_date=meeting_data.proposed_date,
-            proposed_time=meeting_data.proposed_time,
-            location_type=meeting_data.location_type,
-            location_details=meeting_data.location_details,
-            notes=meeting_data.notes,
             status="pending",
         )
 
@@ -461,7 +464,7 @@ class MeetingService(BaseService):
         )
 
     def create_meeting_feedback(
-        self, feedback_data: MeetingFeedbackCreate, user_id: UUID
+        self, user_id: UUID, feedback_data: MeetingFeedbackCreate
     ) -> MeetingFeedback:
         """
         Create feedback for a meeting
@@ -487,8 +490,8 @@ class MeetingService(BaseService):
             meeting_request_id=feedback_data.meeting_request_id,
             user_id=user_id,
             rating=feedback_data.rating,
-            comments=feedback_data.comments,
-            want_to_continue=feedback_data.want_to_continue,
+            feedback=feedback_data.feedback,
+            wants_to_continue=feedback_data.wants_to_continue,
         )
 
         self.session.add(feedback)

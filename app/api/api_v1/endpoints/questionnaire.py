@@ -20,12 +20,13 @@ router = APIRouter()
 
 @router.get(
     "/me",
+    response_model=QuestionnaireInDB,
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_questionnaire(
     session: SessionDep,
     current_user: VerifiedUserDep,
-):
+) -> QuestionnaireInDB:
     """
     Get current user's questionnaire
     """
@@ -35,7 +36,7 @@ def get_questionnaire(
         raise HTTPException(
             status_code=http_status.HTTP_404_NOT_FOUND, detail="Questionnaire not found"
         )
-    return QuestionnaireInDB.model_validate(questionnaire).model_dump()
+    return questionnaire
 
 
 @router.get(

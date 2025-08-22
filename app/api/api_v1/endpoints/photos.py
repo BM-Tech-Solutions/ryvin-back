@@ -27,7 +27,6 @@ def get_photos(
     """
     photo_service = PhotoService(session)
     photos = photo_service.get_user_photos(current_user.id, skip, limit)
-
     return photos
 
 
@@ -65,7 +64,6 @@ def set_primary_photo(
     """
     photo_service = PhotoService(session)
     photo = photo_service.set_primary_photo(current_user.id, photo_id)
-
     return photo
 
 
