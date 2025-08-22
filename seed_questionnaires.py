@@ -198,13 +198,19 @@ def get_realistic_questionnaire_data(gender: str, user_name: str):
         "physical_description": "Taille moyenne, style naturel.",
         "clothing_style": random.choice(["classique", "decontracte", "urbain", "changeant"]),
         "appearance_importance": random.choice(["tres_importante", "moyenne", "peu_importante"]),
-        "partner_hygiene_appearance_importance": random.choice(["tres_importante", "moyenne", "faible"]),
-        "partner_sexual_values_alignment": random.choice(["oui", "non_communication", "peu_importe"]),
+        "partner_hygiene_appearance_importance": random.choice(
+            ["tres_importante", "moyenne", "faible"]
+        ),
+        "partner_sexual_values_alignment": random.choice(
+            ["oui", "non_communication", "peu_importe"]
+        ),
         "ideal_sexuality_vision": "Une intimité basée sur la complicité et le respect.",
         "money_approach_in_couple": "Partage équitable et communication transparente.",
         "educational_approach": "Éducation bienveillante et valeurs fortes.",
         "share_same_educational_values": random.choice(["oui", "non"]),
-        "partner_personality_preference": random.choice(["introverti", "extraverti", "peu_importe"]),
+        "partner_personality_preference": random.choice(
+            ["introverti", "extraverti", "peu_importe"]
+        ),
         "partner_same_love_language": random.choice(["oui", "non"]),
         # Descriptions
         "lessons_from_past_relationships": "J'ai appris l'importance de la communication.",

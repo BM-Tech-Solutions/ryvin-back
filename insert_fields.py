@@ -49,7 +49,7 @@ def load_form_fields():
     if os.path.exists("resources/form_fields_updated.json"):
         print("📋 Loading from form_fields_updated.json (with subcategories)")
         return json.load(open("resources/form_fields_updated.json"))
-    
+
     # Fallback to original file
     print("📋 Loading from form_fields.json (legacy format)")
     return json.load(open("resources/form_fields.json"))
@@ -59,7 +59,7 @@ def process_fields_from_subcategories(category_data, new_cat, sess):
     """Process fields from subcategories structure"""
     for subcategory_data in category_data.get("subcategories", []):
         print(f"  📂 Processing subcategory: {subcategory_data['label']}")
-        
+
         for field_data in subcategory_data.get("fields", []):
             field_schema = FieldSchema.model_validate(field_data)
             new_field = QuestionnaireField(
@@ -68,7 +68,7 @@ def process_fields_from_subcategories(category_data, new_cat, sess):
             )
             new_cat.fields.append(new_field)
             print(f"    ✅ Field '{field_data['name']}' - ID: {new_field.id}")
-            
+
             # Handle child fields
             for child_field_data in field_schema.child_fields:
                 child_field_schema = FieldSchema.model_validate(child_field_data)
@@ -90,7 +90,7 @@ def process_fields_legacy(category_data, new_cat, sess):
         )
         new_cat.fields.append(new_field)
         print(f"    ✅ Field '{field_data['name']}' - ID: {new_field.id}")
-        
+
         # Handle child fields
         for child_field_data in field_schema.child_fields:
             child_field_schema = FieldSchema.model_validate(child_field_data)
@@ -104,7 +104,7 @@ def process_fields_legacy(category_data, new_cat, sess):
 
 if __name__ == "__main__":
     cats = load_form_fields()
-    
+
     try:
         sess = SessionLocal()
         # Delete all previous rows
@@ -114,17 +114,17 @@ if __name__ == "__main__":
         sess.commit()
 
         print("📝 Processing categories and fields...")
-        
+
         for cat_data in cats:
             print("-" * 60)
             print(f"📋 Processing category: {cat_data['label']}")
-            
+
             # Create category (excluding fields and subcategories from direct mapping)
             cat_schema = CategorySchema.model_validate(cat_data)
             new_cat = QuestionnaireCategory(
                 **cat_schema.model_dump(exclude=["fields", "subcategories"])
             )
-            
+
             # Process fields based on structure
             if cat_data.get("subcategories"):
                 # New structure with subcategories
@@ -132,16 +132,16 @@ if __name__ == "__main__":
             else:
                 # Legacy structure with direct fields
                 process_fields_legacy(cat_data, new_cat, sess)
-            
+
             sess.add(new_cat)
             print(f"  ✅ Added {len(new_cat.fields)} fields to category '{cat_data['name']}'")
 
         sess.commit()
         print("\n🎉 Successfully seeded questionnaire categories and fields!")
-        
+
     except Exception as e:
         print(f"\n❌ Error during seeding: {e}")
-        if hasattr(e, 'args'):
+        if hasattr(e, "args"):
             print(f"Error details: {e.args}")
         sess.rollback()
     finally:
