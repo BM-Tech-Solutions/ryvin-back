@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi import status as http_status
 
 from app.core.dependencies import FlexUserDep, SessionDep
-from app.schemas.match import Match
+from app.schemas.match import MatchOut
 from app.services.match_service import MatchService
 from app.services.matching_cron_service import MatchingCronService
 
@@ -14,7 +14,7 @@ router = APIRouter()
 
 @router.get(
     "/me",
-    response_model=List[Match],
+    response_model=List[MatchOut],
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_my_matches(
@@ -23,7 +23,7 @@ def get_my_matches(
     status: str = Query(None, description="Filter by match status"),
     skip: int = Query(0, description="Number of matches to skip"),
     limit: int = Query(100, description="Maximum number of matches to return"),
-) -> Any:
+) -> List[MatchOut]:
     """
     Get all matches for the current authenticated user
     """
@@ -34,10 +34,10 @@ def get_my_matches(
 
 @router.get(
     "/{match_id}",
-    response_model=Match,
+    response_model=MatchOut,
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
-def get_specific_match(session: SessionDep, current_user: FlexUserDep, match_id: UUID) -> Any:
+def get_specific_match(session: SessionDep, current_user: FlexUserDep, match_id: UUID) -> MatchOut:
     """
     Get a specific match by match ID, only if it belongs to the current user
     """
@@ -59,7 +59,7 @@ def get_specific_match(session: SessionDep, current_user: FlexUserDep, match_id:
 
 @router.post(
     "/{match_id}/accept",
-    response_model=Match,
+    response_model=MatchOut,
     status_code=http_status.HTTP_200_OK,
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
@@ -78,7 +78,7 @@ def accept_match(
 
 @router.post(
     "/{match_id}/decline",
-    response_model=Match,
+    response_model=MatchOut,
     status_code=http_status.HTTP_200_OK,
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )

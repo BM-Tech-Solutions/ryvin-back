@@ -89,14 +89,6 @@ class JourneyInDB(JourneyInDBBase):
     pass
 
 
-class Journey(JourneyInDBBase):
-    """
-    Schema for journey response
-    """
-
-    pass
-
-
 class JourneyOut(BaseModel):
     """
     Schema for detailed journey response with additional data

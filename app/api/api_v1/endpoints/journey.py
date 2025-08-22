@@ -7,8 +7,8 @@ from fastapi import status as http_status
 from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.schemas.journey import JourneyOut
 from app.schemas.meeting import (
-    MeetingFeedback,
     MeetingFeedbackCreate,
+    MeetingFeedbackOut,
     MeetingRequestCreate,
     MeetingRequestOut,
 )
@@ -253,7 +253,7 @@ def decline_meeting_request(
 # Meeting Feedback
 @router.post(
     "/{journey_id}/meeting-feedback",
-    response_model=MeetingFeedback,
+    response_model=MeetingFeedbackOut,
     status_code=http_status.HTTP_201_CREATED,
     openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
 )
@@ -262,7 +262,7 @@ def create_meeting_feedback(
     current_user: VerifiedUserDep,
     journey_id: UUID,
     feedback_in: MeetingFeedbackCreate,
-) -> Any:
+) -> MeetingFeedbackOut:
     """
     Create feedback for a meeting
     """

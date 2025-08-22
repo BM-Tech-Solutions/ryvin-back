@@ -51,14 +51,6 @@ class MessageInDB(MessageInDBBase):
     pass
 
 
-class Message(MessageInDBBase):
-    """
-    Schema for message response
-    """
-
-    pass
-
-
 class Sender(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

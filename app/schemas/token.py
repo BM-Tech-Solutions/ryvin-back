@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict
 
 
-class Token(BaseModel):
+class TokenOut(BaseModel):
     """
     Schema for access token response
     """

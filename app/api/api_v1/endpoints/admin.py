@@ -11,8 +11,8 @@ from app.core.security import utc_now
 from app.main import api_key_header
 from app.models.enums import MatchStatus
 from app.models.user import User
-from app.schemas.journey import Journey
-from app.schemas.match import Match
+from app.schemas.journey import JourneyOut
+from app.schemas.match import MatchOut
 from app.schemas.user import UserOut
 from app.services.admin_service import AdminService
 from app.services.match_service import MatchService
@@ -156,12 +156,12 @@ async def trigger_matching_for_user(
     return {"message": "Matching process triggered for user", "result": result}
 
 
-@router.get("/matches/{match_id}", response_model=Match)
+@router.get("/matches/{match_id}", response_model=MatchOut)
 def admin_get_match_by_id(
     session: SessionDep,
     match_id: UUID,
     current_user: AdminViaTokenDep,
-) -> Match | None:
+) -> MatchOut:
     """Get a specific match by ID (admin)."""
     match = MatchService(session).get_match_by_id(match_id)
     if not match:
@@ -169,7 +169,7 @@ def admin_get_match_by_id(
     return match
 
 
-@router.get("/users/{user_id}/matches", response_model=list[Match])
+@router.get("/users/{user_id}/matches", response_model=list[MatchOut])
 def admin_get_user_matches(
     session: SessionDep,
     current_user: AdminViaTokenDep,
@@ -177,7 +177,7 @@ def admin_get_user_matches(
     status: str | None = Query(None, description="Filter by match status"),
     skip: int = Query(0, description="Number of matches to skip"),
     limit: int = Query(100, description="Maximum number of matches to return"),
-) -> list[Match]:
+) -> list[MatchOut]:
     """Get matches for a given user (admin)."""
     matches = MatchService(session).get_user_matches(user_id, status, skip, limit)
     return matches
@@ -245,7 +245,7 @@ def unban_user(
     return {"message": "User unbanned successfully"}
 
 
-@router.get("/matches", response_model=List[Match])
+@router.get("/matches", response_model=List[MatchOut])
 def get_matches(
     session: SessionDep,
     current_user: AdminViaTokenDep,
@@ -255,7 +255,7 @@ def get_matches(
     ),
     skip: int = 0,
     limit: int = 100,
-) -> Any:
+) -> List[MatchOut]:
     """
     Get all matches (admin only)
     """
@@ -263,7 +263,7 @@ def get_matches(
     return matches
 
 
-@router.get("/journeys", response_model=List[Journey])
+@router.get("/journeys", response_model=List[JourneyOut])
 def get_journeys(
     session: SessionDep,
     current_user: AdminViaTokenDep,
