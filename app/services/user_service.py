@@ -27,11 +27,15 @@ class UserService(BaseService):
         """
         return self.session.get(User, user_id)
 
-    def get_user_by_phone(self, phone_number: str) -> Optional[User]:
+    def get_user_by_phone(self, phone_region: str, phone_number: str) -> Optional[User]:
         """
         Get user by phone number
         """
-        return self.session.query(User).filter(User.phone_number == phone_number).first()
+        return (
+            self.session.query(User)
+            .filter(User.phone_region == phone_region, User.phone_number == phone_number)
+            .first()
+        )
 
     def get_user_by_email(self, email: str) -> Optional[User]:
         """
@@ -41,11 +45,16 @@ class UserService(BaseService):
             return None
         return self.session.query(User).filter(User.email == email).first()
 
-    def create_user(self, phone_number: str) -> User:
+    def create_user(self, phone_region: str, phone_number: str) -> User:
         """
         Create a new user with phone number
         """
-        user = User(phone=phone_number, is_active=True, is_verified=False)
+        user = User(
+            phone_region=phone_region,
+            phone_number=phone_number,
+            is_active=True,
+            is_verified=False,
+        )
         self.session.add(user)
         self.session.commit()
         self.session.refresh(user)

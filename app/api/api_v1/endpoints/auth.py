@@ -23,7 +23,8 @@ from firebase import init_firebase
 
 # Request models
 class PhoneAuthRequest(BaseModel):
-    phone_number: str = Field(..., description="User's phone number")
+    phone_region: str = Field(..., description="User's phone number Region")
+    phone_number: str = Field(..., description="User's phone number Number")
     device_info: Optional[Dict[str, str]] = Field(default=None, description="Device information")
 
 
@@ -46,6 +47,7 @@ class RefreshTokenRequest(BaseModel):
 # Response models
 class AuthResponse(BaseModel):
     user_id: str
+    phone_region: Optional[str] = None
     phone_number: Optional[str] = None
     email: Optional[str] = None
     name: Optional[str] = None
@@ -97,7 +99,9 @@ def phone_auth(
     """
     auth_service = AuthService(db)
     return auth_service.phone_auth(
-        phone_number=request.phone_number, device_info=request.device_info
+        phone_region=request.phone_region,
+        phone_number=request.phone_number,
+        device_info=request.device_info,
     )
 
 
@@ -161,7 +165,9 @@ def logout(request: RefreshTokenRequest, db: Session = Depends(get_db)) -> Any:
 
 @router.get("/test-token/{phone_number}")
 def get_test_token(
-    phone_number: str, db: Session = Depends(get_db), api_key: str = Security(api_key_header)
+    phone_number: str,
+    db: Session = Depends(get_db),
+    api_key: str = Security(api_key_header),
 ) -> Dict[str, str]:
     """
     Generate a test token for a given phone number.
@@ -255,26 +261,21 @@ def get_user_data(
     """
     Get user data by ID for testing purposes.
     """
-    try:
-        user = db.query(User).filter(User.id == user_id).first()
+    user = db.query(User).filter(User.id == user_id).first()
 
-        if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-        # Convert user object to dictionary
-        user_data = {
-            "id": str(user.id),
-            "phone": user.phone_number,
-            "email": user.email,
-            "name": user.name,
-            "is_verified": user.is_verified,
-            "created_at": user.created_at.isoformat(),
-            "last_login": user.last_login.isoformat() if user.last_login else None,
-        }
+    # Convert user object to dictionary
+    user_data = {
+        "id": str(user.id),
+        "phone_region": user.phone_region,
+        "phone_number": user.phone_number,
+        "email": user.email,
+        "name": user.name,
+        "is_verified": user.is_verified,
+        "created_at": user.created_at.isoformat(),
+        "last_login": user.last_login.isoformat() if user.last_login else None,
+    }
 
-        return {"user": user_data}
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error retrieving user data: {str(e)}",
-        )
+    return {"user": user_data}

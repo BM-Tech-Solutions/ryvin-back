@@ -372,6 +372,7 @@ class FieldType(BaseStrEnum):
     SELECT = "select"
     FIELDS_GROUP = "fields_group"
     BOOLEAN = "boolean"
+    MULTIPLE_SELECT = "multiple_select"
 
 
 class FieldUnit(BaseStrEnum):

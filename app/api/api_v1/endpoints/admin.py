@@ -29,6 +29,7 @@ router = APIRouter()
 
 
 class SeedAdminRequest(BaseModel):
+    phone_region: str
     phone_number: str
     email: EmailStr | None = None
 
@@ -49,11 +50,19 @@ def seed_admin(
     if payload.email:
         user = session.query(User).filter(User.email == payload.email).first()
     if not user:
-        user = session.query(User).filter(User.phone_number == payload.phone_number).first()
+        user = (
+            session.query(User)
+            .filter(
+                User.phone_region == payload.phone_region,
+                User.phone_number == payload.phone_number,
+            )
+            .first()
+        )
 
     created = False
     if not user:
         user = User(
+            phone_region=payload.phone_region,
             phone_number=payload.phone_number,
             email=str(payload.email) if payload.email else None,
             is_active=True,
@@ -76,6 +85,7 @@ def seed_admin(
         "message": "Admin created" if created else "Admin promoted",
         "user_id": str(user.id),
         "email": user.email,
+        "phone_region": user.phone_region,
         "phone_number": user.phone_number,
         "is_admin": user.is_admin,
     }

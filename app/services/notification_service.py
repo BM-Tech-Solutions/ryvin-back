@@ -20,7 +20,8 @@ class NotificationService:
         Send a notification to a user
         """
         # In a real app, this would send to a notification service like Firebase
-        print(f"Sending notification to {user.phone_number}: {title} - {body}")
+        phone_number = f"{user.phone_region}{user.phone_number}"
+        print(f"Sending notification to {phone_number}: {title} - {body}")
         return True
 
     def send_new_match_notification(self, user: User, match: Match) -> bool:
