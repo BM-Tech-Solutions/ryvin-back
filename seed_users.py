@@ -72,7 +72,8 @@ def create_test_users():
             last_name = random.choice(surnames)
 
             user = User(
-                phone_number=f"+336{random.randint(10000000, 99999999)}",
+                phone_region="+336",
+                phone_number=str(random.randint(10000000, 99999999)),
                 email=f"{first_name.lower()}.{last_name.lower()}@example.fr",
                 is_active=True,
                 is_verified=True,
@@ -89,7 +90,8 @@ def create_test_users():
                     "id": user.id,
                     "name": f"{first_name} {last_name}",
                     "email": user.email,
-                    "phone": user.phone_number,
+                    "phone_region": user.phone_region,
+                    "phone_number": user.phone_number,
                     "gender": "homme",
                 }
             )
@@ -103,7 +105,8 @@ def create_test_users():
             last_name = random.choice(surnames)
 
             user = User(
-                phone_number=f"+336{random.randint(10000000, 99999999)}",
+                phone_region="+336",
+                phone_number=str(random.randint(10000000, 99999999)),
                 email=f"{first_name.lower()}.{last_name.lower()}@example.fr",
                 is_active=True,
                 is_verified=True,
@@ -120,7 +123,8 @@ def create_test_users():
                     "id": user.id,
                     "name": f"{first_name} {last_name}",
                     "email": user.email,
-                    "phone": user.phone_number,
+                    "phone_region": user.phone_region,
+                    "phone_number": user.phone_number,
                     "gender": "femme",
                 }
             )
@@ -162,7 +166,7 @@ def list_existing_users():
 
         print(f"   Found {len(users)} existing users:")
         for user in users:
-            print(f"   - {user.email} ({user.phone_number})")
+            print(f"   - {user.email} ({user.phone_region}{user.phone_number})")
 
         return users
 

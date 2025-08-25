@@ -82,7 +82,7 @@ class MatchService(BaseService):
             user1_id=user1_id,
             user2_id=user2_id,
             compatibility_score=compatibility_score,
-            status="pending",
+            status=MatchStatus.PENDING,
             user1_accepted=False,
             user2_accepted=False,
         )
@@ -216,7 +216,7 @@ class MatchService(BaseService):
             )
 
         # Update match status
-        match.status = "declined"
+        match.status = MatchStatus.DECLINED
 
         # Set which user declined
         if match.user1_id == user_id:

@@ -15,7 +15,7 @@ class JourneyBase(BaseModel):
     model_config = ConfigDict(from_attributes=True, validate_by_name=True)
 
     match_id: UUID
-    current_step: int = Field(default=JourneyStep.PRE_COMPATIBILITY)
+    current_step: int = Field(default=JourneyStep.STEP1_PRE_COMPATIBILITY)
     is_completed: bool = Field(default=False)
 
     @field_validator("current_step")
@@ -84,14 +84,6 @@ class JourneyInDBBase(JourneyBase):
 class JourneyInDB(JourneyInDBBase):
     """
     Schema for journey in DB (internal use)
-    """
-
-    pass
-
-
-class Journey(JourneyInDBBase):
-    """
-    Schema for journey response
     """
 
     pass

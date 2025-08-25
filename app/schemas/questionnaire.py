@@ -171,14 +171,6 @@ class QuestionnaireInDB(QuestionnaireInDBBase):
     pass
 
 
-class Questionnaire(QuestionnaireInDBBase):
-    """
-    Schema for questionnaire response
-    """
-
-    pass
-
-
 class QuestionnaireCompletion(BaseModel):
     """
     Schema for Questionnaire completion status

@@ -9,7 +9,6 @@ from fastapi import status as http_status
 from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.models.enums import get_field_enum
 from app.schemas.questionnaire import (
-    CategoryOut,
     QuestionnaireCreate,
     QuestionnaireInDB,
     QuestionnaireUpdate,
@@ -21,12 +20,13 @@ router = APIRouter()
 
 @router.get(
     "/me",
+    response_model=QuestionnaireInDB,
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_questionnaire(
     session: SessionDep,
     current_user: VerifiedUserDep,
-):
+) -> QuestionnaireInDB:
     """
     Get current user's questionnaire
     """
@@ -36,7 +36,7 @@ def get_questionnaire(
         raise HTTPException(
             status_code=http_status.HTTP_404_NOT_FOUND, detail="Questionnaire not found"
         )
-    return QuestionnaireInDB.model_validate(questionnaire).model_dump()
+    return questionnaire
 
 
 @router.get(
@@ -108,13 +108,12 @@ def get_questionnaire_status(
         db_categories = quest_service.get_questions_by_categories()
         db_field_map = {}
         db_category_map = {}
-        
+
         for db_cat in db_categories:
             db_category_map[db_cat.name] = str(db_cat.id)
             for db_field in db_cat.fields:
                 db_field_map[db_field.name] = str(db_field.id)
-        
-        
+
         # Try to load from updated form fields JSON with subcategories
         try:
             root = Path(__file__).resolve().parents[4]
@@ -126,36 +125,36 @@ def get_questionnaire_status(
 
                 # Process missing fields and organize by database categories with proper subcategory structure
                 missing_set = set(missing)
-                
+
                 # Group missing fields by their database categories
                 for category in db_categories:
                     category_missing_fields = []
                     for field in category.fields:
                         if field.name in missing_set:
                             category_missing_fields.append(field)
-                    
+
                     if not category_missing_fields:
                         continue
-                    
+
                     # Find corresponding JSON category for metadata
                     json_category = None
                     for json_cat in data:
                         if json_cat.get("name") == category.name:
                             json_category = json_cat
                             break
-                    
+
                     category_id = str(category.id)
                     subcategories_out = []
-                    
+
                     # If JSON category has subcategories, organize fields by them
                     if json_category and json_category.get("subcategories"):
                         subcategory_fields_map = {}
-                        
+
                         # First, map each missing field to its subcategory
                         for field in category_missing_fields:
                             found_subcategory = None
                             json_field_data = None
-                            
+
                             # Find which subcategory this field belongs to
                             for subcat in json_category.get("subcategories", []):
                                 for json_field in subcat.get("fields", []):
@@ -165,10 +164,15 @@ def get_questionnaire_status(
                                         break
                                 if found_subcategory:
                                     break
-                            
+
                             # If not found in subcategories, put in general
                             if not found_subcategory:
-                                found_subcategory = {"name": "general", "label": "General", "description": "", "order_position": 999}
+                                found_subcategory = {
+                                    "name": "general",
+                                    "label": "General",
+                                    "description": "",
+                                    "order_position": 999,
+                                }
                                 json_field_data = {
                                     "name": field.name,
                                     "label": field.label,
@@ -179,47 +183,53 @@ def get_questionnaire_status(
                                     "parent_field": field.parent_field,
                                     "field_unit": field.field_unit,
                                     "placeholder": field.placeholder,
-                                    "allow_custom": field.allow_custom
+                                    "allow_custom": field.allow_custom,
                                 }
-                            
+
                             subcat_name = found_subcategory["name"]
                             if subcat_name not in subcategory_fields_map:
                                 subcategory_fields_map[subcat_name] = {
                                     "subcategory": found_subcategory,
-                                    "fields": []
+                                    "fields": [],
                                 }
-                            
+
                             enum = get_field_enum(field.name)
-                            subcategory_fields_map[subcat_name]["fields"].append({
-                                "id": str(field.id),
-                                "name": json_field_data["name"],
-                                "label": json_field_data["label"],
-                                "description": json_field_data.get("description", ""),
-                                "order_position": json_field_data.get("order_position", 0),
-                                "field_type": json_field_data.get("field_type", "text"),
-                                "options": enum.options() if enum else None,
-                                "parent_field": json_field_data.get("parent_field"),
-                                "field_unit": json_field_data.get("field_unit"),
-                                "placeholder": json_field_data.get("placeholder"),
-                                "required": bool(json_field_data.get("required", False)),
-                                "allow_custom": bool(json_field_data.get("allow_custom", False)),
-                                "child_fields": [],
-                            })
-                        
+                            subcategory_fields_map[subcat_name]["fields"].append(
+                                {
+                                    "id": str(field.id),
+                                    "name": json_field_data["name"],
+                                    "label": json_field_data["label"],
+                                    "description": json_field_data.get("description", ""),
+                                    "order_position": json_field_data.get("order_position", 0),
+                                    "field_type": json_field_data.get("field_type", "text"),
+                                    "options": enum.options() if enum else None,
+                                    "parent_field": json_field_data.get("parent_field"),
+                                    "field_unit": json_field_data.get("field_unit"),
+                                    "placeholder": json_field_data.get("placeholder"),
+                                    "required": bool(json_field_data.get("required", False)),
+                                    "allow_custom": bool(
+                                        json_field_data.get("allow_custom", False)
+                                    ),
+                                    "child_fields": [],
+                                }
+                            )
+
                         # Build subcategories output
                         for subcat_name, subcat_data in subcategory_fields_map.items():
                             subcategory = subcat_data["subcategory"]
                             subcategory_id = f"{category_id}_{subcat_name}"
-                            
-                            subcategories_out.append({
-                                "id": subcategory_id,
-                                "name": subcategory["name"],
-                                "label": subcategory["label"],
-                                "description": subcategory.get("description", ""),
-                                "order_position": subcategory.get("order_position", 0),
-                                "fields": subcat_data["fields"],
-                            })
-                    
+
+                            subcategories_out.append(
+                                {
+                                    "id": subcategory_id,
+                                    "name": subcategory["name"],
+                                    "label": subcategory["label"],
+                                    "description": subcategory.get("description", ""),
+                                    "order_position": subcategory.get("order_position", 0),
+                                    "fields": subcat_data["fields"],
+                                }
+                            )
+
                     else:
                         # No subcategories in JSON, create general subcategory
                         fields_out = []
@@ -234,46 +244,62 @@ def get_questionnaire_status(
                                 "parent_field": field.parent_field,
                                 "field_unit": field.field_unit,
                                 "placeholder": field.placeholder,
-                                "allow_custom": field.allow_custom
+                                "allow_custom": field.allow_custom,
                             }
-                            
+
                             enum = get_field_enum(field.name)
-                            fields_out.append({
-                                "id": str(field.id),
-                                "name": json_field_data["name"],
-                                "label": json_field_data["label"],
-                                "description": json_field_data.get("description", ""),
-                                "order_position": json_field_data.get("order_position", 0),
-                                "field_type": json_field_data.get("field_type", "text"),
-                                "options": enum.options() if enum else None,
-                                "parent_field": json_field_data.get("parent_field"),
-                                "field_unit": json_field_data.get("field_unit"),
-                                "placeholder": json_field_data.get("placeholder"),
-                                "required": bool(json_field_data.get("required", False)),
-                                "allow_custom": bool(json_field_data.get("allow_custom", False)),
-                                "child_fields": [],
-                            })
-                        
-                        subcategories_out = [{
-                            "id": f"{category_id}_general",
-                            "name": "general",
-                            "label": "General",
-                            "description": "",
-                            "order_position": 1,
-                            "fields": fields_out,
-                        }]
-                    
+                            fields_out.append(
+                                {
+                                    "id": str(field.id),
+                                    "name": json_field_data["name"],
+                                    "label": json_field_data["label"],
+                                    "description": json_field_data.get("description", ""),
+                                    "order_position": json_field_data.get("order_position", 0),
+                                    "field_type": json_field_data.get("field_type", "text"),
+                                    "options": enum.options() if enum else None,
+                                    "parent_field": json_field_data.get("parent_field"),
+                                    "field_unit": json_field_data.get("field_unit"),
+                                    "placeholder": json_field_data.get("placeholder"),
+                                    "required": bool(json_field_data.get("required", False)),
+                                    "allow_custom": bool(
+                                        json_field_data.get("allow_custom", False)
+                                    ),
+                                    "child_fields": [],
+                                }
+                            )
+
+                        subcategories_out = [
+                            {
+                                "id": f"{category_id}_general",
+                                "name": "general",
+                                "label": "General",
+                                "description": "",
+                                "order_position": 1,
+                                "fields": fields_out,
+                            }
+                        ]
+
                     # Add category to output
-                    categories_out.append({
-                        "id": category_id,
-                        "name": json_category["name"] if json_category else category.name,
-                        "label": json_category["label"] if json_category else category.label,
-                        "description": json_category.get("description", "") if json_category else category.description or "",
-                        "order_position": json_category.get("order_position", 0) if json_category else category.order_position,
-                        "step": json_category.get("step", 0) if json_category else category.step,
-                        "picture_url": json_category.get("picture_url") if json_category else category.picture_url,
-                        "subcategories": subcategories_out,
-                    })
+                    categories_out.append(
+                        {
+                            "id": category_id,
+                            "name": json_category["name"] if json_category else category.name,
+                            "label": json_category["label"] if json_category else category.label,
+                            "description": json_category.get("description", "")
+                            if json_category
+                            else category.description or "",
+                            "order_position": json_category.get("order_position", 0)
+                            if json_category
+                            else category.order_position,
+                            "step": json_category.get("step", 0)
+                            if json_category
+                            else category.step,
+                            "picture_url": json_category.get("picture_url")
+                            if json_category
+                            else category.picture_url,
+                            "subcategories": subcategories_out,
+                        }
+                    )
 
                 response["missing_by_categories"] = categories_out
             else:
@@ -283,8 +309,9 @@ def get_questionnaire_status(
             # Log the exception for debugging
             print(f"Exception in questionnaire status: {e}")
             import traceback
+
             traceback.print_exc()
-            
+
             # Fallback to existing logic for backward compatibility with subcategories
             categories = quest_service.get_questions_by_categories()
             missing_set = set(missing)
@@ -638,7 +665,7 @@ def complete_questionnaire(
 def get_questions_by_categories(session: SessionDep):
     """
     Get all questionnaire questions organized by categories and subcategories
-    
+
     Returns categories with subcategories structure from form_fields_updated.json
     or falls back to database structure for backward compatibility.
     """
@@ -646,20 +673,20 @@ def get_questions_by_categories(session: SessionDep):
         # Try to load from updated form fields JSON with subcategories
         root = Path(__file__).resolve().parents[4]
         form_json = root / "resources" / "form_fields_updated.json"
-        
+
         if form_json.exists():
             data = json.loads(form_json.read_text(encoding="utf-8"))
-            
+
             # Process and enhance with field options from enums
             categories_out = []
             for category in data:
                 # Process subcategories
                 subcategories_out = []
-                
+
                 if category.get("subcategories"):
                     for subcategory in category.get("subcategories", []):
                         fields_out = []
-                        
+
                         for field in subcategory.get("fields", []):
                             enum = get_field_enum(field.get("name"))
                             field_enhanced = {
@@ -678,15 +705,17 @@ def get_questions_by_categories(session: SessionDep):
                                 "child_fields": [],
                             }
                             fields_out.append(field_enhanced)
-                        
+
                         if fields_out:
-                            subcategories_out.append({
-                                "name": subcategory.get("name"),
-                                "label": subcategory.get("label"),
-                                "description": subcategory.get("description", ""),
-                                "order_position": subcategory.get("order_position", 0),
-                                "fields": fields_out,
-                            })
+                            subcategories_out.append(
+                                {
+                                    "name": subcategory.get("name"),
+                                    "label": subcategory.get("label"),
+                                    "description": subcategory.get("description", ""),
+                                    "order_position": subcategory.get("order_position", 0),
+                                    "fields": fields_out,
+                                }
+                            )
                 else:
                     # Handle legacy format without subcategories
                     fields_out = []
@@ -708,42 +737,46 @@ def get_questions_by_categories(session: SessionDep):
                             "child_fields": [],
                         }
                         fields_out.append(field_enhanced)
-                    
+
                     if fields_out:
-                        subcategories_out.append({
-                            "name": "general",
-                            "label": "General", 
-                            "description": "",
-                            "order_position": 1,
-                            "fields": fields_out,
-                        })
-                
+                        subcategories_out.append(
+                            {
+                                "name": "general",
+                                "label": "General",
+                                "description": "",
+                                "order_position": 1,
+                                "fields": fields_out,
+                            }
+                        )
+
                 if subcategories_out:
-                    categories_out.append({
-                        "id": None,
-                        "name": category.get("name"),
-                        "label": category.get("label"),
-                        "description": category.get("description", ""),
-                        "order_position": category.get("order_position", 0),
-                        "step": category.get("step", 0),
-                        "picture_url": category.get("picture_url"),
-                        "subcategories": subcategories_out,
-                    })
-            
+                    categories_out.append(
+                        {
+                            "id": None,
+                            "name": category.get("name"),
+                            "label": category.get("label"),
+                            "description": category.get("description", ""),
+                            "order_position": category.get("order_position", 0),
+                            "step": category.get("step", 0),
+                            "picture_url": category.get("picture_url"),
+                            "subcategories": subcategories_out,
+                        }
+                    )
+
             return categories_out
-            
+
     except Exception:
         pass  # Fall back to database approach
-    
+
     # Fallback: Use database service (legacy support)
     quest_service = QuestionnaireService(session)
     db_categories = quest_service.get_questions_by_categories()
-    
+
     # Wrap database results in subcategories for consistency
     categories_with_subcategories = []
     for category in db_categories:
         # Convert to dict if it's a model instance
-        if hasattr(category, '__dict__'):
+        if hasattr(category, "__dict__"):
             cat_dict = {
                 "id": str(category.id) if category.id else None,
                 "name": category.name,
@@ -766,21 +799,26 @@ def get_questions_by_categories(session: SessionDep):
                                 "description": field.description,
                                 "order_position": field.order_position,
                                 "field_type": field.field_type,
-                                "options": get_field_enum(field.name).options() if get_field_enum(field.name) else None,
+                                "options": get_field_enum(field.name).options()
+                                if get_field_enum(field.name)
+                                else None,
                                 "parent_field": field.parent_field,
                                 "field_unit": field.field_unit,
                                 "placeholder": field.placeholder,
                                 "required": bool(field.required),
                                 "allow_custom": bool(field.allow_custom),
                                 "child_fields": [],
-                            } for field in getattr(category, 'fields', [])
-                        ]
+                            }
+                            for field in getattr(category, "fields", [])
+                        ],
                     }
-                ] if getattr(category, 'fields', None) else []
+                ]
+                if getattr(category, "fields", None)
+                else [],
             }
         else:
             cat_dict = category
-        
+
         categories_with_subcategories.append(cat_dict)
-    
+
     return categories_with_subcategories

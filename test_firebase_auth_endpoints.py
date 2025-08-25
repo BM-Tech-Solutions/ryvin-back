@@ -29,10 +29,12 @@ def test_create_user():
     print("-------------------------------")
 
     # Phone number to test
-    phone_number = "+213778788714"  # E.164 format without spaces
+    phone_region = "+213"
+    phone_number = "778788714"
 
     # Request payload
     payload = {
+        "phone_region": phone_region,
         "phone_number": phone_number,
         "display_name": "Test User",
         "photo_url": "https://example.com/photo.jpg",
@@ -72,10 +74,14 @@ def test_verify_user():
     print("-------------------------------")
 
     # Phone number to test
-    phone_number = "+213778788714"  # E.164 format without spaces
+    phone_region = "+213"
+    phone_number = "778788714"
 
     # Request payload
-    payload = {"phone_number": phone_number}
+    payload = {
+        "phone_region": phone_region,
+        "phone_number": phone_number,
+    }
 
     # Make the request
     url = f"{BASE_URL}/auth/verify-user"

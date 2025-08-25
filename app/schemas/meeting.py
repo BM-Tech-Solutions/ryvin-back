@@ -145,9 +145,9 @@ class MeetingFeedbackInDB(MeetingFeedbackInDBBase):
     pass
 
 
-class MeetingFeedback(MeetingFeedbackInDBBase):
+class MeetingFeedbackOut(MeetingFeedbackInDB):
     """
-    Schema for meeting feedback response
+    Schema for meeting feedback Response
     """
 
     pass

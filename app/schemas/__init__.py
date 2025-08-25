@@ -1,21 +1,20 @@
 # ruff: noqa: F401 I001
-from .journey import Journey, JourneyCreate, JourneyInDB, JourneyUpdate
-from .match import Match, MatchCreate, MatchInDB, MatchUpdate
+from .journey import JourneyCreate, JourneyInDB, JourneyUpdate
+from .match import MatchCreate, MatchInDB, MatchUpdate
 from .meeting import (
-    MeetingFeedback,
     MeetingFeedbackCreate,
     MeetingFeedbackInDB,
     MeetingRequestOut,
     MeetingRequestCreate,
     MeetingRequestInDB,
+    MeetingFeedbackOut,
 )
-from .message import Message, MessageCreate, MessageInDB
+from .message import MessageCreate, MessageInDB
 from .questionnaire import (
-    Questionnaire,
     QuestionnaireCreate,
     QuestionnaireInDB,
     QuestionnaireUpdate,
 )
-from .token import Token, TokenPayload
+from .token import TokenOut, TokenPayload
 from .user import UserOut, UserCreate, UserInDB, UserUpdate
 from .photos import PhotoOut

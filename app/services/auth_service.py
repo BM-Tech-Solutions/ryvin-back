@@ -28,23 +28,31 @@ class AuthService(BaseService):
     Service for authentication operations with simplified flow
     """
 
-    def verify_user_exists(self, phone_number: str) -> Dict[str, Any]:
+    def verify_user_exists(self, phone_region: str, phone_number: str) -> Dict[str, Any]:
         """
         Verify if a user exists with the given phone number
         """
+        # Check if user exists in Firebase
+        firebase_phone_number = f"{phone_region}{phone_number}"
         try:
-            # Check if user exists in Firebase
-            try:
-                # unused variable
-                firebase_user = firebase_auth.get_user_by_phone_number(phone_number)  # noqa: F841
-                firebase_exists = True
-            except firebase_auth.UserNotFoundError:
-                firebase_exists = False
+            firebase_user = firebase_auth.get_user_by_phone_number(firebase_phone_number)  # noqa: F841
+            firebase_exists = True
+        except firebase_auth.UserNotFoundError:
+            firebase_exists = False
 
+        try:
             # Check if user exists in our database
-            user = self.db.query(User).filter(User.phone_number == phone_number).first()
+            user = (
+                self.db.query(User)
+                .filter(User.phone_region == phone_region, User.phone_number == phone_number)
+                .first()
+            )
 
-            response = {"exists": firebase_exists or user is not None, "phone_number": phone_number}
+            response = {
+                "exists": firebase_exists or user is not None,
+                "phone_region": phone_region,
+                "phone_number": phone_number,
+            }
 
             if user:
                 response["user_id"] = str(user.id)
@@ -58,57 +66,61 @@ class AuthService(BaseService):
                 detail=f"Failed to verify user: {str(e)}",
             )
 
-    def verify_phone_token(self, phone_number: str) -> Dict[str, Any]:
+    def verify_phone_token(self, phone_region: str, phone_number: str) -> Dict[str, Any]:
         """
         Verify phone number (token verification is handled in the frontend)
 
         This method is kept for backward compatibility but doesn't perform verification
         as it's now handled in the frontend.
         """
-        try:
-            if not phone_number:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
-                )
-
-            return {"phone_number": phone_number, "is_verified": True}
-
-        except firebase_auth.InvalidIdTokenError as e:
-            print(f"Invalid Firebase token: {e}")
+        if not phone_region:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Firebase token: {str(e)}"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Phone region is required"
             )
-        except Exception as e:
-            print(f"Error in verify_phone_token: {e}")
+
+        if not phone_number:
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to verify phone token: {str(e)}",
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
             )
+
+        return {"phone_region": phone_region, "phone_number": phone_number, "is_verified": True}
 
     def register_user(
-        self, phone_number: str, device_info: Optional[Dict[str, Any]] = None
+        self,
+        phone_region: str,
+        phone_number: str,
+        device_info: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Register a new user with phone number after verification
 
         Note: Firebase token verification is handled in the frontend
         """
+        if not phone_region:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Phone region is required"
+            )
+        if not phone_number:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
+            )
+
+        # Check if user already exists
+        user = (
+            self.db.query(User)
+            .filter(User.phone_region == phone_region, User.phone_number == phone_number)
+            .first()
+        )
+        if user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User with this phone number already exists",
+            )
+
         try:
-            if not phone_number:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
-                )
-
-            # Check if user already exists
-            user = self.db.query(User).filter(User.phone_number == phone_number).first()
-            if user:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="User with this phone number already exists",
-                )
-
             # Create new user with null profile fields
             user = User(
+                phone_region=phone_region,
                 phone_number=phone_number,
                 is_verified=True,
                 last_login=utc_now,
@@ -139,17 +151,13 @@ class AuthService(BaseService):
 
             return {
                 "user_id": str(user.id),
+                "phone_region": phone_region,
                 "phone_number": phone_number,
                 "access_token": access_token,
                 "refresh_token": refresh_token,
                 "token_type": "bearer",
             }
 
-        except firebase_auth.InvalidIdTokenError as e:
-            print(f"Invalid Firebase token: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Firebase token: {str(e)}"
-            )
         except Exception as e:
             print(f"Error in register_user: {e}")
             raise HTTPException(
@@ -158,28 +166,39 @@ class AuthService(BaseService):
             )
 
     def login_user(
-        self, phone_number: str, device_info: Optional[Dict[str, Any]] = None
+        self,
+        phone_region: str,
+        phone_number: str,
+        device_info: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Login with phone number
 
         Note: Firebase token verification is handled in the frontend
         """
+        if not phone_region:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Phone region is required"
+            )
+
+        if not phone_number:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
+            )
+
+        # Check if user exists in our database
+        user = (
+            self.db.query(User)
+            .filter(User.phone_region == phone_region, User.phone_number == phone_number)
+            .first()
+        )
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found. Please register first.",
+            )
         try:
-            if not phone_number:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
-                )
-
-            # Check if user exists in our database
-            user = self.db.query(User).filter(User.phone_number == phone_number).first()
-
-            if not user:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="User not found. Please register first.",
-                )
-
             # Update last login and device info
             user.last_login = utc_now()
 
@@ -227,6 +246,7 @@ class AuthService(BaseService):
 
             return {
                 "user_id": str(user.id),
+                "phone_region": user.phone_region,
                 "phone_number": user.phone_number,
                 "email": user.email,
                 "profile_complete": profile_complete,
@@ -235,11 +255,6 @@ class AuthService(BaseService):
                 "token_type": "bearer",
             }
 
-        except firebase_auth.InvalidIdTokenError as e:
-            print(f"Invalid Firebase token: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Firebase token: {str(e)}"
-            )
         except Exception as e:
             print(f"Error in login_user: {e}")
             raise HTTPException(
@@ -248,28 +263,40 @@ class AuthService(BaseService):
             )
 
     def verify_phone(
-        self, phone_number: str, device_info: Optional[Dict[str, Any]] = None
+        self,
+        phone_region: str,
+        phone_number: str,
+        device_info: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Verify phone number and create or update user
 
         Note: Firebase token verification is handled in the frontend
         """
+        if not phone_region:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Phone region is required"
+            )
+        if not phone_number:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
+            )
+
+        # Check if user exists in our database
+        user = (
+            self.db.query(User)
+            .filter(User.phone_region == phone_region, User.phone_number == phone_number)
+            .first()
+        )
+
+        user_exists = user is not None
+        profile_complete = user is not None and user.email is not None
+
         try:
-            if not phone_number:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
-                )
-
-            # Check if user exists in our database
-            user = self.db.query(User).filter(User.phone_number == phone_number).first()
-
-            user_exists = user is not None
-            profile_complete = user is not None and user.email is not None
-
             if not user:
                 # Create new user
                 user = User(
+                    phone_region=phone_region,
                     phone_number=phone_number,
                     is_verified=True,
                     last_login=utc_now(),
@@ -332,7 +359,8 @@ class AuthService(BaseService):
             if profile_complete:
                 response["user"] = {
                     "id": str(user.id),
-                    "phone": user.phone,
+                    "phone_region": user.phone_region,
+                    "phone_number": user.phone_number,
                     "name": user.name,
                     "email": user.email,
                     "is_verified": user.is_verified,
@@ -342,10 +370,6 @@ class AuthService(BaseService):
 
             return response
 
-        except firebase_auth.InvalidIdTokenError as e:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Firebase token: {str(e)}"
-            )
         except Exception as e:
             print(f"Error in verify_phone: {e}")
             raise HTTPException(
@@ -501,7 +525,7 @@ class AuthService(BaseService):
             )
 
     def phone_auth(
-        self, phone_number: str, device_info: Optional[Dict[str, Any]] = None
+        self, phone_region: str, phone_number: str, device_info: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
         Unified phone authentication method that handles both new and existing users.
@@ -512,19 +536,28 @@ class AuthService(BaseService):
 
         Note: Firebase token verification is handled in the frontend
         """
+        if not phone_region:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Phone region is required"
+            )
+        if not phone_number:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
+            )
+
+        # Check if user exists in our database
+        user = (
+            self.db.query(User)
+            .filter(User.phone_region == phone_region, User.phone_number == phone_number)
+            .first()
+        )
+        is_new_user = user is None
+
         try:
-            if not phone_number:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number is required"
-                )
-
-            # Check if user exists in our database
-            user = self.db.query(User).filter(User.phone_number == phone_number).first()
-            is_new_user = user is None
-
             if is_new_user:
                 # Create new user with null profile fields
                 user = User(
+                    phone_region=phone_region,
                     phone_number=phone_number,
                     is_verified=True,
                     last_login=utc_now(),
@@ -579,6 +612,7 @@ class AuthService(BaseService):
 
             return {
                 "user_id": str(user.id),
+                "phone_region": phone_region,
                 "phone_number": phone_number,
                 "email": user.email,
                 "name": user.name,
@@ -589,12 +623,6 @@ class AuthService(BaseService):
                 "refresh_token": refresh_token,
                 "token_type": "bearer",
             }
-
-        except firebase_auth.InvalidIdTokenError as e:
-            print(f"Invalid Firebase token: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Firebase token: {str(e)}"
-            )
         except Exception as e:
             print(f"Error in phone_auth: {e}")
             raise HTTPException(
@@ -657,6 +685,7 @@ class AuthService(BaseService):
             if is_new_user:
                 # Create new user with no phone number (NULL). Requires DB column to be nullable.
                 user = User(
+                    phone_region=None,
                     phone_number=None,
                     email=email,
                     name=name,
@@ -714,6 +743,7 @@ class AuthService(BaseService):
 
             return {
                 "user_id": str(user.id),
+                "phone_region": user.phone_region,
                 "phone_number": user.phone_number,
                 "email": email,
                 "name": name,
@@ -787,21 +817,22 @@ class AuthService(BaseService):
         # Create a refresh token with the user ID and random suffix
         return create_refresh_token(subject=f"{user_id}:{suffix}")
 
-    def generate_test_token(self, phone_number: str) -> Optional[str]:
+    def generate_test_token(self, phone_region: str, phone_number: str) -> Optional[str]:
         """
         Generate a test Firebase ID token for a given phone number.
         This is for testing purposes only.
         """
+        # Check if user exists in Firebase
+        firebase_phone_number = f"{phone_region}{phone_number}"
         try:
-            # Check if user exists in Firebase
-            try:
-                user = firebase_auth.get_user_by_phone_number(phone_number)
-                print(f"Found existing Firebase user with phone: {phone_number}")
-            except firebase_auth.UserNotFoundError:
-                # Create user if not exists
-                user = firebase_auth.create_user(phone_number=phone_number)
-                print(f"Created new Firebase user with phone: {phone_number}")
+            user = firebase_auth.get_user_by_phone_number(firebase_phone_number)
+            print(f"Found existing Firebase user with phone: {firebase_phone_number}")
+        except firebase_auth.UserNotFoundError:
+            # Create user if not exists
+            user = firebase_auth.create_user(phone_number=firebase_phone_number)
+            print(f"Created new Firebase user with phone: {firebase_phone_number}")
 
+        try:
             # Create custom token
             custom_token = firebase_auth.create_custom_token(user.uid)
             print(f"Created custom token for user: {user.uid}")
@@ -821,4 +852,3 @@ class AuthService(BaseService):
                 return None
         except Exception as e:
             print(f"Error generating test token: {e}")
-            return None

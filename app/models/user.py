@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import DateTime, text
+from sqlalchemy import CheckConstraint, DateTime, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -22,8 +22,18 @@ class User(Base):
     """
 
     __tablename__ = "user"
+    __table_args__ = (
+        UniqueConstraint("phone_region", "phone_number", name="unique_phone_number"),
+        CheckConstraint(
+            text(
+                "(phone_region IS NOT NULL AND phone_number IS NOT NULL) OR (phone_region IS NULL AND phone_number IS NULL)"
+            ),
+            name="both_number_and_region_or_none",
+        ),
+    )
 
-    phone_number: Mapped[Optional[str]] = mapped_column(unique=True, index=True, nullable=True)
+    phone_region: Mapped[Optional[str]] = mapped_column(nullable=True)
+    phone_number: Mapped[Optional[str]] = mapped_column(nullable=True, index=True)
     email: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
     name: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
     profile_image: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
@@ -65,4 +75,4 @@ class User(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<User {self.id}: {self.phone_number}>"
+        return f"<User {self.id}: {self.phone_region} {self.phone_number}>"

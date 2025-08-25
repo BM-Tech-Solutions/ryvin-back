@@ -65,15 +65,7 @@ class MatchInDB(MatchInDBBase):
     pass
 
 
-class Match(MatchInDBBase):
-    """
-    Schema for match response
-    """
-
-    pass
-
-
-class MatchResponse(BaseModel):
+class MatchOut(BaseModel):
     """
     Schema for detailed match response with user information
     """
