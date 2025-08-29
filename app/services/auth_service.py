@@ -10,6 +10,7 @@ from datetime import timedelta
 from typing import Any, Dict, Optional
 from uuid import UUID
 
+import httpx
 import requests
 from fastapi import HTTPException, status
 from firebase_admin import auth as firebase_auth
@@ -17,10 +18,10 @@ from jose import JWTError, jwt
 
 from app.core.config import settings
 from app.core.security import create_access_token, create_refresh_token, utc_now
+from app.models.enums import SocialProviders
 from app.models.token import RefreshToken
 from app.models.user import User
 from app.services.base_service import BaseService
-from firebase import init_firebase
 
 
 class AuthService(BaseService):
@@ -630,137 +631,146 @@ class AuthService(BaseService):
                 detail=f"Failed to authenticate user: {str(e)}",
             )
 
-    def google_auth(
-        self, google_token: str, device_info: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+    async def google_auth(self, code, redirect_uri):
         """
-        Unified Google authentication method that handles both new and existing users.
+        Exchanges a Google authorization code for an access token and ID token.
+        """
+        token_url = "https://oauth2.googleapis.com/token"
 
-        1. Verifies Google token using Firebase Admin SDK
-        2. Retrieves user data from the verified token
-        3. Checks if email exists in our system
-        4. Creates account if user doesn't exist
-        5. Returns login info in both cases
-        """
+        data = {
+            "code": code,
+            "client_id": settings.GOOGLE_CLIENT_ID,
+            "client_secret": settings.GOOGLE_CLIENT_SECRET,
+            "redirect_uri": redirect_uri,
+            "grant_type": "authorization_code",
+        }
+
         try:
-            # Ensure Firebase is initialized with proper project ID/options
-            init_firebase()
-            # Verify the Google ID token using Firebase Admin SDK
-            try:
-                decoded_token = firebase_auth.verify_id_token(google_token)
-
-                # Extract user data from the decoded token
-                email = decoded_token.get("email")
-                name = decoded_token.get("name", "")
-                profile_image = decoded_token.get("picture", "")
-                # unused variable
-                google_id = decoded_token.get("sub")  # noqa: F841
-
-                if not email:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Email not found in the Google token",
-                    )
-
-            except (ValueError, firebase_auth.InvalidIdTokenError) as e:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail=f"Invalid Google token: {str(e)}",
-                )
-            except Exception as e:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Error verifying Google token: {str(e)}",
-                )
-
-            if not email:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Email not provided by Google"
-                )
-
-            # Check if user exists by email
-            user = self.db.query(User).filter(User.email == email).first()
-            is_new_user = user is None
-
-            if is_new_user:
-                # Create new user with no phone number (NULL). Requires DB column to be nullable.
-                user = User(
-                    phone_region=None,
-                    phone_number=None,
-                    email=email,
-                    name=name,
-                    profile_image=profile_image,
-                    is_verified=True,
-                    last_login=utc_now(),
-                )
-            else:
-                # Update existing user
-                user.name = name if name else user.name
-                user.profile_image = profile_image if profile_image else user.profile_image
-                user.last_login = utc_now()
-                user.is_verified = True
-
-            # Device info is accepted but not stored as the User model has no such columns
-
-            # Save user to database
-            if is_new_user:
-                self.db.add(user)
-            self.db.commit()
-            self.db.refresh(user)
-
-            # For Google auth, profile is complete by default
-            is_profile_complete = True
-
-            # Generate tokens
-            access_token = create_access_token(subject=str(user.id))
-            refresh_token = self._generate_unique_refresh_token(str(user.id))
-
-            # Store the refresh token in the database
-            expires_at = utc_now() + timedelta(days=30)
-
-            # Check if a refresh token already exists for this user
-            existing_token = (
-                self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
-            )
-
-            if existing_token:
-                # Update existing token
-                existing_token.token = refresh_token
-                existing_token.expires_at = expires_at
-                existing_token.is_revoked = False
-            else:
-                # Create new refresh token record
-                db_refresh_token = RefreshToken(
-                    id=uuid.uuid4(),
-                    user_id=user.id,
-                    token=refresh_token,
-                    expires_at=expires_at,
-                    is_revoked=False,
-                )
-                self.db.add(db_refresh_token)
-
-            self.db.commit()
-
-            return {
-                "user_id": str(user.id),
-                "phone_region": user.phone_region,
-                "phone_number": user.phone_number,
-                "email": email,
-                "name": name,
-                "profile_image": profile_image,
-                "is_new_user": is_new_user,
-                "is_profile_complete": is_profile_complete,
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-                "token_type": "bearer",
-            }
-
+            async with httpx.AsyncClient() as client:
+                response = await client.post(token_url, data=data)
+                response.raise_for_status()
         except Exception as e:
-            print(f"Error in google_auth: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to authenticate with Google: {str(e)}",
+                detail=f"Token Exchange Failed: {e}",
             )
+
+        try:
+            google_tokens = response.json()
+            decoded_id_token = await self.verify_google_id_token(
+                id_token=google_tokens["id_token"],
+                access_token=google_tokens["access_token"],
+                client_id=settings.GOOGLE_CLIENT_ID,
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Token Verification Failed: {e}",
+            )
+
+        # Extract user data from the decoded token
+        email = decoded_id_token.get("email")
+        name = decoded_id_token.get("name", "")
+        social_image = decoded_id_token.get("picture", "")
+        social_id = decoded_id_token.get("sub")
+
+        user = (
+            self.db.query(User)
+            .filter(
+                User.social_provider == SocialProviders.GOOGLE,
+                User.social_id == social_id,
+            )
+            .first()
+        )
+        if not user:
+            # create new user
+            user = User(
+                phone_region=None,
+                phone_number=None,
+                email=email,
+                name=name,
+                social_image=social_image,
+                is_verified=True,
+                last_login=utc_now(),
+                social_provider=SocialProviders.GOOGLE,
+                social_id=social_id,
+            )
+            self.db.add(user)
+        else:
+            # Update existing user
+            user.last_login = utc_now()
+            user.is_verified = True
+
+        self.db.commit()
+        self.db.refresh(user)
+
+        # Generate tokens
+        access_token = create_access_token(user.id)
+        refresh_token = create_refresh_token(user.id)
+
+        # Store the refresh token in the database
+        expires_at = utc_now() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+
+        # Check if a refresh token already exists for this user
+        existing_token = self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
+
+        if existing_token:
+            # Update existing token
+            existing_token.token = refresh_token
+            existing_token.expires_at = expires_at
+            existing_token.is_revoked = False
+        else:
+            # Create new refresh token record
+            db_refresh_token = RefreshToken(
+                user_id=user.id,
+                token=refresh_token,
+                expires_at=expires_at,
+                is_revoked=False,
+            )
+            self.db.add(db_refresh_token)
+
+        self.db.commit()
+
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+        }
+
+    async def get_google_jwks(self):
+        jwks_url = "https://www.googleapis.com/oauth2/v3/certs"
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(jwks_url)
+                response.raise_for_status()
+                return response.json()
+        except httpx.HTTPStatusError as exc:
+            raise Exception(f"Failed to fetch JWKS: {exc.response.text}")
+
+    async def verify_google_id_token(self, id_token: str, access_token: str, client_id: str):
+        jwks = await self.get_google_jwks()
+        # Get the KID from the token header
+        header = jwt.get_unverified_header(id_token)
+        kid = header.get("kid")
+
+        if not kid:
+            raise Exception("No 'kid' found in token header.")
+
+        # Find the matching key in the JWKS
+        key = next((key for key in jwks["keys"] if key["kid"] == kid), None)
+
+        if not key:
+            raise Exception("Public key not found in JWKS list from Google.")
+
+        # Verify the signature and claims
+        decoded_token = jwt.decode(
+            id_token,
+            key,
+            algorithms=[header.get("alg")],
+            audience=client_id,
+            issuer="https://accounts.google.com",
+            access_token=access_token,
+        )
+        return decoded_token
 
     def _get_google_user_info(self, google_token: str) -> Dict[str, Any]:
         """

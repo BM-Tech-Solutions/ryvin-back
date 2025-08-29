@@ -30,11 +30,12 @@ class User(Base):
             ),
             name="both_number_and_region_or_none",
         ),
+        UniqueConstraint("social_provider", "social_id", name="unique_social_account"),
     )
 
     phone_region: Mapped[Optional[str]] = mapped_column(nullable=True)
     phone_number: Mapped[Optional[str]] = mapped_column(nullable=True, index=True)
-    email: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
+    email: Mapped[Optional[str]]
     name: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
     profile_image: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
     has_completed_questionnaire: Mapped[bool] = mapped_column(default=False)
@@ -48,6 +49,10 @@ class User(Base):
     is_banned: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
     ban_reason: Mapped[Optional[str]]
     banned_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    # OAuth
+    social_provider: Mapped[Optional[str]]
+    social_id: Mapped[Optional[str]]
+    social_image: Mapped[Optional[str]]
 
     # Relationships
     questionnaire: Mapped[Optional["Questionnaire"]] = relationship(

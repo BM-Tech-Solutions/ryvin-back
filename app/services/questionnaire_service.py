@@ -2,10 +2,16 @@ from collections import defaultdict
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.security import utc_now
-from app.models import Questionnaire, QuestionnaireCategory, QuestionnaireField
+from app.models import (
+    Questionnaire,
+    QuestionnaireCategory,
+    QuestionnaireField,
+    QuestionnaireSubCategory,
+)
 from app.models.enums import FieldType
 from app.schemas.questionnaire import QuestionnaireCreate, QuestionnaireUpdate
 
@@ -107,24 +113,18 @@ class QuestionnaireService(BaseService):
         if q1.primary_love_language == q2.primary_love_language:
             score += 15
 
-        # Check if deal breakers match
-        # if q1.deal_breakers and q2.deal_breakers:
-        #     # Lower score if deal breakers overlap
-        #     if any(item in q2.lifestyle_preferences for item in q1.deal_breakers.split(",")):
-        #         score -= 30
-
-        #     if any(item in q1.lifestyle_preferences for item in q2.deal_breakers.split(",")):
-        #         score -= 30
-
-        # Ensure score is between 0 and 100
         return max(0, min(score, 100))
 
     def get_all_categories(self) -> list[QuestionnaireCategory]:
-        return (
-            self.session.query(QuestionnaireCategory)
-            .order_by(QuestionnaireCategory.order_position)
-            .all()
+        stmt = select(QuestionnaireCategory).options(
+            selectinload(QuestionnaireCategory.sub_categories).options(
+                selectinload(QuestionnaireSubCategory.fields).options(
+                    selectinload(QuestionnaireField.children)
+                )
+            )
         )
+
+        return self.session.execute(stmt).scalars().all()
 
     def get_categories_by_ids(self, ids: list[UUID]) -> list[QuestionnaireCategory]:
         if not ids:
@@ -139,7 +139,7 @@ class QuestionnaireService(BaseService):
     def get_category_fields(self, category_id: UUID) -> list[QuestionnaireField]:
         return (
             self.session.query(QuestionnaireField)
-            .filter(QuestionnaireField.category_id == category_id)
+            .filter(QuestionnaireField.sub_category_id == category_id)
             .order_by(QuestionnaireField.order_position)
             .all()
         )
