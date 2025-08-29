@@ -9,6 +9,7 @@ from fastapi import status as http_status
 from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.models.enums import get_field_enum
 from app.schemas.questionnaire import (
+    CategoryOut,
     QuestionnaireCreate,
     QuestionnaireInDB,
     QuestionnaireUpdate,
@@ -822,3 +823,38 @@ def get_questions_by_categories(session: SessionDep):
         categories_with_subcategories.append(cat_dict)
 
     return categories_with_subcategories
+
+
+@router.get(
+    "/all-fields",
+    response_model=list[CategoryOut],
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
+def get_all_fields(session: SessionDep, current_user: VerifiedUserDep) -> list[CategoryOut]:
+    """
+    Get all questionnaire questions organized by categories from the database
+    """
+    quest_service = QuestionnaireService(session)
+    return quest_service.get_questions_by_categories()
+
+
+@router.get(
+    "/me/null-fields",
+    response_model=list[CategoryOut],
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
+def get_null_field(session: SessionDep, current_user: VerifiedUserDep) -> list[CategoryOut]:
+    """
+    Get all null fields (not answered questions) by current user
+    """
+    quest_service = QuestionnaireService(session)
+    categories = quest_service.get_questions_by_categories()
+    if current_user.questionnaire:
+        for category in categories:
+            category.fields = [
+                f
+                for f in category.fields
+                if not current_user.questionnaire.is_field_answered(f.name)
+            ]
+
+    return categories
