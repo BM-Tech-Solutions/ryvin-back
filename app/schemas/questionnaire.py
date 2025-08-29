@@ -77,6 +77,7 @@ class QuestionnaireBase(BaseModel):
     clothing_style: Optional[str] = None
     appearance_importance: Optional[str] = None
     partner_hygiene_appearance_importance: Optional[str] = None
+    partner_physical_preferences: Optional[str] = None
     partner_waist_size: Optional[str] = None
     partner_body_size: Optional[str] = None
     partner_clothing_style: Optional[str] = None
@@ -103,6 +104,7 @@ class QuestionnaireBase(BaseModel):
     ideal_couple_life_description: Optional[str] = None
 
     # children_and_family
+    children_infos: Optional[str] = None
     has_children: Optional[str] = None
     number_of_children: Optional[str] = None
     wants_children: Optional[str] = None
@@ -113,8 +115,6 @@ class QuestionnaireBase(BaseModel):
     share_same_educational_values: Optional[str] = None
     imagine_yourself_in10_years: Optional[str] = None
     reason_for_registration: Optional[str] = None
-
-    # No validators here to avoid raising on reads of legacy/partial data
 
 
 class QuestionnaireCreate(QuestionnaireBase):
@@ -182,19 +182,19 @@ class QuestionnaireCompletion(BaseModel):
     has_primary_photo: bool = False
 
 
+# Fields Schemas
 class FieldOut(BaseModel):
     name: str
     label: str
     description: str
     order_position: int
     field_type: FieldType
-    options: Optional[list] = Field(default=None, validate_default=True)
-    parent_field: Optional[str] = None
     field_unit: Optional[str] = None
+    options: Optional[list] = None
     placeholder: Optional[str] = None
     required: bool
     allow_custom: bool = False
-    child_fields: list["FieldOut"] = []
+    children: list["FieldOut"] = []
 
     @field_validator("options")
     @classmethod
@@ -205,11 +205,18 @@ class FieldOut(BaseModel):
         return None
 
 
-class CategoryOut(BaseModel):
+class SubCategoryOut(BaseModel):
     name: str
     label: str
     description: str = ""
     order_position: int
-    step: int
-    picture_url: Optional[str] = None
     fields: list[FieldOut] = []
+
+
+class CategoryOut(BaseModel):
+    name: str
+    label: str
+    description: str = ""
+    image_url: Optional[str] = None
+    order_position: int
+    sub_categories: list[SubCategoryOut] = []
