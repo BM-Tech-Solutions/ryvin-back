@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from jose import jwt
 from passlib.context import CryptContext
@@ -13,7 +13,7 @@ def utc_now():
     return datetime.now(timezone.utc)
 
 
-def create_access_token(subject: Union[str, Any], expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(subject: Any, expires_delta: Optional[timedelta] = None) -> str:
     """
     Create a JWT access token
     """
@@ -26,9 +26,7 @@ def create_access_token(subject: Union[str, Any], expires_delta: Optional[timede
     return encoded_jwt
 
 
-def create_refresh_token(
-    subject: Union[str, Any], expires_delta: Optional[timedelta] = None
-) -> str:
+def create_refresh_token(subject: Any, expires_delta: Optional[timedelta] = None) -> str:
     """
     Create a JWT refresh token
     """

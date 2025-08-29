@@ -18,6 +18,11 @@ class BaseStrEnum(str, Enum):
         return [(member.value, member.label) for member in cls]
 
 
+class SocialProviders(BaseStrEnum):
+    GOOGLE = "google", "Google"
+    APPLE = "apple", "Apple"
+
+
 # Form Fields Options
 class Gender(BaseStrEnum):
     HOMME = "homme", "Homme"

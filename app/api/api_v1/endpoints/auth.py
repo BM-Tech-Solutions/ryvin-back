@@ -14,6 +14,7 @@ from firebase_admin import auth as firebase_auth
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.main import api_key_header
 from app.models.user import User
@@ -28,14 +29,9 @@ class PhoneAuthRequest(BaseModel):
     device_info: Optional[Dict[str, str]] = Field(default=None, description="Device information")
 
 
-class GoogleAuthRequest(BaseModel):
-    google_token: str = Field(..., description="Google OAuth access token")
-    device_info: Optional[Dict[str, str]] = Field(default=None, description="Device information")
-
-
 class GoogleAuthSchema(BaseModel):
     code: str
-    redirect_uri: str
+    redirect_uri: str = Field(examples=[settings.GOOGLE_REDIRECT_URI])
 
 
 class CompleteProfileRequest(BaseModel):
@@ -127,7 +123,7 @@ async def google_auth(
     5. Returns login info in both cases
     """
     auth_service = AuthService(db)
-    return await auth_service.google_login(code=request.code, redirect_uri=request.redirect_uri)
+    return await auth_service.google_auth(code=request.code, redirect_uri=request.redirect_uri)
 
 
 @router.post("/complete-profile", response_model=CompleteProfileResponse)
