@@ -455,7 +455,7 @@
         "required": true
       },
       {
-        "name": "partner_physical_fields_group",
+        "name": "partner_physical_preferences",
         "label": "Quels aspects physiques sont importants pour toi chez un(e) partenaire, sans que ce soit bloquant ?",
         "description": "(plusieurs choix possibles)",
         "order_position": 5,
@@ -471,7 +471,7 @@
             "required": false,
             "field_unit": "années",
             "placeholder": "168,180",
-            "parent_field": "partner_physical_fields_group"
+            "parent_field": "partner_physical_preferences"
           },
           {
             "name": "partner_body_size",
@@ -480,7 +480,7 @@
             "order_position": 2,
             "field_type": "select",
             "required": false,
-            "parent_field": "partner_physical_fields_group"
+            "parent_field": "partner_physical_preferences"
           },
           {
             "name": "partner_clothing_style",
@@ -489,7 +489,7 @@
             "order_position": 3,
             "field_type": "select",
             "required": false,
-            "parent_field": "partner_physical_fields_group"
+            "parent_field": "partner_physical_preferences"
           },
           {
             "name": "care_partner_self_hygiene",
@@ -498,7 +498,7 @@
             "order_position": 4,
             "field_type": "boolean",
             "required": false,
-            "parent_field": "partner_physical_fields_group"
+            "parent_field": "partner_physical_preferences"
           },
           {
             "name": "dont_care_partner_physical_aspects",
@@ -507,7 +507,7 @@
             "order_position": 5,
             "field_type": "boolean",
             "required": false,
-            "parent_field": "partner_physical_fields_group"
+            "parent_field": "partner_physical_preferences"
           }
         ]
       }
@@ -655,7 +655,7 @@
     "step": 5,
     "fields": [
       {
-        "name": "children_fields_group",
+        "name": "children_infos",
         "label": "",
         "description": "",
         "order_position": 1,
@@ -669,7 +669,7 @@
             "order_position": 1,
             "field_type": "boolean",
             "required": true,
-            "parent_field": "children_fields_group"
+            "parent_field": "children_infos"
           },
           {
             "name": "number_of_children",
@@ -679,7 +679,7 @@
             "order_position": 2,
             "field_type": "text",
             "required": false,
-            "parent_field": "children_fields_group"
+            "parent_field": "children_infos"
           }
         ]
       },

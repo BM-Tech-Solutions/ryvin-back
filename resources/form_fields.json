@@ -106,7 +106,7 @@
     "order_position": 2,
     "sub_categories": [
       {
-        "name": "religious_spiritual_beliefs",
+        "name": "religious_and_spiritual_beliefs",
         "label": "Croyances religieuses et spirituelles",
         "description": "",
         "order_position": 1,
@@ -163,7 +163,7 @@
         ]
       },
       {
-        "name": "political_societal_values",
+        "name": "political_and_societal_values",
         "label": "Valeurs politiques et sociétales",
         "description": "",
         "order_position": 2,
@@ -218,7 +218,7 @@
             "required": true
           },
           {
-            "name": "dietary_habits",
+            "name": "specific_dietary_habits",
             "label": "As-tu des habitudes alimentaires spécifiques ?",
             "description": "",
             "order_position": 2,
@@ -226,7 +226,7 @@
             "required": true
           },
           {
-            "name": "hygiene_cleanliness_approach",
+            "name": "hygiene_tidiness_approach",
             "label": "Quelle est ton approche de l'hygiène et du rangement ?",
             "description": "",
             "order_position": 3,
@@ -234,7 +234,7 @@
             "required": true
           },
           {
-            "name": "smoking_habit",
+            "name": "smoker",
             "label": "Fumes-tu ?",
             "description": "",
             "order_position": 4,
@@ -242,7 +242,7 @@
             "required": true
           },
           {
-            "name": "alcohol_consumption",
+            "name": "drinks_alcohol",
             "label": "Bois-tu de l'alcool ?",
             "description": "",
             "order_position": 5,
@@ -258,7 +258,7 @@
         "order_position": 2,
         "fields": [
           {
-            "name": "partner_sport_frequency_preference",
+            "name": "partner_sport_frequency",
             "label": "Quelle fréquence de sport souhaites-tu chez lui/elle ?",
             "description": "",
             "order_position": 6,
@@ -266,7 +266,7 @@
             "required": true
           },
           {
-            "name": "partner_same_dietary_habits_required",
+            "name": "partner_same_dietary_habits",
             "label": "Doit-il(elle) avoir les mêmes habitudes alimentaires que toi ?",
             "description": "",
             "order_position": 7,
@@ -290,7 +290,7 @@
             "required": true
           },
           {
-            "name": "accept_drinking_partner",
+            "name": "accept_alcohol_consumer_partner",
             "label": "Acceptes-tu un(e) partenaire qui consomme de l'alcool ?",
             "description": "",
             "order_position": 10,
@@ -306,7 +306,7 @@
             "required": true
           },
           {
-            "name": "pet_type",
+            "name": "type_of_pet",
             "label": "Si oui, quel animal ?",
             "description": "",
             "order_position": 12,
@@ -315,7 +315,7 @@
             "parent_field": "has_pet"
           },
           {
-            "name": "accept_partner_with_pet",
+            "name": "ready_to_live_with_pet",
             "label": "Es-tu prêt(e) à vivre avec un(e) partenaire qui a un animal ?",
             "description": "",
             "order_position": 13,
@@ -331,7 +331,7 @@
             "required": true
           },
           {
-            "name": "animal_allergies",
+            "name": "which_animals_allergic",
             "label": "Si oui, lesquels ?",
             "description": "",
             "order_position": 15,
@@ -342,7 +342,7 @@
         ]
       },
       {
-        "name": "personality_social_relations",
+        "name": "personality_and_social_relations",
         "label": "Personnalité et relations sociales",
         "description": "",
         "order_position": 3,
@@ -356,7 +356,7 @@
             "required": true
           },
           {
-            "name": "preferred_partner_personality",
+            "name": "partner_personality_preference",
             "label": "Tu préfères quelqu'un de :",
             "description": "",
             "order_position": 17,
@@ -364,7 +364,7 @@
             "required": true
           },
           {
-            "name": "love_language",
+            "name": "primary_love_language",
             "label": "Ton langage de l'amour principal :",
             "description": "",
             "order_position": 18,
@@ -372,7 +372,7 @@
             "required": true
           },
           {
-            "name": "partner_same_love_language_required",
+            "name": "partner_same_love_language",
             "label": "Ton/ta partenaire doit-il(elle) avoir le même langage de l'amour que toi ?",
             "description": "",
             "order_position": 19,
@@ -380,7 +380,7 @@
             "required": true
           },
           {
-            "name": "friends_meeting_frequency",
+            "name": "friends_visit_frequency",
             "label": "À quelle fréquence aimes-tu voir tes amis ?",
             "description": "",
             "order_position": 20,
@@ -388,7 +388,7 @@
             "required": true
           },
           {
-            "name": "social_lifestyle_tolerance",
+            "name": "tolerance_social_vs_homebody",
             "label": "Quelle est ta tolérance vis-à-vis d'un mode de vie très sociable ou très casanier chez l'autre ?",
             "description": "",
             "order_position": 21,
@@ -404,7 +404,7 @@
             "required": true
           },
           {
-            "name": "greatest_relationship_quality",
+            "name": "greatest_quality_in_relationship",
             "label": "Quelle est ta plus grande qualité dans une relation ? Et ton plus grand défaut ?",
             "description": "",
             "order_position": 23,
@@ -412,7 +412,7 @@
             "required": true
           },
           {
-            "name": "what_makes_you_fall",
+            "name": "what_attracts_you",
             "label": "Qu'est-ce qui te fait craquer chez quelqu'un ?",
             "description": "",
             "order_position": 24,
@@ -420,7 +420,7 @@
             "required": true
           },
           {
-            "name": "intolerable_defect",
+            "name": "intolerable_flaw",
             "label": "Quel est le défaut que tu ne pourrais jamais tolérer ?",
             "description": "",
             "order_position": 25,
@@ -439,13 +439,13 @@
     "order_position": 4,
     "sub_categories": [
       {
-        "name": "physical_preferences_attraction",
+        "name": "physical_preferences_and_attraction",
         "label": "Préférences physiques et attirance",
         "description": "",
         "order_position": 1,
         "fields": [
           {
-            "name": "physical_self_description",
+            "name": "physical_description",
             "label": "Décris-toi physiquement, en quelques lignes.",
             "description": "",
             "order_position": 1,
@@ -461,7 +461,7 @@
             "required": true
           },
           {
-            "name": "physical_appearance_importance_self",
+            "name": "appearance_importance",
             "label": "Quelle importance accordes-tu à ton apparence physique ?",
             "description": "",
             "order_position": 3,
@@ -469,7 +469,7 @@
             "required": true
           },
           {
-            "name": "partner_appearance_importance",
+            "name": "partner_hygiene_appearance_importance",
             "label": "Quelle importance accordes-tu à l'hygiène, au soin de soi et à l'apparence chez l'autre ?",
             "description": "",
             "order_position": 4,
@@ -537,7 +537,7 @@
         "order_position": 2,
         "fields": [
           {
-            "name": "sexuality_importance_in_couple",
+            "name": "importance_of_sexuality",
             "label": "Quelle importance accordes-tu à la sexualité dans un couple ?",
             "description": "",
             "order_position": 6,
@@ -545,7 +545,7 @@
             "required": true
           },
           {
-            "name": "ideal_intimacy_frequency",
+            "name": "ideal_intimate_frequency",
             "label": "Quelle est ta fréquence idéale de rapports intimes ?",
             "description": "",
             "order_position": 7,
@@ -553,7 +553,7 @@
             "required": true
           },
           {
-            "name": "sexuality_communication_comfort",
+            "name": "comfort_level_talking_sexuality",
             "label": "Quel est ton niveau de confort pour parler de sexualité avec ton/ta partenaire ?",
             "description": "",
             "order_position": 8,
@@ -561,7 +561,7 @@
             "required": true
           },
           {
-            "name": "partner_similar_sexual_values_required",
+            "name": "partner_sexual_values_alignment",
             "label": "Ton/ta partenaire doit-il(elle) avoir des valeurs sexuelles proches des tiennes ?",
             "description": "",
             "order_position": 9,
@@ -569,7 +569,7 @@
             "required": true
           },
           {
-            "name": "public_affection_comfort",
+            "name": "comfortable_public_affection",
             "label": "Es-tu à l'aise avec les démonstrations publiques d'affection ?",
             "description": "",
             "order_position": 10,
@@ -593,7 +593,7 @@
         "order_position": 3,
         "fields": [
           {
-            "name": "compatibility_type_preference",
+            "name": "partner_similarity_preference",
             "label": "Tu recherches quelqu'un de :",
             "description": "",
             "order_position": 12,
@@ -601,22 +601,14 @@
             "required": true
           },
           {
-            "name": "partner_age_range_min",
+            "name": "partner_age_range",
             "label": "Quelle est la tranche d'âge que tu souhaiterais pour ton/ta partenaire ? (De)",
             "description": "",
             "order_position": 13,
-            "field_type": "integer",
+            "field_type": "range",
             "required": true,
-            "field_unit": "ans"
-          },
-          {
-            "name": "partner_age_range_max",
-            "label": "Quelle est la tranche d'âge que tu souhaiterais pour ton/ta partenaire ? (À)",
-            "description": "",
-            "order_position": 14,
-            "field_type": "integer",
-            "required": true,
-            "field_unit": "ans"
+            "field_unit": "ans",
+            "placeholder": "18,24"
           }
         ]
       },
@@ -627,18 +619,18 @@
         "order_position": 4,
         "fields": [
           {
-            "name": "partner_financial_situation_importance",
+            "name": "importance_financial_situation_partner",
             "label": "Quelle importance accordes-tu à la situation financière de ton/ta partenaire ?",
             "description": "",
-            "order_position": 15,
+            "order_position": 14,
             "field_type": "select",
             "required": true
           },
           {
-            "name": "partner_education_expectations",
+            "name": "ideal_partner_education_profession",
             "label": "Ton/ta partenaire idéal(e) doit-il(elle) avoir :",
             "description": "",
-            "order_position": 16,
+            "order_position": 15,
             "field_type": "select",
             "required": true
           },
@@ -646,7 +638,7 @@
             "name": "money_approach_in_couple",
             "label": "Quelle est ton approche vis-à-vis de l'argent dans un couple ?",
             "description": "",
-            "order_position": 17,
+            "order_position": 16,
             "field_type": "text_area",
             "required": true
           },
@@ -654,7 +646,7 @@
             "name": "ideal_partner_description",
             "label": "Décris ton/ta partenaire idéal(e), sans parler du physique.",
             "description": "",
-            "order_position": 18,
+            "order_position": 17,
             "field_type": "text_area",
             "required": true
           },
@@ -662,7 +654,7 @@
             "name": "ideal_couple_life_description",
             "label": "Décris ta vie de couple idéale.",
             "description": "",
-            "order_position": 19,
+            "order_position": 18,
             "field_type": "text_area",
             "required": true
           }
@@ -703,6 +695,7 @@
                 "name": "number_of_children",
                 "label": "Si oui, combien ?",
                 "description": "",
+                "placeholder": "4",
                 "order_position": 2,
                 "field_type": "integer",
                 "required": false
@@ -726,13 +719,12 @@
             "required": true
           },
           {
-            "name": "desired_number_of_children",
+            "name": "partner_desired_number_of_children",
             "label": "Si oui, combien ?",
             "description": "",
             "order_position": 4,
             "field_type": "integer",
-            "required": false,
-            "parent_field": "wants_children"
+            "required": false
           },
           {
             "name": "educational_approach",
@@ -751,7 +743,7 @@
             "required": true
           },
           {
-            "name": "shared_educational_values_important",
+            "name": "share_same_educational_values",
             "label": "Est-ce important que vous partagiez les mêmes valeurs éducatives ?",
             "description": "",
             "order_position": 7,
@@ -759,7 +751,7 @@
             "required": true
           },
           {
-            "name": "life_vision_10_years",
+            "name": "imagine_yourself_in10_years",
             "label": "Tu t'imagines comment dans 10 ans ?",
             "description": "",
             "order_position": 8,
@@ -767,7 +759,7 @@
             "required": true
           },
           {
-            "name": "app_registration_reason",
+            "name": "reason_for_registration",
             "label": "Pourquoi t'es-tu inscrit(e) sur cette application ?",
             "description": "",
             "order_position": 9,
