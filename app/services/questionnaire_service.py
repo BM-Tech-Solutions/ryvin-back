@@ -107,16 +107,6 @@ class QuestionnaireService(BaseService):
         if q1.primary_love_language == q2.primary_love_language:
             score += 15
 
-        # Check if deal breakers match
-        # if q1.deal_breakers and q2.deal_breakers:
-        #     # Lower score if deal breakers overlap
-        #     if any(item in q2.lifestyle_preferences for item in q1.deal_breakers.split(",")):
-        #         score -= 30
-
-        #     if any(item in q1.lifestyle_preferences for item in q2.deal_breakers.split(",")):
-        #         score -= 30
-
-        # Ensure score is between 0 and 100
         return max(0, min(score, 100))
 
     def get_all_categories(self) -> list[QuestionnaireCategory]:

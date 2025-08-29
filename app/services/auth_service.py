@@ -10,6 +10,7 @@ from datetime import timedelta
 from typing import Any, Dict, Optional
 from uuid import UUID
 
+import httpx
 import requests
 from fastapi import HTTPException, status
 from firebase_admin import auth as firebase_auth
@@ -630,6 +631,60 @@ class AuthService(BaseService):
                 detail=f"Failed to authenticate user: {str(e)}",
             )
 
+    async def google_login(self, code, redirect_uri):
+        """
+        Exchanges a Google authorization code for an access token and ID token.
+        """
+        token_url = "https://oauth2.googleapis.com/token"
+
+        data = {
+            "code": code,
+            "client_id": settings.GOOGLE_CLIENT_ID,
+            "client_secret": settings.GOOGLE_CLIENT_SECRET,
+            "redirect_uri": redirect_uri,
+            "grant_type": "authorization_code",
+        }
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(token_url, data=data)
+                response.raise_for_status()
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Token Exchange Failed: {e}",
+            )
+
+        try:
+            google_tokens = response.json()
+            decoded_id_token = await self.verify_google_id_token(
+                id_token=google_tokens["id_token"],
+                access_token=google_tokens["access_token"],
+                client_id=settings.GOOGLE_CLIENT_ID,
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Token Verification Failed: {e}",
+            )
+
+        # Extract user data from the decoded token
+        email = decoded_id_token.get("email")
+        name = decoded_id_token.get("name", "")
+        profile_image = decoded_id_token.get("picture", "")
+
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email not found in the Google token",
+            )
+
+        return {
+            "email": email,
+            "name": name,
+            "profile_image": profile_image,
+        }
+
     def google_auth(
         self, google_token: str, device_info: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
@@ -761,6 +816,42 @@ class AuthService(BaseService):
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to authenticate with Google: {str(e)}",
             )
+
+    async def get_google_jwks(self):
+        jwks_url = "https://www.googleapis.com/oauth2/v3/certs"
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(jwks_url)
+                response.raise_for_status()
+                return response.json()
+        except httpx.HTTPStatusError as exc:
+            raise Exception(f"Failed to fetch JWKS: {exc.response.text}")
+
+    async def verify_google_id_token(self, id_token: str, access_token: str, client_id: str):
+        jwks = await self.get_google_jwks()
+        # Get the kid from the token header
+        header = jwt.get_unverified_header(id_token)
+        kid = header.get("kid")
+
+        if not kid:
+            raise Exception("No 'kid' found in token header.")
+
+        # Find the matching key in the JWKS
+        key = next((key for key in jwks["keys"] if key["kid"] == kid), None)
+
+        if not key:
+            raise Exception("Public key not found in JWKS list from Google.")
+
+        # Verify the signature and claims
+        decoded_token = jwt.decode(
+            id_token,
+            key,
+            algorithms=[header.get("alg")],
+            audience=client_id,
+            issuer="https://accounts.google.com",
+            access_token=access_token,
+        )
+        return decoded_token
 
     def _get_google_user_info(self, google_token: str) -> Dict[str, Any]:
         """
