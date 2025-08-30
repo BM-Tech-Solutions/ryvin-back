@@ -16,6 +16,7 @@ class UserBase(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+    name: str
     phone_region: Optional[str] = None
     phone_number: Optional[str] = None
     email: Optional[EmailStr] = None
@@ -26,13 +27,13 @@ class UserBase(BaseModel):
             raise ValueError("Phone region must start with '+'.")
 
         code = v.removeprefix("+")
-        if not code.isdigit() or len(code) not in [1, 3]:
+        if not code.isdigit() or not (1 <= len(code) <= 3):
             raise ValueError("Phone region must be a 1 or 2 or 3-digit number.")
         return v
 
     @field_validator("phone_number")
     def validate_phone_number(cls, v: str):
-        if not v.isdigit() or len(v) not in [8, 9]:
+        if not v.isdigit() or not (8 <= len(v) <= 9):
             raise ValueError("Phone number must be an 8 or 9-digit number.")
         return v
 
@@ -69,6 +70,9 @@ class UserInDBBase(UserBase):
     last_login: Optional[datetime] = None
     subscription_type: str = Field(default=SubscriptionType.FREE)
     subscription_expires_at: Optional[datetime] = None
+    social_provider: Optional[str] = None
+    social_id: Optional[str] = None
+    social_image: Optional[str] = None
 
 
 class UserInDB(UserInDBBase):

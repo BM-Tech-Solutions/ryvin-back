@@ -22,6 +22,7 @@ from app.models import Photo as Photo
 from app.models import Questionnaire as Questionnaire
 from app.models import QuestionnaireCategory as QuestionnaireCategory
 from app.models import QuestionnaireField as QuestionnaireField
+from app.models import QuestionnaireSubCategory as QuestionnaireSubCategory
 from app.models import RefreshToken as RefreshToken
 from app.models import User as User
 

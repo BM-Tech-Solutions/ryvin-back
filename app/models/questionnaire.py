@@ -88,11 +88,12 @@ class Questionnaire(Base):
     clothing_style: Mapped[Optional[str]]
     appearance_importance: Mapped[Optional[str]]
     partner_hygiene_appearance_importance: Mapped[Optional[str]]
-    partner_waist_size: Mapped[Optional[str]]  # partner_physical_fields_group
-    partner_body_size: Mapped[Optional[str]]  # partner_physical_fields_group
-    partner_clothing_style: Mapped[Optional[str]]  # partner_physical_fields_group
-    care_partner_self_hygiene: Mapped[Optional[str]]  # partner_physical_fields_group
-    dont_care_partner_physical_aspects: Mapped[Optional[str]]  # partner_physical_fields_group
+    partner_physical_preferences: Mapped[Optional[str]]  # parent field
+    partner_waist_size: Mapped[Optional[str]]  # child field
+    partner_body_size: Mapped[Optional[str]]  # child field
+    partner_clothing_style: Mapped[Optional[str]]  # child field
+    care_partner_self_hygiene: Mapped[Optional[str]]  # child field
+    dont_care_partner_physical_aspects: Mapped[Optional[str]]  # child field
 
     # sexuality_and_intimacy
     importance_of_sexuality: Mapped[Optional[str]]
@@ -114,8 +115,9 @@ class Questionnaire(Base):
     ideal_couple_life_description: Mapped[Optional[str]]
 
     # children_and_family
-    has_children: Mapped[Optional[str]]  # children_fields_group
-    number_of_children: Mapped[Optional[str]]  # children_fields_group
+    children_infos: Mapped[Optional[str]]  # parent field
+    has_children: Mapped[Optional[str]]  # child field
+    number_of_children: Mapped[Optional[str]]  # child field
     wants_children: Mapped[Optional[str]]
     partner_must_want_children: Mapped[Optional[str]]
     partner_desired_number_of_children: Mapped[Optional[str]]
@@ -135,5 +137,13 @@ class Questionnaire(Base):
         """Check if the questionnaire is complete"""
         return self.completed_at is not None
 
+    def is_field_answered(self, field_name: str) -> bool:
+        """Check if some field is answered in this Questionnaire"""
+        return getattr(self, field_name, None) not in [None, ""]
+
     def __repr__(self) -> str:
         return f"<Questionnaire {self.id}: {self.first_name}, {self.age}>"
+
+    @classmethod
+    def fields_to_exclude(cls) -> list[str]:
+        return ["id", "user_id", "completed_at", "created_at", "updated_at"]

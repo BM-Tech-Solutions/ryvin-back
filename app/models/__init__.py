@@ -8,6 +8,7 @@ from .message import Message
 from .photo import Photo
 from .questionnaire import Questionnaire
 from .questionnaire_category import QuestionnaireCategory
+from .questionnaire_subcategory import QuestionnaireSubCategory
 from .questionnaire_field import QuestionnaireField
 from .token import RefreshToken
 from .user import User
