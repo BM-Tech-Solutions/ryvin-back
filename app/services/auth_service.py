@@ -566,15 +566,13 @@ class AuthService(BaseService):
                     email=None,
                     profile_image=None,
                 )
+                self.db.add(user)
             else:
                 # Update last login timestamp
                 user.last_login = utc_now()
 
             # Device info is accepted but not stored as the User model has no such columns
 
-            # Save user to database
-            if is_new_user:
-                self.db.add(user)
             self.db.commit()
             self.db.refresh(user)
 

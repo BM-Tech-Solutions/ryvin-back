@@ -190,7 +190,7 @@ class FieldOut(BaseModel):
     order_position: int
     field_type: FieldType
     field_unit: Optional[str] = None
-    options: Optional[list] = None
+    options: Optional[list] = Field(default=None, validate_default=True)
     placeholder: Optional[str] = None
     required: bool
     allow_custom: bool = False
