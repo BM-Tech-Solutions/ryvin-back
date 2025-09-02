@@ -5,6 +5,7 @@ from fastapi import status as http_status
 
 from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.schemas.questionnaire import (
+    AnsweredCategoryOut,
     CategoryOut,
     QuestionnaireCreate,
     QuestionnaireInDB,
@@ -132,15 +133,42 @@ def get_null_field(session: SessionDep, current_user: VerifiedUserDep) -> list[C
     Get all null fields (not answered questions) by current user
     """
     quest_service = QuestionnaireService(session)
-    categories = quest_service.get_questions_by_categories()
+    categories = quest_service.get_all_categories()
     if not current_user.questionnaire:
         return categories
     for category in categories:
         for sub_category in category.sub_categories:
             sub_category.fields = [
                 f
-                for f in category.fields
+                for f in sub_category.fields
                 if not current_user.questionnaire.is_field_answered(f.name)
             ]
+
+    return categories
+
+
+@router.get(
+    "/me/answered-fields",
+    response_model=list[AnsweredCategoryOut],
+    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+)
+def get_answered_field(
+    session: SessionDep, current_user: VerifiedUserDep
+) -> list[AnsweredCategoryOut]:
+    """
+    Get all answered fields by current user
+    """
+    quest_service = QuestionnaireService(session)
+    categories = quest_service.get_all_categories()
+    if not current_user.questionnaire:
+        return categories
+    for category in categories:
+        for sub_category in category.sub_categories:
+            fields = []
+            for field in sub_category.fields:
+                if current_user.questionnaire.is_field_answered(field.name):
+                    field.answer = getattr(current_user.questionnaire, field.name)
+                    fields.append(field)
+            sub_category.fields = fields
 
     return categories
