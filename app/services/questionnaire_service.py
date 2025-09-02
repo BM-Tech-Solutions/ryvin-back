@@ -1,4 +1,3 @@
-from collections import defaultdict
 from typing import Optional
 from uuid import UUID
 
@@ -12,7 +11,6 @@ from app.models import (
     QuestionnaireField,
     QuestionnaireSubCategory,
 )
-from app.models.enums import FieldType
 from app.schemas.questionnaire import QuestionnaireCreate, QuestionnaireUpdate
 
 from .base_service import BaseService
@@ -153,28 +151,6 @@ class QuestionnaireService(BaseService):
         return (
             self.session.query(QuestionnaireField).filter(QuestionnaireField.name.in_(names)).all()
         )
-
-    def get_questions_by_categories(self) -> list[QuestionnaireCategory]:
-        """
-        Get all questionnaire questions organized by categories from the database
-        """
-        categories = self.get_all_categories()
-        parent_fields = defaultdict(list)
-        for category in categories:
-            fields = self.get_category_fields(category.id)
-            new_fields = []
-            for field in fields:
-                if field.parent_field:
-                    parent_fields[field.parent_field].append(field)
-                else:
-                    new_fields.append(field)
-            for field in new_fields:
-                if field.field_type == FieldType.FIELDS_GROUP:
-                    field.child_fields = parent_fields[field.name]
-
-            category.fields = new_fields
-
-        return categories
 
     def get_required_fields(self) -> list[QuestionnaireField]:
         return (

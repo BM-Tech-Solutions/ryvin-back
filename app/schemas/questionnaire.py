@@ -199,7 +199,8 @@ class FieldOut(BaseModel):
     @field_validator("options")
     @classmethod
     def options_validator(cls, v: Optional[Any], info: ValidationInfo):
-        field_enum = get_field_enum(info.data.get("name"))
+        field_name = info.data.get("name")
+        field_enum = get_field_enum(field_name)
         if field_enum:
             return field_enum.options()
         return None
@@ -220,3 +221,25 @@ class CategoryOut(BaseModel):
     image_url: Optional[str] = None
     order_position: int
     sub_categories: list[SubCategoryOut] = []
+
+
+class AsweredFieldOut(FieldOut):
+    answer: int | str | list
+
+    @field_validator("answer")
+    @classmethod
+    def validate_answer(cls, v, info: ValidationInfo):
+        if info.data.get("name") == "age" and isinstance(v, str) and v.isdigit():
+            try:
+                return int(v)
+            except ValueError:
+                pass
+        return v
+
+
+class AnsweredSubCategoryOut(SubCategoryOut):
+    fields: list[AsweredFieldOut] = []
+
+
+class AnsweredCategoryOut(CategoryOut):
+    sub_categories: list[AnsweredSubCategoryOut] = []
