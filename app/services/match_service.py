@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -12,7 +12,6 @@ from app.models.user import User
 from .base_service import BaseService
 from .journey_service import JourneyService
 from .notification_service import NotificationService
-from .questionnaire_service import QuestionnaireService
 
 
 class MatchService(BaseService):
@@ -97,64 +96,6 @@ class MatchService(BaseService):
             NotificationService().send_new_match_notification(user2, match)
 
         return match
-
-    def discover_potential_matches(
-        self, user_id: UUID, skip: int = 0, limit: int = 20
-    ) -> List[Dict[str, Any]]:
-        """
-        Discover potential matches for a user
-        """
-        user = self.session.get(User, user_id)
-        if not user:
-            raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="User not found")
-
-        # Get existing matches to exclude
-        existing_match_users = []
-        existing_matches = self.get_user_matches(user_id)
-        for match in existing_matches:
-            if match.user1_id == user_id:
-                existing_match_users.append(match.user2_id)
-            else:
-                existing_match_users.append(match.user1_id)
-
-        # Query for potential matches
-        potential_matches_query = self.session.query(User).filter(
-            User.id != user_id,
-            User.is_active.is_(True),
-            User.is_verified.is_(True),
-            User.has_completed_questionnaire.is_(True),
-        )
-
-        # Filter by gender preference (simplified)
-        if user.interested_in:
-            potential_matches_query = potential_matches_query.filter(
-                User.gender == user.interested_in
-            )
-
-        # Exclude existing matches
-        if existing_match_users:
-            potential_matches_query = potential_matches_query.filter(
-                User.id.notin_(existing_match_users)
-            )
-
-        # Get potential matches
-        potential_matches = potential_matches_query.offset(skip).limit(limit).all()
-
-        # Calculate compatibility scores
-        questionnaire_service = QuestionnaireService(self.session)
-        result = []
-
-        for potential_match in potential_matches:
-            compatibility_score = questionnaire_service.get_compatibility_score(
-                user_id, potential_match.id
-            )
-
-            result.append({"user": potential_match, "compatibility_score": compatibility_score})
-
-        # Sort by compatibility score
-        result.sort(key=lambda x: x["compatibility_score"], reverse=True)
-
-        return result
 
     def accept_match(self, match_id: UUID, user_id: UUID) -> Match:
         """
