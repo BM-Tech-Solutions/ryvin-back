@@ -6,6 +6,7 @@ from fastapi import status as http_status
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.security import utc_now
 from app.models.enums import JourneyStatus, JourneyStep, MeetingStatus
 from app.models.journey import Journey
@@ -116,29 +117,24 @@ class JourneyService(BaseService):
             message_count = (
                 self.session.query(Message).filter(Message.journey_id == journey.id).count()
             )
-            if message_count < 5:
+            if message_count < settings.MIN_NBR_MESSAGES:
                 raise HTTPException(
                     status_code=http_status.HTTP_400_BAD_REQUEST,
-                    detail="At least 5 messages must be exchanged before advancing",
+                    detail=f"At least {settings.MIN_NBR_MESSAGES} messages must be exchanged before advancing",
                 )
+
+            # Advance to next step
+            journey.current_step = JourneyStep.STEP2_VOICE_VIDEO_CALL
 
         elif journey.current_step == JourneyStep.STEP2_VOICE_VIDEO_CALL:
             # Voice/Video Call to Photos Unlocked
-            # In a real app, we might check for call duration or confirmation
-            pass
+            # we will check for call duration from twillio later
+            journey.current_step = JourneyStep.STEP3_PHOTOS_UNLOCKED
 
         elif journey.current_step == JourneyStep.STEP3_PHOTOS_UNLOCKED:
             # Photos Unlocked to Physical Meeting
-            # Check if both users have photos
-            match = journey.match
-            user1_photos = self.session.get(User, match.user1_id).photos
-            user2_photos = self.session.get(User, match.user2_id).photos
-
-            if not user1_photos or not user2_photos:
-                raise HTTPException(
-                    status_code=http_status.HTTP_400_BAD_REQUEST,
-                    detail="Both users must upload photos before advancing",
-                )
+            # no checks required!
+            journey.current_step = JourneyStep.STEP4_PHYSICAL_MEETING
 
         elif journey.current_step == JourneyStep.STEP4_PHYSICAL_MEETING:
             # Physical Meeting to Meeting Feedback
@@ -157,6 +153,7 @@ class JourneyService(BaseService):
                     status_code=http_status.HTTP_400_BAD_REQUEST,
                     detail="An accepted meeting request is required before advancing",
                 )
+            journey.current_step = JourneyStep.STEP5_MEETING_FEEDBACK
 
         # Check if journey is already at the final step
         if journey.current_step >= JourneyStep.STEP5_MEETING_FEEDBACK:
@@ -165,8 +162,6 @@ class JourneyService(BaseService):
                 detail="Journey is already at the final step",
             )
 
-        # Advance to next step
-        journey.current_step += 1
         journey.updated_at = utc_now()
 
         self.session.commit()
