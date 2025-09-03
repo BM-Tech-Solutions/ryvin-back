@@ -51,10 +51,10 @@ class PhotoService(BaseService):
         """
         # Check if user has reached photo limit
         photo_count = self.session.query(Photo).filter(Photo.user_id == user_id).count()
-        if photo_count >= 6:
+        if photo_count >= settings.MAX_NBR_IMAGES:
             raise HTTPException(
                 status_code=http_status.HTTP_400_BAD_REQUEST,
-                detail="Maximum number of photos (6) reached",
+                detail=f"Maximum number of photos ({settings.MAX_NBR_IMAGES}) reached",
             )
 
         # Validate file type
