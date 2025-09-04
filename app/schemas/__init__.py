@@ -14,6 +14,9 @@ from .questionnaire import (
     QuestionnaireCreate,
     QuestionnaireInDB,
     QuestionnaireUpdate,
+    CategoryOut,
+    SubCategoryOut,
+    FieldOut,
 )
 from .token import TokenOut, TokenPayload
 from .user import UserOut, UserCreate, UserInDB, UserUpdate

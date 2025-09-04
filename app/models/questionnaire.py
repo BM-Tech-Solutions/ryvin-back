@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from sqlalchemy import DateTime, ForeignKey
@@ -34,7 +34,7 @@ class Questionnaire(Base):
     age: Mapped[Optional[str]]
     city_of_residence: Mapped[Optional[str]]
     nationality_cultural_origin: Mapped[Optional[str]]
-    languages_spoken: Mapped[Optional[List[str]]] = mapped_column(JSONB, default=list)
+    languages_spoken: Mapped[Optional[list[str]]] = mapped_column(JSONB, default=list)
     professional_situation: Mapped[Optional[str]]
     education_level: Mapped[Optional[str]]
     previously_married: Mapped[Optional[str]]

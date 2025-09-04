@@ -6,7 +6,7 @@ It calculates compatibility scores and creates matches between users of differen
 """
 
 import logging
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import and_, or_
@@ -134,7 +134,7 @@ class MatchingCronService:
 
         return stats
 
-    def _get_eligible_users_for_matching(self) -> List[User]:
+    def _get_eligible_users_for_matching(self) -> list[User]:
         """
         Get all users eligible for matching
 
@@ -277,7 +277,7 @@ class MatchingCronService:
 
     def _get_potential_matches_for_user(
         self, user: User, user_questionnaire: Questionnaire
-    ) -> List[Tuple[User, Questionnaire]]:
+    ) -> list[Tuple[User, Questionnaire]]:
         """
         Get potential matches for a user (opposite gender, not already matched)
 

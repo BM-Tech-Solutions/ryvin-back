@@ -1,5 +1,5 @@
 import json
-from typing import Any, List, Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Security
@@ -255,7 +255,7 @@ def unban_user(
     return {"message": "User unbanned successfully"}
 
 
-@router.get("/matches", response_model=List[MatchOut])
+@router.get("/matches", response_model=list[MatchOut])
 def get_matches(
     session: SessionDep,
     current_user: AdminViaTokenDep,
@@ -265,7 +265,7 @@ def get_matches(
     ),
     skip: int = 0,
     limit: int = 100,
-) -> List[MatchOut]:
+) -> list[MatchOut]:
     """
     Get all matches (admin only)
     """
@@ -273,7 +273,7 @@ def get_matches(
     return matches
 
 
-@router.get("/journeys", response_model=List[JourneyOut])
+@router.get("/journeys", response_model=list[JourneyOut])
 def get_journeys(
     session: SessionDep,
     current_user: AdminViaTokenDep,
@@ -281,7 +281,7 @@ def get_journeys(
     is_completed: bool = Query(None, description="Filter by completion status"),
     skip: int = 0,
     limit: int = 100,
-) -> Any:
+) -> list[JourneyOut]:
     """
     Get all journeys (admin only)
     """

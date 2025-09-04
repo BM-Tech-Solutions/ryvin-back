@@ -1,5 +1,5 @@
 from enum import Enum, IntEnum
-from typing import List, Tuple
+from typing import Tuple
 
 
 class BaseStrEnum(str, Enum):
@@ -14,7 +14,7 @@ class BaseStrEnum(str, Enum):
         return self._label_
 
     @classmethod
-    def options(cls) -> List[Tuple[str, str]]:
+    def options(cls) -> list[Tuple[str, str]]:
         return [(member.value, member.label) for member in cls]
 
 

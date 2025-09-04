@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -62,7 +62,7 @@ class JourneyService(BaseService):
         is_completed: bool = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[Journey]:
+    ) -> list[Journey]:
         """
         Get all journeys for a user
         """
@@ -227,7 +227,7 @@ class MessageService(BaseService):
     Service for message-related operations within journeys
     """
 
-    def get_messages(self, journey_id: UUID, skip: int = 0, limit: int = 100) -> List[Message]:
+    def get_messages(self, journey_id: UUID, skip: int = 0, limit: int = 100) -> list[Message]:
         """
         Get messages for a journey
         """
@@ -354,7 +354,7 @@ class MeetingService(BaseService):
     Service for meeting-related operations within journeys
     """
 
-    def get_meeting_requests(self, journey_id: UUID) -> List[MeetingRequest]:
+    def get_meeting_requests(self, journey_id: UUID) -> list[MeetingRequest]:
         """
         Get meeting requests for a journey
         """
@@ -452,7 +452,7 @@ class MeetingService(BaseService):
 
         return meeting_request
 
-    def get_meeting_feedback(self, meeting_request_id: UUID) -> List[MeetingFeedback]:
+    def get_meeting_feedback(self, meeting_request_id: UUID) -> list[MeetingFeedback]:
         """
         Get feedback for a meeting
         """
