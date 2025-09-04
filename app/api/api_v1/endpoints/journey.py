@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
@@ -21,8 +21,8 @@ router = APIRouter()
 # Journey
 @router.get(
     "",
-    response_model=List[JourneyOut],
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    response_model=list[JourneyOut],
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_journeys(
     session: SessionDep,
@@ -31,7 +31,7 @@ def get_journeys(
     is_completed: bool = Query(None, description="Filter by completion status"),
     skip: int = 0,
     limit: int = 100,
-) -> List[JourneyOut]:
+) -> list[JourneyOut]:
     """
     Get all journeys for the current user
     """
@@ -49,13 +49,13 @@ def get_journeys(
 @router.get(
     "/{journey_id}",
     response_model=JourneyOut,
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_journey(
     session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
-) -> Optional[JourneyOut]:
+) -> JourneyOut:
     """
     Get a specific journey by ID
     """
@@ -72,7 +72,7 @@ def get_journey(
 @router.post(
     "/{journey_id}/advance",
     status_code=http_status.HTTP_200_OK,
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def advance_journey(
     session: SessionDep,
@@ -95,7 +95,7 @@ def advance_journey(
 @router.post(
     "/{journey_id}/end",
     status_code=http_status.HTTP_200_OK,
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def end_journey(
     session: SessionDep,
@@ -115,8 +115,8 @@ def end_journey(
 # Messages
 @router.get(
     "/{journey_id}/messages",
-    response_model=List[MessageOut],
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    response_model=list[MessageOut],
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_messages(
     session: SessionDep,
@@ -136,7 +136,7 @@ def get_messages(
 @router.delete(
     "/{journey_id}/messages/{message_id}",
     status_code=http_status.HTTP_204_NO_CONTENT,
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def delete_message(
     session: SessionDep,
@@ -177,14 +177,14 @@ def delete_message(
 # Meeting Request
 @router.get(
     "/{journey_id}/meeting-requests",
-    response_model=List[MeetingRequestOut],
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    response_model=list[MeetingRequestOut],
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_meeting_requests(
     session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
-) -> List[MeetingRequestOut]:
+) -> list[MeetingRequestOut]:
     """
     Get all meeting requests for a journey
     """
@@ -197,7 +197,7 @@ def get_meeting_requests(
     "/{journey_id}/meeting-requests",
     response_model=MeetingRequestOut,
     status_code=http_status.HTTP_201_CREATED,
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def create_meeting_request(
     session: SessionDep,
@@ -218,7 +218,7 @@ def create_meeting_request(
 @router.post(
     "/{journey_id}/meeting-requests/{meeting_request_id}/accept",
     status_code=http_status.HTTP_200_OK,
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def accept_meeting_request(
     session: SessionDep,
@@ -238,7 +238,7 @@ def accept_meeting_request(
 @router.post(
     "/{journey_id}/meeting-requests/{meeting_request_id}/decline",
     status_code=http_status.HTTP_200_OK,
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def decline_meeting_request(
     session: SessionDep,
@@ -260,7 +260,7 @@ def decline_meeting_request(
     "/{journey_id}/meeting-feedback",
     response_model=MeetingFeedbackOut,
     status_code=http_status.HTTP_201_CREATED,
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def create_meeting_feedback(
     session: SessionDep,

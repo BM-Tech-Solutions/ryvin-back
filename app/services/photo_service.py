@@ -1,6 +1,6 @@
 import os
 import uuid
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 import aiofiles
@@ -23,7 +23,7 @@ class PhotoService(BaseService):
         super().__init__(db)
         self.session = db
 
-    def get_user_photos(self, user_id: UUID, skip: int = 0, limit: int = 100) -> List[Photo]:
+    def get_user_photos(self, user_id: UUID, skip: int = 0, limit: int = 100) -> list[Photo]:
         """
         Get user photos
         """

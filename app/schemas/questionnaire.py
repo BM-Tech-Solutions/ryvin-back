@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
@@ -23,7 +23,7 @@ class QuestionnaireBase(BaseModel):
     )
     city_of_residence: Optional[str] = None
     nationality_cultural_origin: Optional[str] = None
-    languages_spoken: List[str] = None
+    languages_spoken: list[str] = None
     professional_situation: Optional[str] = None
     education_level: Optional[str] = None
     previously_married: Optional[str] = None
@@ -177,13 +177,15 @@ class QuestionnaireCompletion(BaseModel):
     """
 
     completion_percentage: int = Field(..., ge=0, le=100)
-    missing_fields: List[str] = Field(default_factory=list)
+    missing_fields: list[str] = Field(default_factory=list)
     photo_count: int = 0
     has_primary_photo: bool = False
 
 
 # Fields Schemas
 class FieldOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
+
     name: str
     label: str
     description: str
@@ -207,6 +209,8 @@ class FieldOut(BaseModel):
 
 
 class SubCategoryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
+
     name: str
     label: str
     description: str = ""
@@ -215,6 +219,8 @@ class SubCategoryOut(BaseModel):
 
 
 class CategoryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
+
     name: str
     label: str
     description: str = ""

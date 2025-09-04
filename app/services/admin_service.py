@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -37,7 +37,7 @@ class AdminService(BaseService):
         is_verified: bool = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[User]:
+    ) -> list[User]:
         """
         Get all users with optional search
         """
@@ -110,7 +110,7 @@ class AdminService(BaseService):
         min_compatibility_score: float = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[Match]:
+    ) -> list[Match]:
         """
         Get all matches with optional status filter
         """
@@ -126,7 +126,7 @@ class AdminService(BaseService):
 
     def get_journeys(
         self, is_completed: bool = None, current_step: int = None, skip: int = 0, limit: int = 100
-    ) -> List[Journey]:
+    ) -> list[Journey]:
         """
         Get all journeys with optional filters
         """
@@ -210,7 +210,7 @@ class AdminService(BaseService):
             "meetings": {"total": total_meetings, "accepted": accepted_meetings},
         }
 
-    def get_flagged_messages(self, skip: int = 0, limit: int = 100) -> List[Message]:
+    def get_flagged_messages(self, skip: int = 0, limit: int = 100) -> list[Message]:
         """
         Get messages flagged for moderation
         """

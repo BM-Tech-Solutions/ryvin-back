@@ -113,7 +113,7 @@ def complete_questionnaire(
 @router.get(
     "/all-fields",
     response_model=list[CategoryOut],
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_all_fields(session: SessionDep, current_user: VerifiedUserDep) -> list[CategoryOut]:
     """
@@ -126,7 +126,7 @@ def get_all_fields(session: SessionDep, current_user: VerifiedUserDep) -> list[C
 @router.get(
     "/me/null-fields",
     response_model=list[CategoryOut],
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_null_field(session: SessionDep, current_user: VerifiedUserDep) -> list[CategoryOut]:
     """
@@ -150,7 +150,7 @@ def get_null_field(session: SessionDep, current_user: VerifiedUserDep) -> list[C
 @router.get(
     "/me/answered-fields",
     response_model=list[AnsweredCategoryOut],
-    openapi_extra={"security": [{"APIKeyHeader": [], "BearerAuth": []}]},
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_answered_field(
     session: SessionDep, current_user: VerifiedUserDep

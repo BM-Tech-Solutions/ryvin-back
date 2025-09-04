@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import CheckConstraint, DateTime, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -59,23 +59,23 @@ class User(Base):
         back_populates="user", uselist=False, foreign_keys="Questionnaire.user_id"
     )
 
-    matches_as_user1: Mapped[List["Match"]] = relationship(
+    matches_as_user1: Mapped[list["Match"]] = relationship(
         back_populates="user1", foreign_keys="Match.user1_id"
     )
-    matches_as_user2: Mapped[List["Match"]] = relationship(
+    matches_as_user2: Mapped[list["Match"]] = relationship(
         back_populates="user2", foreign_keys="Match.user2_id"
     )
 
-    sent_messages: Mapped[List["Message"]] = relationship(
+    sent_messages: Mapped[list["Message"]] = relationship(
         back_populates="sender", foreign_keys="Message.sender_id"
     )
-    meeting_requests: Mapped[List["MeetingRequest"]] = relationship(
+    meeting_requests: Mapped[list["MeetingRequest"]] = relationship(
         back_populates="requester", foreign_keys="MeetingRequest.requested_by"
     )
-    meeting_feedbacks: Mapped[List["MeetingFeedback"]] = relationship(
+    meeting_feedbacks: Mapped[list["MeetingFeedback"]] = relationship(
         back_populates="user", foreign_keys="MeetingFeedback.user_id"
     )
-    photos: Mapped[List["Photo"]] = relationship(
+    photos: Mapped[list["Photo"]] = relationship(
         back_populates="user", foreign_keys="Photo.user_id"
     )
 

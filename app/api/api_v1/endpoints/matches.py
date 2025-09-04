@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
@@ -14,7 +14,7 @@ router = APIRouter()
 
 @router.get(
     "/me",
-    response_model=List[MatchOut],
+    response_model=list[MatchOut],
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_my_matches(
@@ -23,7 +23,7 @@ def get_my_matches(
     status: str = Query(None, description="Filter by match status"),
     skip: int = Query(0, description="Number of matches to skip"),
     limit: int = Query(100, description="Maximum number of matches to return"),
-) -> List[MatchOut]:
+) -> list[MatchOut]:
     """
     Get all matches for the current authenticated user
     """

@@ -16,7 +16,7 @@ class UserBase(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    name: str
+    name: str | None
     phone_region: Optional[str] = None
     phone_number: Optional[str] = None
     email: Optional[EmailStr] = None

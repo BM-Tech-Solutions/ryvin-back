@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -126,7 +126,7 @@ class UserService(BaseService):
         self.session.refresh(user)
         return user
 
-    def get_active_users(self, skip: int = 0, limit: int = 100) -> List[User]:
+    def get_active_users(self, skip: int = 0, limit: int = 100) -> list[User]:
         """
         Get all active users
         """
@@ -140,7 +140,7 @@ class UserService(BaseService):
 
     def get_users_by_subscription_type(
         self, subscription_type: str, skip: int = 0, limit: int = 100
-    ) -> List[User]:
+    ) -> list[User]:
         """
         Get users by subscription type
         """

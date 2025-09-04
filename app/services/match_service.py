@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -46,7 +46,7 @@ class MatchService(BaseService):
             .first()
         )
 
-    def get_all_matches(self, skip: int = 0, limit: int = 100) -> List[Match]:
+    def get_all_matches(self, skip: int = 0, limit: int = 100) -> list[Match]:
         """
         Get all matches in the system
         """
@@ -54,7 +54,7 @@ class MatchService(BaseService):
 
     def get_user_matches(
         self, user_id: UUID, status: str = None, skip: int = 0, limit: int = 100
-    ) -> List[Match]:
+    ) -> list[Match]:
         """
         Get all matches for a user
         """
