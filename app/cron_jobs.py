@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 from apscheduler.jobstores.sqlalchemy import BaseJobStore, SQLAlchemyJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from app.core.database import engine
+from app.core.database import SessionLocal, engine
 from app.models import APSchedulerJob
 
 
@@ -32,8 +32,9 @@ async def run_matching_job():
     from app.services.matching_cron_service import MatchingCronService
 
     try:
-        matching_service = MatchingCronService()
-        result = await matching_service.run_daily_matching()
+        with SessionLocal() as session:
+            matching_service = MatchingCronService(session)
+            result = await matching_service.run_daily_matching()
         print(f"🎯 MATCHING JOB COMPLETED: {result['new_matches_created']} new matches created")
     except Exception as e:
         print(f"❌ MATCHING JOB ERROR: {str(e)}")
