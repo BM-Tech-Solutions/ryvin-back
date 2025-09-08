@@ -58,12 +58,11 @@ class PhotoService(BaseService):
             )
 
         # Validate file type
-        allowed_extensions = [".jpg", ".jpeg", ".png"]
         file_ext = os.path.splitext(file.filename)[1].lower()
-        if file_ext not in allowed_extensions:
+        if file_ext not in settings.ALLOWED_EXTENSIONS:
             raise HTTPException(
                 status_code=http_status.HTTP_400_BAD_REQUEST,
-                detail=f"File type not allowed. Allowed types: {', '.join(allowed_extensions)}",
+                detail=f"File type not allowed. Allowed types: {', '.join(settings.ALLOWED_EXTENSIONS)}",
             )
 
         # Generate unique filename

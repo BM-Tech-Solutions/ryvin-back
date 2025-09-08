@@ -94,6 +94,9 @@ class Settings(BaseSettings):
     MIN_NBR_MESSAGES: int = 50
     MAX_NBR_IMAGES: int = 9
 
+    # allowed extensions for images
+    ALLOWED_EXTENSIONS: list[str] = [".jpg", ".jpeg", ".png"]
+
     @field_validator("DATABASE_URI", mode="before")
     def assemble_db_connection(cls, v: Optional[str], info: ValidationInfo) -> Any:
         if isinstance(v, str):

@@ -3,24 +3,26 @@
 Service for Firebase authentication operations with simplified flow.
 """
 
+import os
 import random
 import string
 import uuid
 from datetime import timedelta
 from typing import Any, Dict, Optional
-from uuid import UUID
 
+import aiofiles
 import httpx
 import requests
-from fastapi import HTTPException, status
+from fastapi import HTTPException, UploadFile, status
 from firebase_admin import auth as firebase_auth
-from jose import JWTError, jwt
+from jose import jwt
 
 from app.core.config import settings
 from app.core.security import create_access_token, create_refresh_token, utc_now
 from app.models.enums import SocialProviders
 from app.models.token import RefreshToken
 from app.models.user import User
+from app.schemas.auth import CompleteProfileRequest, UpdatePhoneRequest
 from app.services.base_service import BaseService
 
 
@@ -378,67 +380,117 @@ class AuthService(BaseService):
                 detail=f"Failed to verify phone: {str(e)}",
             )
 
-    def complete_profile(
-        self, access_token: str, name: str, email: str, profile_image: Optional[str] = None
-    ) -> Dict[str, Any]:
+    def can_complete_profile(self, user: User, request: CompleteProfileRequest):
+        """
+        check whether user can update his profile using this request
+        """
+        if (not request.phone_region and request.phone_number) or (
+            request.phone_region and not request.phone_number
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="phone_region & phone_number: set both or neither",
+            )
+
+        if not user.social_id and request.phone_region:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="can't update phone_region for phone users",
+            )
+
+        if not user.social_id and request.phone_number:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="can't update phone_number for phone users",
+            )
+
+        if user.social_id and request.email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="can't update email for social users",
+            )
+
+        if request.name:
+            # Check if name is already in use
+            same_name_user = (
+                self.db.query(User).filter(User.name == request.name, User.id != user.id).first()
+            )
+
+            if same_name_user:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="'name' already in use",
+                )
+
+    async def save_image(self, file: UploadFile, dest_path: str) -> str:
+        # Validate file type
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in settings.ALLOWED_EXTENSIONS:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"File type not allowed. Allowed types: {', '.join(settings.ALLOWED_EXTENSIONS)}",
+            )
+
+        dest_path = f"{dest_path}{file_ext}"
+        file_abs_path = settings.BASE_DIR / dest_path
+
+        try:
+            # make sure media/photos exists
+            os.makedirs(file_abs_path.parent, exist_ok=True)
+
+            # Open the destination file in binary write mode (async)
+            async with aiofiles.open(file_abs_path, "wb") as dest_file:
+                while chunk := await file.read(8192):
+                    await dest_file.write(chunk)
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"There was an error uploading the image: {e}",
+            )
+        finally:
+            # Ensure the uploaded file's internal temporary file is closed
+            file.file.close()
+
+        return dest_path
+
+    async def complete_profile(self, user: User, request: CompleteProfileRequest) -> Dict[str, Any]:
         """
         Complete user profile after phone verification
         """
         try:
-            # Verify access token
-            try:
-                payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=["HS256"])
+            # Update user information (name, email, phone)
+            user_data = request.model_dump(exclude_unset=True)
+            user_data.pop("profile_image", None)
 
-                # Check token type
-                if payload.get("type") != "access":
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token type"
-                    )
-
-                user_id = UUID(payload.get("sub"))
-
-            except (JWTError, ValueError) as e:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail=f"Invalid or expired token: {str(e)}",
-                )
-
-            # Get user by ID
-            user = self.db.query(User).filter(User.id == user_id).first()
-
-            if not user:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-            if not user.is_verified:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number not verified"
-                )
-
-            # Check if email is already in use
-            existing_email_user = (
-                self.db.query(User).filter(User.email == email, User.id != user.id).first()
-            )
-
-            if existing_email_user:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Email already in use"
-                )
-
-            # Update user information
-            user.name = name
-            user.email = email
-            if profile_image:
-                user.profile_image = profile_image
+            for key, value in user_data.items():
+                setattr(user, key, value)
 
             self.db.commit()
             self.db.refresh(user)
+
+            if request.profile_image:
+                # save the image to filesystem
+                file_path = f"media/photos/{uuid.uuid4()}"
+                file_path = await self.save_image(request.profile_image, dest_path=file_path)
+                old_file_path = user.profile_image
+                user.profile_image = file_path
+
+                self.db.commit()
+                self.db.refresh(user)
+
+                if old_file_path:
+                    try:
+                        os.remove(settings.BASE_DIR / old_file_path)
+                    except FileNotFoundError:
+                        pass
 
             # Generate new tokens
             access_token = create_access_token(subject=str(user.id))
             refresh_token = self._generate_unique_refresh_token(str(user.id))
 
             # Store the refresh token in the database
-            expires_at = utc_now() + timedelta(days=30)
+            expires_at = utc_now() + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
 
             # Check if a refresh token already exists for this user
             existing_token = (
@@ -479,6 +531,22 @@ class AuthService(BaseService):
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to complete profile: {str(e)}",
             )
+
+    def update_phone(self, user: User, request: UpdatePhoneRequest):
+        if user.phone_region != request.old_phone_region:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail={"detail": "wrong old phone region"}
+            )
+        if user.phone_number != request.old_phone_number:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail={"detail": "wrong old phone number"}
+            )
+
+        user.phone_region = request.new_phone_region
+        user.phone_number = request.new_phone_number
+        self.session.commit()
+        self.session.refresh(user)
+        return user
 
     def refresh_tokens(self, refresh_token: str) -> Dict[str, Any]:
         """
