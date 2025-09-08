@@ -2,11 +2,32 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-import phonenumbers
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.core.security import utc_now
 from app.models.enums import SubscriptionType
+
+
+def validate_phone_region(v: str) -> str:
+    if not isinstance(v, str):
+        return v
+
+    if not v.startswith("+"):
+        raise ValueError("Phone region must start with '+'.")
+
+    code = v.removeprefix("+")
+    if not code.isdigit() or not (1 <= len(code) <= 3):
+        raise ValueError("Phone region must be a 1, 2, or 3-digit number.")
+    return v
+
+
+def validate_phone_number(v: str) -> str:
+    if not isinstance(v, str):
+        return v
+
+    if not v.isdigit() or not (8 <= len(v) <= 9):
+        raise ValueError("Phone number must be an 8 or 9-digit number.")
+    return v
 
 
 class UserBase(BaseModel):
@@ -17,25 +38,17 @@ class UserBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     name: str | None
-    phone_region: Optional[str] = None
-    phone_number: Optional[str] = None
+    phone_region: str | None = None
+    phone_number: str | None = None
     email: Optional[EmailStr] = None
 
     @field_validator("phone_region")
-    def validate_phone_region(cls, v: str):
-        if not v.startswith("+"):
-            raise ValueError("Phone region must start with '+'.")
-
-        code = v.removeprefix("+")
-        if not code.isdigit() or not (1 <= len(code) <= 3):
-            raise ValueError("Phone region must be a 1 or 2 or 3-digit number.")
-        return v
+    def validate_phone_region(cls, v):
+        return validate_phone_region(v)
 
     @field_validator("phone_number")
-    def validate_phone_number(cls, v: str):
-        if not v.isdigit() or not (8 <= len(v) <= 9):
-            raise ValueError("Phone number must be an 8 or 9-digit number.")
-        return v
+    def validate_phone_number(cls, v):
+        return validate_phone_number(v)
 
 
 class UserCreate(UserBase):
@@ -110,33 +123,9 @@ class TestUserCreate(BaseModel):
     subscription_expires_at: Optional[datetime] = None
 
     @field_validator("phone_region")
-    def validate_phone_region(cls, v: str):
-        if not v.startswith("+"):
-            raise ValueError("Phone region must start with '+'.")
-
-        code = v.removeprefix("+")
-        if not code.isdigit() or len(code) not in [1, 3]:
-            raise ValueError("Phone region must be a 1 or 2 or 3-digit number.")
-        return v
+    def validate_phone_region(cls, v):
+        return validate_phone_region(v)
 
     @field_validator("phone_number")
-    def validate_phone_number(cls, v: str):
-        if not v.isdigit() or len(v) not in [8, 9]:
-            raise ValueError("Phone number must be an 8 or 9-digit number.")
-        return v
-
-
-# old validation using phonenumbers
-def validate_phone_number(cls, v):
-    if v is None:
-        return v
-    # Allow placeholder values set for Google-auth users
-    if isinstance(v, str) and v.startswith("google:"):
-        return v
-    try:
-        phone_number = phonenumbers.parse(v, None)
-        if not phonenumbers.is_valid_number(phone_number):
-            raise ValueError("Invalid phone number")
-        return v
-    except Exception:
-        raise ValueError("Invalid phone number format")
+    def validate_phone_number(cls, v):
+        return validate_phone_number(v)
