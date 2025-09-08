@@ -78,7 +78,7 @@ class PartnerSameReligiousEducationVision(BaseStrEnum):
 class BodySize(BaseStrEnum):
     THIN = "thin", "Mince"
     ATHLETIC = "athletic", "Athlétique"
-    WITH_FORMS = "WITH_FORMS", "Avec Formes"
+    WITH_FORMS = "with_forms", "Avec Formes"
     DONT_CARE = "dont_care", "Peu Importe"
 
 
@@ -378,6 +378,7 @@ class FieldType(BaseStrEnum):
     FIELDS_GROUP = "fields_group"
     BOOLEAN = "boolean"
     MULTIPLE_SELECT = "multiple_select"
+    ARRAY = "array"
 
 
 class FieldUnit(BaseStrEnum):
