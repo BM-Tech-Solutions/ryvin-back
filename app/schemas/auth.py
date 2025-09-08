@@ -6,6 +6,10 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field, fie
 from app.core.config import settings
 from app.schemas.user import validate_phone_number, validate_phone_region
 
+# validators
+PhoneRegion = Annotated[str, AfterValidator(validate_phone_region)]
+PhoneNumber = Annotated[str, AfterValidator(validate_phone_number)]
+
 
 # Request models
 class PhoneAuthRequest(BaseModel):
@@ -28,26 +32,10 @@ class GoogleAuthRequest(BaseModel):
 
 
 class UpdatePhoneRequest(BaseModel):
-    old_phone_region: str = Field(description="User's old phone number Region")
-    old_phone_number: str = Field(description="User's old phone number Number")
-    new_phone_region: str = Field(description="User's new phone number Region")
-    new_phone_number: str = Field(description="User's new phone number Number")
-
-    @field_validator("old_phone_region")
-    def validate_old_phone_region(cls, v):
-        return validate_phone_region(v)
-
-    @field_validator("new_phone_region")
-    def validate_new_phone_region(cls, v):
-        return validate_phone_region(v)
-
-    @field_validator("old_phone_number")
-    def validate_old_phone_number(cls, v):
-        return validate_phone_number(v)
-
-    @field_validator("new_phone_number")
-    def validate_new_phone_number(cls, v):
-        return validate_phone_number(v)
+    old_phone_region: PhoneRegion | None = Field(description="User's old phone number Region")
+    old_phone_number: PhoneNumber | None = Field(description="User's old phone number Number")
+    new_phone_region: PhoneRegion = Field(description="User's new phone number Region")
+    new_phone_number: PhoneNumber = Field(description="User's new phone number Number")
 
 
 class RefreshTokenRequest(BaseModel):
@@ -68,11 +56,6 @@ class AuthResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
-
-
-# validators
-PhoneRegion = Annotated[str, AfterValidator(validate_phone_region)]
-PhoneNumber = Annotated[str, AfterValidator(validate_phone_number)]
 
 
 class CompleteProfileRequest(BaseModel):

@@ -1,10 +1,13 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
+from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyHeader, HTTPBearer
 from fastapi.staticfiles import StaticFiles
+from psycopg2.errors import UniqueViolation
+from sqlalchemy.exc import IntegrityError
 
 from firebase import init_firebase
 
@@ -107,6 +110,15 @@ app.mount("/media", StaticFiles(directory="media"), name="media")
 
 # Add combined auth middleware (accepts API-Token or Bearer JWT)
 app.add_middleware(CombinedAuthMiddleware)
+
+
+# exception handlers
+@app.exception_handler(IntegrityError)
+async def sa_integrity_exception_handler(request, exc: IntegrityError):
+    if isinstance(exc.orig, UniqueViolation):
+        return JSONResponse({"detail": exc.orig.pgerror}, status_code=status.HTTP_401_UNAUTHORIZED)
+    return JSONResponse({"detail": exc.args}, status_code=status.HTTP_400_BAD_REQUEST)
+
 
 # Import and include API routers
 from app.api.api_v1.api import api_router  # noqa: E402, I001
