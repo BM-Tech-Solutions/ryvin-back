@@ -3,7 +3,6 @@ from typing import Annotated, Dict, Optional
 from fastapi import UploadFile
 from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-from app.core.config import settings
 from app.schemas.user import validate_phone_number, validate_phone_region
 
 # validators
@@ -28,7 +27,6 @@ class PhoneAuthRequest(BaseModel):
 
 class GoogleAuthRequest(BaseModel):
     code: str
-    redirect_uri: str = Field(examples=[settings.GOOGLE_REDIRECT_URI])
 
 
 class UpdatePhoneRequest(BaseModel):
