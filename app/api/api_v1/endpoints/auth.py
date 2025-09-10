@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Security, status
 from firebase_admin import auth as firebase_auth
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.main import api_key_header
@@ -75,7 +76,9 @@ async def google_auth(
     5. Returns login info in both cases
     """
     auth_service = AuthService(db)
-    return await auth_service.google_auth(code=request.code, redirect_uri=request.redirect_uri)
+    return await auth_service.google_auth(
+        code=request.code, redirect_uri=settings.GOOGLE_REDIRECT_URI
+    )
 
 
 @router.post("/complete-profile", response_model=CompleteProfileResponse)
