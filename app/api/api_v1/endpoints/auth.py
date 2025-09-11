@@ -22,6 +22,7 @@ from app.schemas.auth import (
     AuthResponse,
     CompleteProfileRequest,
     CompleteProfileResponse,
+    GoogleAuthMobileRequest,
     GoogleAuthRequest,
     LogoutResponse,
     PhoneAuthRequest,
@@ -59,8 +60,8 @@ def phone_auth(
     )
 
 
-@router.post("/google-auth")
-async def google_auth(
+@router.post("/old-google-auth")
+async def google_auth_old(
     request: GoogleAuthRequest,
     db: Session = Depends(get_db),
     api_key: str = Security(api_key_header),
@@ -76,8 +77,30 @@ async def google_auth(
     5. Returns login info in both cases
     """
     auth_service = AuthService(db)
-    return await auth_service.google_auth(
+    return await auth_service.google_auth_old(
         code=request.code, redirect_uri=settings.GOOGLE_REDIRECT_URI
+    )
+
+
+@router.post("/google-auth")
+async def google_auth(
+    request: GoogleAuthMobileRequest,
+    db: Session = Depends(get_db),
+    api_key: str = Security(api_key_header),
+) -> Any:
+    """
+    Authenticate with Google OAuth token.
+    Handles both new and existing users.
+
+    1. Verifies Google token
+    2. Retrieves user data from Google
+    3. Checks if email exists in our system
+    4. Creates account if user doesn't exist
+    5. Returns login info in both cases
+    """
+    auth_service = AuthService(db)
+    return await auth_service.google_auth_mobile(
+        id_token=request.id_token, access_token=request.access_token
     )
 
 

@@ -29,6 +29,11 @@ class GoogleAuthRequest(BaseModel):
     code: str
 
 
+class GoogleAuthMobileRequest(BaseModel):
+    id_token: str
+    access_token: str
+
+
 class UpdatePhoneRequest(BaseModel):
     old_phone_region: PhoneRegion | None = Field(description="User's old phone number Region")
     old_phone_number: PhoneNumber | None = Field(description="User's old phone number Number")
