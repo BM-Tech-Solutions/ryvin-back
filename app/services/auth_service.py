@@ -838,7 +838,8 @@ class AuthService(BaseService):
             )
             .first()
         )
-        if not user:
+        is_new_user = not user
+        if is_new_user:
             # create new user
             user = User(
                 phone_region=None,
@@ -859,6 +860,9 @@ class AuthService(BaseService):
 
         self.db.commit()
         self.db.refresh(user)
+
+        # Check if profile is complete
+        is_profile_complete = user.name is not None and user.email is not None
 
         # Generate tokens
         access_token = create_access_token(user.id)
@@ -888,8 +892,17 @@ class AuthService(BaseService):
         self.db.commit()
 
         return {
+            "user_id": str(user.id),
+            "phone_region": user.phone_region,
+            "phone_number": user.phone_number,
+            "email": user.email,
+            "name": user.name,
+            "profile_image": user.profile_image,
+            "is_new_user": is_new_user,
+            "is_profile_complete": is_profile_complete,
             "access_token": access_token,
             "refresh_token": refresh_token,
+            "token_type": "bearer",
         }
 
     async def get_google_jwks(self):
