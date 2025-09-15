@@ -31,7 +31,6 @@ class GoogleAuthRequest(BaseModel):
 
 class GoogleAuthMobileRequest(BaseModel):
     id_token: str
-    access_token: str
 
 
 class UpdatePhoneRequest(BaseModel):

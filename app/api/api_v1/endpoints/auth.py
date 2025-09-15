@@ -99,9 +99,7 @@ async def google_auth(
     5. Returns login info in both cases
     """
     auth_service = AuthService(db)
-    return await auth_service.google_auth_mobile(
-        id_token=request.id_token, access_token=request.access_token
-    )
+    return await auth_service.google_auth_mobile(id_token=request.id_token)
 
 
 @router.post("/complete-profile", response_model=CompleteProfileResponse)
