@@ -820,7 +820,7 @@ class AuthService(BaseService):
             decoded_id_token = await self.verify_google_id_token(
                 id_token=id_token,
                 access_token=access_token,
-                client_id=settings.FIREBASE_CLIENT_ID,
+                client_id=settings.GOOGLE_CLIENT_ID,
             )
         except Exception as e:
             raise HTTPException(
