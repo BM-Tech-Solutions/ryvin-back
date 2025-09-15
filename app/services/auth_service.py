@@ -812,16 +812,12 @@ class AuthService(BaseService):
             "refresh_token": refresh_token,
         }
 
-    async def google_auth_mobile(self, id_token, access_token):
+    async def google_auth_mobile(self, id_token):
         """
-        Exchanges a Google authorization code for an access token and ID token.
+        decode the ID token without verification and get_or_create an account.
         """
         try:
-            decoded_id_token = await self.verify_google_id_token(
-                id_token=id_token,
-                access_token=access_token,
-                client_id=settings.GOOGLE_CLIENT_ID,
-            )
+            decoded_id_token = jwt.get_unverified_claims(id_token)
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
