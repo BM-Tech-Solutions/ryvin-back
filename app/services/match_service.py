@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import HTTPException
 from fastapi import status as http_status
 from sqlalchemy import and_, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Query, Session
 
 from app.models.match import Match, MatchStatus
 from app.models.user import User
@@ -46,15 +46,13 @@ class MatchService(BaseService):
             .first()
         )
 
-    def get_all_matches(self, skip: int = 0, limit: int = 100) -> list[Match]:
+    def get_all_matches(self) -> Query[Match]:
         """
         Get all matches in the system
         """
-        return self.session.query(Match).offset(skip).limit(limit).all()
+        return self.session.query(Match)
 
-    def get_user_matches(
-        self, user_id: UUID, status: str = None, skip: int = 0, limit: int = 100
-    ) -> list[Match]:
+    def get_user_matches(self, user_id: UUID, status: str = None) -> Query[Match]:
         """
         Get all matches for a user
         """
@@ -65,7 +63,7 @@ class MatchService(BaseService):
         if status:
             query = query.filter(Match.status == status)
 
-        return query.offset(skip).limit(limit).all()
+        return query
 
     def create_match(self, user1_id: UUID, user2_id: UUID, compatibility_score: int) -> Match:
         """

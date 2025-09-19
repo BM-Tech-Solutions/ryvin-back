@@ -3,6 +3,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi import status as http_status
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlalchemy import paginate
 
 from app.core.dependencies import FlexUserDep, SessionDep
 from app.schemas.match import MatchOut
@@ -14,22 +16,20 @@ router = APIRouter()
 
 @router.get(
     "/me",
-    response_model=list[MatchOut],
+    response_model=Page[MatchOut],
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_my_matches(
     session: SessionDep,
     current_user: FlexUserDep,
     status: str = Query(None, description="Filter by match status"),
-    skip: int = Query(0, description="Number of matches to skip"),
-    limit: int = Query(100, description="Maximum number of matches to return"),
-) -> list[MatchOut]:
+) -> Page[MatchOut]:
     """
     Get all matches for the current authenticated user
     """
     match_service = MatchService(session)
-    matches = match_service.get_user_matches(current_user.id, status, skip, limit)
-    return matches
+    matches = match_service.get_user_matches(current_user.id, status)
+    return paginate(matches)
 
 
 @router.get(

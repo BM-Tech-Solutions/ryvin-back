@@ -6,6 +6,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyHeader, HTTPBearer
 from fastapi.staticfiles import StaticFiles
+from fastapi_pagination import add_pagination
 from psycopg2.errors import UniqueViolation
 from sqlalchemy.exc import IntegrityError
 
@@ -124,6 +125,7 @@ async def sa_integrity_exception_handler(request, exc: IntegrityError):
 from app.api.api_v1.api import api_router  # noqa: E402, I001
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+add_pagination(app)
 
 
 @app.get("/")

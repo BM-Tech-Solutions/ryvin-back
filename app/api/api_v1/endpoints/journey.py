@@ -3,6 +3,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi import status as http_status
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlalchemy import paginate
 
 from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.schemas.journey import JourneyOut
@@ -21,7 +23,7 @@ router = APIRouter()
 # Journey
 @router.get(
     "",
-    response_model=list[JourneyOut],
+    response_model=Page[JourneyOut],
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_journeys(
@@ -29,21 +31,15 @@ def get_journeys(
     current_user: VerifiedUserDep,
     current_step: int = Query(None, description="Filter by current step"),
     is_completed: bool = Query(None, description="Filter by completion status"),
-    skip: int = 0,
-    limit: int = 100,
-) -> list[JourneyOut]:
+) -> Page[JourneyOut]:
     """
     Get all journeys for the current user
     """
     journey_service = JourneyService(session)
     journeys = journey_service.get_journeys(
-        user_id=current_user.id,
-        current_step=current_step,
-        is_completed=is_completed,
-        skip=skip,
-        limit=limit,
+        user_id=current_user.id, current_step=current_step, is_completed=is_completed
     )
-    return journeys
+    return paginate(journeys)
 
 
 @router.get(
@@ -78,18 +74,13 @@ def advance_journey(
     session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
-) -> Any:
+) -> JourneyOut:
     """
     Advance to the next step in the journey
     """
     journey_service = JourneyService(session)
-    journey = journey_service.advance_journey(journey_id)
-
-    return {
-        "message": f"Journey advanced to step {journey.current_step}",
-        "current_step": journey.current_step,
-        "journey": journey,
-    }
+    journey = journey_service.advance_journey(current_user, journey_id)
+    return journey
 
 
 @router.post(
@@ -102,35 +93,33 @@ def end_journey(
     current_user: VerifiedUserDep,
     journey_id: UUID,
     reason: str,
-) -> Any:
+) -> JourneyOut:
     """
     End the journey
     """
     journey_service = JourneyService(session)
-    journey_service.end_journey(journey_id, current_user.id, reason)
+    journey = journey_service.end_journey(journey_id, current_user.id, reason)
 
-    return {"message": "Journey ended successfully"}
+    return journey
 
 
 # Messages
 @router.get(
     "/{journey_id}/messages",
-    response_model=list[MessageOut],
+    response_model=Page[MessageOut],
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_messages(
     session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
-    skip: int = 0,
-    limit: int = 100,
-) -> Any:
+) -> Page[MessageOut]:
     """
     Get all messages for a journey
     """
     message_service = MessageService(session)
-    messages = message_service.get_messages(journey_id, skip, limit)
-    return messages
+    messages = message_service.get_messages(journey_id)
+    return paginate(messages)
 
 
 @router.delete(
@@ -177,20 +166,20 @@ def delete_message(
 # Meeting Request
 @router.get(
     "/{journey_id}/meeting-requests",
-    response_model=list[MeetingRequestOut],
+    response_model=Page[MeetingRequestOut],
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_meeting_requests(
     session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
-) -> list[MeetingRequestOut]:
+) -> Page[MeetingRequestOut]:
     """
     Get all meeting requests for a journey
     """
     meeting_service = MeetingService(session)
     meeting_requests = meeting_service.get_meeting_requests(journey_id)
-    return meeting_requests
+    return paginate(meeting_requests)
 
 
 @router.post(

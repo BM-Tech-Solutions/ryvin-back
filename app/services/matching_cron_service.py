@@ -12,7 +12,6 @@ from uuid import UUID
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
-from app.core.database import get_session
 from app.core.security import utc_now
 from app.models.enums import Gender, MatchStatus
 from app.models.match import Match
@@ -30,7 +29,7 @@ class MatchingCronService:
     """
 
     def __init__(self, session: Session = None):
-        self.session = session or next(get_session())
+        self.session = session
         self.matching_algorithm = MatchingAlgorithmService()
         self.notification_service = NotificationService()
         self.min_compatibility_score = 50  # Minimum score to create a match (lowered for testing)

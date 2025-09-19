@@ -26,6 +26,9 @@ class Journey(Base):
         pgUUID(as_uuid=True), ForeignKey("match.id"), unique=True, index=True
     )
     current_step: Mapped[int] = mapped_column(default=JourneyStep.STEP1_PRE_COMPATIBILITY)
+    user1_accepted: Mapped[bool] = mapped_column(default=False, server_default="false")
+    user2_accepted: Mapped[bool] = mapped_column(default=False, server_default="false")
+
     # Pré-compatibilité
     step1_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # Appel vocal/vidéo

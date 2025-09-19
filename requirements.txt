@@ -73,6 +73,10 @@ email-validator==2.2.0
 executing==2.2.0
     # via stack-data
 fastapi==0.116.1
+    # via
+    #   ryvin-back (pyproject.toml)
+    #   fastapi-pagination
+fastapi-pagination==0.14.1
     # via ryvin-back (pyproject.toml)
 filelock==3.18.0
     # via virtualenv
@@ -202,6 +206,7 @@ packaging==25.0
     # via
     #   ipykernel
     #   pytest
+    #   sqlakeyset
 parso==0.8.4
     # via jedi
 passlib==1.7.4
@@ -262,6 +267,7 @@ pydantic==2.11.7
     # via
     #   ryvin-back (pyproject.toml)
     #   fastapi
+    #   fastapi-pagination
     #   pydantic-settings
 pydantic-core==2.33.2
     # via pydantic
@@ -285,7 +291,9 @@ pytest==8.4.1
 pytest-cov==6.2.1
     # via ryvin-back (pyproject.toml)
 python-dateutil==2.9.0.post0
-    # via jupyter-client
+    # via
+    #   jupyter-client
+    #   sqlakeyset
 python-dotenv==1.1.1
     # via
     #   ryvin-back (pyproject.toml)
@@ -323,10 +331,14 @@ six==1.17.0
     #   python-dateutil
 sniffio==1.3.1
     # via anyio
+sqlakeyset==2.0.1746777265
+    # via fastapi-pagination
 sqlalchemy==2.0.41
     # via
     #   ryvin-back (pyproject.toml)
     #   alembic
+    #   fastapi-pagination
+    #   sqlakeyset
 stack-data==0.6.3
     # via ipython
 starlette==0.47.1
@@ -353,9 +365,11 @@ typing-extensions==4.14.1
     #   alembic
     #   anyio
     #   fastapi
+    #   fastapi-pagination
     #   minio
     #   pydantic
     #   pydantic-core
+    #   sqlakeyset
     #   sqlalchemy
     #   starlette
     #   typing-inspection
