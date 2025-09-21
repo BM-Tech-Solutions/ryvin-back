@@ -45,5 +45,5 @@ dependencies = [
     "apscheduler>=3.11.0",
     "twilio>=9.7.0",
     "aiofiles>=24.1.0",
-    "fastapi-pagination[sqlalchemy]>=0.14.1",
+    "furl>=2.1.4",
 ]

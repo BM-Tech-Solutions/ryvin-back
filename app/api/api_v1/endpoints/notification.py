@@ -1,11 +1,11 @@
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from fastapi import status as http_status
-from fastapi_pagination import Page
-from fastapi_pagination.ext.sqlalchemy import paginate
+from fastapi.requests import Request
 
 from app.core.dependencies import FlexUserDep, SessionDep
+from app.core.utils import Page, paginate
 from app.schemas.notifications import NotificationOut, NotificationUpdate
 from app.services.notification_service import NotificationService
 
@@ -19,14 +19,19 @@ router = APIRouter()
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_user_notifs(
-    session: SessionDep, current_user: FlexUserDep, is_read: bool = None
+    request: Request,
+    session: SessionDep,
+    current_user: FlexUserDep,
+    is_read: bool = None,
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=25, ge=1, le=100),
 ) -> Page[NotificationOut]:
     """
     Get all matches for the current authenticated user
     """
     notif_service = NotificationService(session)
     notifs = notif_service.get_user_notifs(current_user.id, is_read)
-    return paginate(notifs)
+    return paginate(query=notifs, page=page, per_page=per_page, request=request)
 
 
 @router.get(

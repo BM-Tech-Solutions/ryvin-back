@@ -4,12 +4,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Security
 from fastapi import status as http_status
-from fastapi_pagination import Page
-from fastapi_pagination.ext.sqlalchemy import paginate
+from fastapi.requests import Request
 from pydantic import BaseModel, EmailStr
 
 from app.core.dependencies import AdminViaTokenDep, SessionDep
 from app.core.security import utc_now
+from app.core.utils import Page, paginate
 from app.main import api_key_header
 from app.models.enums import MatchStatus
 from app.models.user import User
@@ -183,29 +183,35 @@ def admin_get_match_by_id(
 
 @router.get("/users/{user_id}/matches", response_model=Page[MatchOut])
 def admin_get_user_matches(
+    request: Request,
     session: SessionDep,
     current_user: AdminViaTokenDep,
     user_id: UUID,
     status: str | None = Query(None, description="Filter by match status"),
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=25, ge=1, le=100),
 ) -> Page[MatchOut]:
     """Get matches for a given user (admin)."""
     matches = MatchService(session).get_user_matches(user_id, status)
-    return paginate(matches)
+    return paginate(query=matches, page=page, per_page=per_page, request=request)
 
 
 @router.get("/users", response_model=Page[UserOut])
 def get_users(
+    request: Request,
     session: SessionDep,
     current_user: AdminViaTokenDep,
     search: str | None = Query(None, description="Search Query"),
     is_active: bool | None = Query(None, description="Filter by active status"),
     is_verified: bool | None = Query(None, description="Filter by verification status"),
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=25, ge=1, le=100),
 ) -> Page[UserOut]:
     """
     Get all users (admin only)
     """
     users = AdminService(session).get_users(search, is_active, is_verified)
-    return paginate(users)
+    return paginate(query=users, page=page, per_page=per_page, request=request)
 
 
 @router.get("/users/{user_id}", response_model=Optional[UserOut])
@@ -255,26 +261,32 @@ def unban_user(
 
 @router.get("/matches", response_model=Page[MatchOut])
 def get_matches(
+    request: Request,
     session: SessionDep,
     current_user: AdminViaTokenDep,
     status: Optional[MatchStatus] = Query(None, description="Filter by match status"),
     min_compatibility: float = Query(
         None, ge=0, le=100, description="Filter by minimum compatibility score"
     ),
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=25, ge=1, le=100),
 ) -> Page[MatchOut]:
     """
     Get all matches (admin only)
     """
     matches = AdminService(session).get_matches(status, min_compatibility)
-    return paginate(matches)
+    return paginate(query=matches, page=page, per_page=per_page, request=request)
 
 
 @router.get("/journeys", response_model=Page[JourneyOut])
 def get_journeys(
+    request: Request,
     session: SessionDep,
     current_user: AdminViaTokenDep,
     current_step: int = Query(None, description="Filter by current step"),
     is_completed: bool = Query(None, description="Filter by completion status"),
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=25, ge=1, le=100),
 ) -> Page[JourneyOut]:
     """
     Get all journeys (admin only)
@@ -282,7 +294,7 @@ def get_journeys(
     journeys = AdminService(session).get_journeys(
         is_completed=is_completed, current_step=current_step
     )
-    return paginate(journeys)
+    return paginate(query=journeys, page=page, per_page=per_page, request=request)
 
 
 @router.get("/stats", status_code=http_status.HTTP_200_OK)

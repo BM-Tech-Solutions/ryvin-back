@@ -570,26 +570,6 @@ wheels = [
 ]
 
 [[package]]
-name = "fastapi-pagination"
-version = "0.14.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "fastapi" },
-    { name = "pydantic" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/60/38/e27d94adb7050d88cddccddb56ab51244a2a9a30377eb5487de8f2b22959/fastapi_pagination-0.14.1.tar.gz", hash = "sha256:d045f8c678cef69ac006236f32a6d808ae6ca549360f79e92eefe2528f3e6337", size = 557666, upload-time = "2025-09-03T10:08:20.538Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/83/6e/7b6e63c3c004c4805fe8795f8355b30cc72f23aa2162f4072e6035ef1e84/fastapi_pagination-0.14.1-py3-none-any.whl", hash = "sha256:e5b698cab368b525f3b2ea2605c77dc22b00f50f67ac7d382dce8d3243fe60dc", size = 52534, upload-time = "2025-09-03T10:08:18.952Z" },
-]
-
-[package.optional-dependencies]
-sqlalchemy = [
-    { name = "sqlakeyset" },
-    { name = "sqlalchemy" },
-]
-
-[[package]]
 name = "filelock"
 version = "3.18.0"
 source = { registry = "https://pypi.org/simple" }
@@ -674,6 +654,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/0b/31/8fbc5af2d183bff20f21aa743b4088eac4445d2bb1cdece449ae80e4e2d1/frozenlist-1.7.0-cp313-cp313t-win32.whl", hash = "sha256:3a14027124ddb70dfcee5148979998066897e79f89f64b13328595c4bdf77c81", size = 43059, upload-time = "2025-06-09T23:02:02.072Z" },
     { url = "https://files.pythonhosted.org/packages/bb/ed/41956f52105b8dbc26e457c5705340c67c8cc2b79f394b79bffc09d0e938/frozenlist-1.7.0-cp313-cp313t-win_amd64.whl", hash = "sha256:3bf8010d71d4507775f658e9823210b7427be36625b387221642725b515dcf3e", size = 47516, upload-time = "2025-06-09T23:02:03.779Z" },
     { url = "https://files.pythonhosted.org/packages/ee/45/b82e3c16be2182bff01179db177fe144d58b5dc787a7d4492c6ed8b9317f/frozenlist-1.7.0-py3-none-any.whl", hash = "sha256:9a5af342e34f7e97caf8c995864c7a396418ae2859cc6fdf1b1073020d516a7e", size = 13106, upload-time = "2025-06-09T23:02:34.204Z" },
+]
+
+[[package]]
+name = "furl"
+version = "2.1.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "orderedmultidict" },
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/53/e4/203a76fa2ef46cdb0a618295cc115220cbb874229d4d8721068335eb87f0/furl-2.1.4.tar.gz", hash = "sha256:877657501266c929269739fb5f5980534a41abd6bbabcb367c136d1d3b2a6015", size = 57526, upload-time = "2025-03-09T05:36:21.175Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/61/8c/dce3b1b7593858eba995b2dfdb833f872c7f863e3da92aab7128a6b11af4/furl-2.1.4-py2.py3-none-any.whl", hash = "sha256:da34d0b34e53ffe2d2e6851a7085a05d96922b5b578620a37377ff1dbeeb11c8", size = 27550, upload-time = "2025-03-09T05:36:19.928Z" },
 ]
 
 [[package]]
@@ -1327,6 +1320,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/43/16/fc88b08840de0e0a72a2f9d8c6bae36be573e475a6326ae854bcc549fc45/nodeenv-1.9.1.tar.gz", hash = "sha256:6ec12890a2dab7946721edbfbcd91f3319c6ccc9aec47be7c7e6b7011ee6645f", size = 47437, upload-time = "2024-06-04T18:44:11.171Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl", hash = "sha256:ba11c9782d29c27c70ffbdda2d7415098754709be8a7056d79a737cd901155c9", size = 22314, upload-time = "2024-06-04T18:44:08.352Z" },
+]
+
+[[package]]
+name = "orderedmultidict"
+version = "1.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/53/4e/3823a27d764bb8388711f4cb6f24e58453e92d6928f4163fdb01e3a3789f/orderedmultidict-1.0.1.tar.gz", hash = "sha256:04070bbb5e87291cc9bfa51df413677faf2141c73c61d2a5f7b26bea3cd882ad", size = 20706, upload-time = "2019-07-10T20:11:47.305Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/04/16/5e95c70bda8fe6ea715005c0db8e602400bdba50ae3c72cb380eba551289/orderedmultidict-1.0.1-py2.py3-none-any.whl", hash = "sha256:43c839a17ee3cdd62234c47deca1a8508a3f2ca1d0678a3bf791c87cf84adbf3", size = 11699, upload-time = "2019-07-10T20:11:45.622Z" },
 ]
 
 [[package]]
@@ -2023,8 +2028,8 @@ dependencies = [
     { name = "bcrypt" },
     { name = "email-validator" },
     { name = "fastapi" },
-    { name = "fastapi-pagination", extra = ["sqlalchemy"] },
     { name = "firebase-admin" },
+    { name = "furl" },
     { name = "httpx" },
     { name = "ipykernel" },
     { name = "jinja2" },
@@ -2060,8 +2065,8 @@ requires-dist = [
     { name = "bcrypt", specifier = ">=4.0.1" },
     { name = "email-validator", specifier = ">=2.0.0" },
     { name = "fastapi", specifier = ">=0.100.0" },
-    { name = "fastapi-pagination", extras = ["sqlalchemy"], specifier = ">=0.14.1" },
     { name = "firebase-admin", specifier = ">=6.2.0" },
+    { name = "furl", specifier = ">=2.1.4" },
     { name = "httpx", specifier = ">=0.24.1" },
     { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "jinja2", specifier = ">=3.1.2" },
@@ -2105,21 +2110,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/a2/87/a6771e1546d97e7e041b6ae58d80074f81b7d5121207425c964ddf5cfdbd/sniffio-1.3.1.tar.gz", hash = "sha256:f4324edc670a0f49750a81b895f35c3adb843cca46f0530f79fc1babb23789dc", size = 20372, upload-time = "2024-02-25T23:20:04.057Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e9/44/75a9c9421471a6c4805dbf2356f7c181a29c1879239abab1ea2cc8f38b40/sniffio-1.3.1-py3-none-any.whl", hash = "sha256:2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2", size = 10235, upload-time = "2024-02-25T23:20:01.196Z" },
-]
-
-[[package]]
-name = "sqlakeyset"
-version = "2.0.1746777265"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "packaging" },
-    { name = "python-dateutil" },
-    { name = "sqlalchemy" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/3b/24/f5f8f28757e697b095e5edd077a37104cf98cd799ba6ab5d902cf7eaeed6/sqlakeyset-2.0.1746777265.tar.gz", hash = "sha256:86c81292b8fed283357509a9c0fa10b057b953e8ab7ed85e290b2766d1e7ef84", size = 111128, upload-time = "2025-05-09T07:54:28.358Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d2/26/035a313c420784b705cd653e6b6305df448faf1a048cf84fe6b092b3697e/sqlakeyset-2.0.1746777265-py3-none-any.whl", hash = "sha256:ca334d593b9b1d86cbefca7fda7909cc7c37b031673e16c7349a38c48c550e8b", size = 26875, upload-time = "2025-05-09T07:54:27.327Z" },
 ]
 
 [[package]]

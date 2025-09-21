@@ -3,10 +3,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi import status as http_status
-from fastapi_pagination import Page
-from fastapi_pagination.ext.sqlalchemy import paginate
+from fastapi.requests import Request
 
 from app.core.dependencies import SessionDep, VerifiedUserDep
+from app.core.utils import Page, paginate
 from app.schemas.journey import JourneyOut
 from app.schemas.meeting import (
     MeetingFeedbackCreate,
@@ -27,10 +27,13 @@ router = APIRouter()
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_journeys(
+    request: Request,
     session: SessionDep,
     current_user: VerifiedUserDep,
     current_step: int = Query(None, description="Filter by current step"),
     is_completed: bool = Query(None, description="Filter by completion status"),
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=25, ge=1, le=100),
 ) -> Page[JourneyOut]:
     """
     Get all journeys for the current user
@@ -39,7 +42,7 @@ def get_journeys(
     journeys = journey_service.get_journeys(
         user_id=current_user.id, current_step=current_step, is_completed=is_completed
     )
-    return paginate(journeys)
+    return paginate(query=journeys, page=page, per_page=per_page, request=request)
 
 
 @router.get(
@@ -110,16 +113,19 @@ def end_journey(
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_messages(
+    request: Request,
     session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=25, ge=1, le=100),
 ) -> Page[MessageOut]:
     """
     Get all messages for a journey
     """
     message_service = MessageService(session)
     messages = message_service.get_messages(journey_id)
-    return paginate(messages)
+    return paginate(query=messages, page=page, per_page=per_page, request=request)
 
 
 @router.delete(
@@ -170,16 +176,19 @@ def delete_message(
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_meeting_requests(
+    request: Request,
     session: SessionDep,
     current_user: VerifiedUserDep,
     journey_id: UUID,
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=25, ge=1, le=100),
 ) -> Page[MeetingRequestOut]:
     """
     Get all meeting requests for a journey
     """
     meeting_service = MeetingService(session)
     meeting_requests = meeting_service.get_meeting_requests(journey_id)
-    return paginate(meeting_requests)
+    return paginate(query=meeting_requests, page=page, per_page=per_page, request=request)
 
 
 @router.post(
