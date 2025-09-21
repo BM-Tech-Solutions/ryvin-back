@@ -77,7 +77,6 @@ class QuestionnaireBase(BaseModel):
     clothing_style: Optional[str] = None
     appearance_importance: Optional[str] = None
     partner_hygiene_appearance_importance: Optional[str] = None
-    partner_physical_preferences: Optional[str] = None
     partner_waist_size: Optional[str] = None
     partner_body_size: Optional[str] = None
     partner_clothing_style: Optional[str] = None
@@ -104,7 +103,6 @@ class QuestionnaireBase(BaseModel):
     ideal_couple_life_description: Optional[str] = None
 
     # children_and_family
-    children_infos: Optional[str] = None
     has_children: Optional[str] = None
     number_of_children: Optional[str] = None
     wants_children: Optional[str] = None
