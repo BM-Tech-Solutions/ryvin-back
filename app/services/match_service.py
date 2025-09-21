@@ -88,10 +88,7 @@ class MatchService(BaseService):
         self.session.commit()
         self.session.refresh(match)
 
-        # Send notification to user2
-        user2 = self.session.get(User, user2_id)
-        if user2:
-            NotificationService().send_new_match_notification(user2, match)
+        NotificationService(self.session).send_new_match_notification(match)
 
         return match
 
@@ -131,8 +128,8 @@ class MatchService(BaseService):
             user2 = self.session.get(User, match.user2_id)
 
             if user1 and user2:
-                NotificationService().send_match_confirmed_notification(user1, match)
-                NotificationService().send_match_confirmed_notification(user2, match)
+                NotificationService(self.session).send_match_confirmed_notification(user1, match)
+                NotificationService(self.session).send_match_confirmed_notification(user2, match)
 
         self.session.commit()
         self.session.refresh(match)

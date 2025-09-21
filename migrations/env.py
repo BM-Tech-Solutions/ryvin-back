@@ -13,6 +13,7 @@ from app.core.config import settings
 # Import all models to ensure they're discovered by Alembic
 from app.core.database import Base
 from app.models import APSchedulerJob as APSchedulerJob
+from app.models import Device as Device
 from app.models import Journey as Journey
 from app.models import Match as Match
 from app.models import MeetingFeedback as MeetingFeedback

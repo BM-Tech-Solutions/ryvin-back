@@ -1,4 +1,6 @@
+from datetime import datetime
 from typing import Annotated, Dict, Optional
+from uuid import UUID
 
 from fastapi import UploadFile
 from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field, field_validator
@@ -89,3 +91,27 @@ class TokenResponse(BaseModel):
 class LogoutResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     message: str
+
+
+class DeviceRequest(BaseModel):
+    """
+    Base schema for Device
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    token: str
+    brand: str | None = None
+    model: str | None = None
+    name: str | None = None
+
+
+class DeviceResponse(DeviceRequest):
+    """
+    Device Response Schema
+    """
+
+    id: UUID
+    user_id: UUID
+    created_at: datetime
+    updated_at: datetime
