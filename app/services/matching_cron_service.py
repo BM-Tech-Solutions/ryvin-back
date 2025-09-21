@@ -366,6 +366,8 @@ class MatchingCronService:
             self.session.commit()
             self.session.refresh(match)
 
+            self.notification_service.send_new_match_notification(match)
+
             # Note: SMS notifications disabled - only storing matches in database
             logger.debug(
                 f"Match created and stored: {user1_id} ↔ {user2_id} (Score: {compatibility_result.total_score})"
