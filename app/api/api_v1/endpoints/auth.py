@@ -8,8 +8,6 @@ from typing import Any, Dict
 
 import httpx
 from fastapi import APIRouter, Depends, Form, HTTPException, Security, status
-from fastapi_pagination import Page
-from fastapi_pagination.ext.sqlalchemy import paginate
 
 # Firebase Admin SDK
 from firebase_admin import auth as firebase_auth
@@ -18,15 +16,12 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.main import api_key_header
-from app.models.device import Device
 from app.models.user import User
 from app.schemas.auth import (
     AuthResponse,
     CompleteProfileRequest,
     CompleteProfileResponse,
-    DeviceRequest,
-    DeviceResponse,
-    GoogleAuthMobileRequest,
+    GoogleAuthRequest,
     LogoutResponse,
     PhoneAuthRequest,
     RefreshTokenRequest,
@@ -59,13 +54,13 @@ def phone_auth(
     return auth_service.phone_auth(
         phone_region=request.phone_region,
         phone_number=request.phone_number,
-        device_info=request.device_info,
+        firebase_token=request.firebase_token,
     )
 
 
 @router.post("/google-auth")
 async def google_auth(
-    request: GoogleAuthMobileRequest,
+    request: GoogleAuthRequest,
     db: Session = Depends(get_db),
     api_key: str = Security(api_key_header),
 ) -> Any:
@@ -80,7 +75,9 @@ async def google_auth(
     5. Returns login info in both cases
     """
     auth_service = AuthService(db)
-    return await auth_service.google_auth_mobile(id_token=request.id_token)
+    return await auth_service.google_auth(
+        id_token=request.id_token, firebase_token=request.firebase_token
+    )
 
 
 @router.post("/complete-profile", response_model=CompleteProfileResponse)
@@ -246,61 +243,3 @@ def get_user_data(
     }
 
     return {"user": user_data}
-
-
-@router.post("/device", response_model=DeviceResponse, status_code=status.HTTP_201_CREATED)
-def register_device(
-    request: DeviceRequest,
-    current_user: VerifiedUserDep,
-    session: SessionDep,
-) -> DeviceResponse:
-    # Check if a token for this user already exists
-    device = (
-        session.query(Device)
-        .filter(Device.user_id == current_user.id, Device.token == request.token)
-        .first()
-    )
-
-    if device:
-        # Token exists, update the metadata if necessary
-        device.brand = request.brand
-        device.model = request.model
-        device.name = request.name
-        session.commit()
-    else:
-        # Token does not exist, so create a new one
-        device = Device(
-            user_id=current_user.id,
-            token=request.token,
-            brand=request.brand,
-            model=request.model,
-            name=request.name,
-        )
-        session.add(device)
-        session.commit()
-
-    return device
-
-
-@router.get("/device", response_model=Page[DeviceResponse], status_code=status.HTTP_200_OK)
-def get_devices(current_user: VerifiedUserDep, session: SessionDep) -> DeviceResponse:
-    return paginate(session.query(Device).filter(Device.user_id == current_user.id))
-
-
-@router.delete("/device/{token}", status_code=status.HTTP_204_NO_CONTENT)
-def unregister_device(device: str, session: SessionDep, current_user: VerifiedUserDep):
-    # Find and delete the token associated with the current user
-    device = (
-        session.query(Device)
-        .filter(Device.user_id == current_user.id, Device.token == device)
-        .first()
-    )
-
-    if not device:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Device with this Token not found for this user.",
-        )
-
-    session.delete(device)
-    session.commit()

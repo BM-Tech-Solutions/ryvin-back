@@ -9,7 +9,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 if TYPE_CHECKING:
-    from .device import Device
     from .user import User
 
 
@@ -35,23 +34,11 @@ class Notification(Base):
     def __str__(self):
         return f"notif: '{self.title}' to '{self.user}'"
 
-    def send_to_device(self, device: "Device", data: dict = None):
+    def send_to_user(self, data: dict = None):
         message = messaging.Message(
-            token=device.token,
+            token=self.user.firebase_token,
             notification=messaging.Notification(title=self.title, body=self.body),
             data=data or {},
         )
 
         messaging.send(message)
-
-    def send_to_all_devices(self, data: dict = None):
-        messages = [
-            messaging.Message(
-                token=device.token,
-                notification=messaging.Notification(title=self.title, body=self.body),
-                data=data or {},
-            )
-            for device in self.user.devices
-        ]
-
-        messaging.send_all(messages)

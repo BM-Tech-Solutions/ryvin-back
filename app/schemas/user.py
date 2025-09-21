@@ -86,6 +86,7 @@ class UserInDBBase(UserBase):
     social_provider: Optional[str] = None
     social_id: Optional[str] = None
     social_image: Optional[str] = None
+    token: str
 
 
 class UserInDB(UserInDBBase):

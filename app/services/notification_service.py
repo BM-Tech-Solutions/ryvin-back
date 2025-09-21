@@ -89,14 +89,14 @@ class NotificationService(BaseService):
             title="New Match",
             body=f"'{match.user2.name}' might be compatible with you!",
         )
-        notif.send_to_all_devices(data={"match_id": str(match.id), "type": "new_match"})
+        notif.send_to_user(data={"match_id": str(match.id), "type": "new_match"})
 
         notif = self.create_notification(
             user_id=match.user2_id,
             title="New Match",
             body=f"'{match.user1.name}' might be compatible with you!",
         )
-        notif.send_to_all_devices(data={"match_id": str(match.id), "type": "new_match"})
+        notif.send_to_user(data={"match_id": str(match.id), "type": "new_match"})
 
     def send_match_confirmed_notification(self, user: User, match: Match) -> bool:
         """

@@ -8,7 +8,6 @@ from app.core.database import Base
 from app.models.enums import SubscriptionType
 
 if TYPE_CHECKING:
-    from .device import Device
     from .match import Match
     from .meeting_feedback import MeetingFeedback
     from .meeting_request import MeetingRequest
@@ -56,6 +55,9 @@ class User(Base):
     social_id: Mapped[Optional[str]]
     social_image: Mapped[Optional[str]]
 
+    # firebase token
+    firebase_token: Mapped[str | None]
+
     # Relationships
     questionnaire: Mapped[Optional["Questionnaire"]] = relationship(
         back_populates="user", uselist=False, foreign_keys="Questionnaire.user_id"
@@ -79,9 +81,6 @@ class User(Base):
     )
     photos: Mapped[list["Photo"]] = relationship(
         back_populates="user", foreign_keys="Photo.user_id"
-    )
-    devices: Mapped[list["Device"]] = relationship(
-        back_populates="user", foreign_keys="Device.user_id"
     )
     notifications: Mapped[list["Notification"]] = relationship(
         back_populates="user", foreign_keys="Notification.user_id"
