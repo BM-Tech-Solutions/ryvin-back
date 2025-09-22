@@ -70,11 +70,12 @@ def accept_match(
     match_id: UUID,
 ) -> MatchOut:
     """
-    Accept a match belonging to the current user
+    Accept a match belonging to the current user.
+    Returns the match details including journey_id if both users have accepted.
     """
     match_service = MatchService(session)
     result = match_service.accept_match(match_id, current_user.id)
-    return result
+    return MatchOut.from_match(result)
 
 
 @router.post(
@@ -93,7 +94,71 @@ def decline_match(
     """
     match_service = MatchService(session)
     match = match_service.decline_match(match_id, current_user.id)
-    return match
+    return MatchOut.from_match(match)
+
+
+@router.post(
+    "/create", 
+    response_model=MatchOut,
+    status_code=http_status.HTTP_201_CREATED,
+    openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
+)
+def create_match_between_users(
+    session: SessionDep,
+    current_user: FlexUserDep,
+    match_request: MatchCreateRequest,
+) -> MatchOut:
+    """
+    Create a match between two users by their IDs.
+    This endpoint allows manual creation of matches, useful for admin purposes or testing.
+    """
+    # Validate that both users exist
+    user1 = session.get(User, match_request.user1_id)
+    user2 = session.get(User, match_request.user2_id)
+    
+    if not user1:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail=f"User with ID {match_request.user1_id} not found"
+        )
+    
+    if not user2:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail=f"User with ID {match_request.user2_id} not found"
+        )
+    
+    # Validate that users are different
+    if match_request.user1_id == match_request.user2_id:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Cannot create a match between the same user"
+        )
+    
+    # Create the match using the service
+    match_service = MatchService(session)
+    try:
+        match = match_service.create_match(
+            match_request.user1_id,
+            match_request.user2_id,  
+            match_request.compatibility_score
+        )
+        return MatchOut.from_match(match)
+    except Exception as e:
+        # Handle case where match already exists
+        existing_match = match_service.get_match_by_users(
+            match_request.user1_id, 
+            match_request.user2_id
+        )
+        if existing_match:
+            raise HTTPException(
+                status_code=http_status.HTTP_409_CONFLICT,
+                detail="A match between these users already exists"
+            )
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create match: {str(e)}"
+        )
 
 
 @router.post(

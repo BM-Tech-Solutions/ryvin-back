@@ -36,6 +36,35 @@ class MatchCreate(MatchBase):
     pass
 
 
+class MatchCreateRequest(BaseModel):
+    """
+    Schema for manual match creation between two users
+    """
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+    user1_id: UUID = Field(description="ID of the first user")
+    user2_id: UUID = Field(description="ID of the second user") 
+    compatibility_score: float = Field(
+        default=50.0,
+        ge=0.0,
+        le=100.0,
+        description="Compatibility score between users (0-100)"
+    )
+    
+    @field_validator("user1_id", "user2_id")
+    def validate_user_ids(cls, v):
+        if not v:
+            raise ValueError("User ID cannot be empty")
+        return v
+    
+    @field_validator("compatibility_score")
+    def validate_compatibility_score_create(cls, v):
+        if v < 0.0 or v > 100.0:
+            raise ValueError("Compatibility score must be between 0 and 100")
+        return v
+
+
 class MatchUpdate(BaseModel):
     """
     Schema for match update
@@ -81,3 +110,22 @@ class MatchOut(BaseModel):
     updated_at: datetime
     user1_accepted: bool = Field(default=False)
     user2_accepted: bool = Field(default=False)
+    journey_id: Optional[UUID] = Field(default=None, description="ID of the journey created when both users accept the match")
+    
+    @classmethod
+    def from_match(cls, match):
+        """Create MatchOut from Match model, including journey_id if available"""
+        journey_id = match.journey.id if match.journey else None
+        
+        return cls(
+            id=match.id,
+            user1_id=match.user1_id,
+            user2_id=match.user2_id,
+            compatibility_score=match.compatibility_score,
+            status=match.status,
+            created_at=match.created_at,
+            updated_at=match.updated_at,
+            user1_accepted=match.user1_accepted,
+            user2_accepted=match.user2_accepted,
+            journey_id=journey_id
+        )
