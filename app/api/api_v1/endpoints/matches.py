@@ -7,7 +7,8 @@ from fastapi.requests import Request
 
 from app.core.dependencies import FlexUserDep, SessionDep
 from app.core.utils import Page, paginate
-from app.schemas.match import MatchOut
+from app.models.user import User
+from app.schemas.match import MatchOut, MatchCreateRequest
 from app.services.match_service import MatchService
 from app.services.matching_cron_service import MatchingCronService
 
