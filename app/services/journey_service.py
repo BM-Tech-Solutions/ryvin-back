@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import HTTPException
 from fastapi import status as http_status
 from sqlalchemy import or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Query, Session
 
 from app.core.config import settings
 from app.core.security import utc_now
@@ -56,13 +56,8 @@ class JourneyService(BaseService):
         return journey
 
     def get_journeys(
-        self,
-        user_id: UUID = None,
-        current_step: int = None,
-        is_completed: bool = None,
-        skip: int = 0,
-        limit: int = 100,
-    ) -> list[Journey]:
+        self, user_id: UUID = None, current_step: int = None, is_completed: bool = None
+    ) -> Query[Journey]:
         """
         Get all journeys for a user
         """
@@ -76,7 +71,7 @@ class JourneyService(BaseService):
         if is_completed is not None:
             query = query.filter(Journey.is_completed == is_completed)
 
-        return query.offset(skip).limit(limit).all()
+        return query
 
     def check_user_in_journey(self, journey: Journey, user_id: UUID) -> bool:
         """
@@ -92,7 +87,7 @@ class JourneyService(BaseService):
             return journey.match.user2_id
         return journey.match.user1_id
 
-    def advance_journey(self, journey_id: UUID) -> Journey:
+    def advance_journey(self, current_user: User, journey_id: UUID) -> Journey:
         """
         Advance journey to the next step
         """
@@ -123,18 +118,15 @@ class JourneyService(BaseService):
                     detail=f"At least {settings.MIN_NBR_MESSAGES} messages must be exchanged before advancing",
                 )
 
-            # Advance to next step
-            journey.current_step = JourneyStep.STEP2_VOICE_VIDEO_CALL
-
         elif journey.current_step == JourneyStep.STEP2_VOICE_VIDEO_CALL:
             # Voice/Video Call to Photos Unlocked
             # we will check for call duration from twillio later
-            journey.current_step = JourneyStep.STEP3_PHOTOS_UNLOCKED
+            pass
 
         elif journey.current_step == JourneyStep.STEP3_PHOTOS_UNLOCKED:
             # Photos Unlocked to Physical Meeting
             # no checks required!
-            journey.current_step = JourneyStep.STEP4_PHYSICAL_MEETING
+            pass
 
         elif journey.current_step == JourneyStep.STEP4_PHYSICAL_MEETING:
             # Physical Meeting to Meeting Feedback
@@ -153,28 +145,33 @@ class JourneyService(BaseService):
                     status_code=http_status.HTTP_400_BAD_REQUEST,
                     detail="An accepted meeting request is required before advancing",
                 )
-            journey.current_step = JourneyStep.STEP5_MEETING_FEEDBACK
 
-        # Check if journey is already at the final step
-        if journey.current_step >= JourneyStep.STEP5_MEETING_FEEDBACK:
+        elif journey.current_step >= JourneyStep.STEP5_MEETING_FEEDBACK:
             raise HTTPException(
                 status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail="Journey is already at the final step",
             )
+
+        # update accepted field
+        if current_user.id == journey.match.user1_id:
+            journey.user1_accepted = True
+
+        elif current_user.id == journey.match.user2_id:
+            journey.user2_accepted = True
 
         journey.updated_at = utc_now()
 
         self.session.commit()
         self.session.refresh(journey)
 
-        # Send notifications to both users
-        match = journey.match
-        user1 = self.session.get(User, match.user1_id)
-        user2 = self.session.get(User, match.user2_id)
-
-        if user1 and user2:
-            NotificationService().send_journey_step_advanced_notification(user1, journey)
-            NotificationService().send_journey_step_advanced_notification(user2, journey)
+        # Check for completion and advance if both users have accepted
+        if journey.user1_accepted and journey.user2_accepted:
+            journey.current_step += 1
+            # Reset acceptance flags for the next step
+            journey.user1_accepted = False
+            journey.user2_accepted = False
+            self.session.commit()
+            self.session.refresh(journey)
 
         return journey
 
@@ -227,7 +224,7 @@ class MessageService(BaseService):
     Service for message-related operations within journeys
     """
 
-    def get_messages(self, journey_id: UUID, skip: int = 0, limit: int = 100) -> list[Message]:
+    def get_messages(self, journey_id: UUID) -> Query[Message]:
         """
         Get messages for a journey
         """
@@ -235,9 +232,6 @@ class MessageService(BaseService):
             self.session.query(Message)
             .filter(Message.journey_id == journey_id)
             .order_by(Message.created_at.desc())
-            .offset(skip)
-            .limit(limit)
-            .all()
         )
 
     def get_journey_message(self, journey_id: UUID, msg_id: UUID) -> Optional[Message]:
@@ -354,7 +348,7 @@ class MeetingService(BaseService):
     Service for meeting-related operations within journeys
     """
 
-    def get_meeting_requests(self, journey_id: UUID) -> list[MeetingRequest]:
+    def get_meeting_requests(self, journey_id: UUID) -> Query[MeetingRequest]:
         """
         Get meeting requests for a journey
         """
@@ -362,7 +356,6 @@ class MeetingService(BaseService):
             self.session.query(MeetingRequest)
             .filter(MeetingRequest.journey_id == journey_id)
             .order_by(MeetingRequest.created_at.desc())
-            .all()
         )
 
     def get_meeting_request_by_id(self, meeting_id: UUID) -> Optional[MeetingRequest]:

@@ -13,7 +13,6 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Security, status
 from firebase_admin import auth as firebase_auth
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.core.database import get_db
 from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.main import api_key_header
@@ -22,7 +21,6 @@ from app.schemas.auth import (
     AuthResponse,
     CompleteProfileRequest,
     CompleteProfileResponse,
-    GoogleAuthMobileRequest,
     GoogleAuthRequest,
     LogoutResponse,
     PhoneAuthRequest,
@@ -56,12 +54,12 @@ def phone_auth(
     return auth_service.phone_auth(
         phone_region=request.phone_region,
         phone_number=request.phone_number,
-        device_info=request.device_info,
+        firebase_token=request.firebase_token,
     )
 
 
-@router.post("/old-google-auth")
-async def google_auth_old(
+@router.post("/google-auth")
+async def google_auth(
     request: GoogleAuthRequest,
     db: Session = Depends(get_db),
     api_key: str = Security(api_key_header),
@@ -77,29 +75,9 @@ async def google_auth_old(
     5. Returns login info in both cases
     """
     auth_service = AuthService(db)
-    return await auth_service.google_auth_old(
-        code=request.code, redirect_uri=settings.GOOGLE_REDIRECT_URI
+    return await auth_service.google_auth(
+        id_token=request.id_token, firebase_token=request.firebase_token
     )
-
-
-@router.post("/google-auth")
-async def google_auth(
-    request: GoogleAuthMobileRequest,
-    db: Session = Depends(get_db),
-    api_key: str = Security(api_key_header),
-) -> Any:
-    """
-    Authenticate with Google OAuth token.
-    Handles both new and existing users.
-
-    1. Verifies Google token
-    2. Retrieves user data from Google
-    3. Checks if email exists in our system
-    4. Creates account if user doesn't exist
-    5. Returns login info in both cases
-    """
-    auth_service = AuthService(db)
-    return await auth_service.google_auth_mobile(id_token=request.id_token)
 
 
 @router.post("/complete-profile", response_model=CompleteProfileResponse)

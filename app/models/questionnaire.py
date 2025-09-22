@@ -65,11 +65,11 @@ class Questionnaire(Base):
     partner_cleanliness_importance: Mapped[Optional[str]]
     accept_smoker_partner: Mapped[Optional[str]]
     accept_alcohol_consumer_partner: Mapped[Optional[str]]
-    has_pet: Mapped[Optional[str]]
-    type_of_pet: Mapped[Optional[str]]
+    has_pet: Mapped[Optional[str]]  # parent field
+    type_of_pet: Mapped[Optional[str]]  # child field
     ready_to_live_with_pet: Mapped[Optional[str]]
-    allergic_to_animals: Mapped[Optional[str]]
-    which_animals_allergic: Mapped[Optional[str]]
+    allergic_to_animals: Mapped[Optional[str]]  # parent field
+    which_animals_allergic: Mapped[Optional[str]]  # child field
 
     # personality_and_social_relations
     personality_type: Mapped[Optional[str]]
@@ -88,8 +88,7 @@ class Questionnaire(Base):
     clothing_style: Mapped[Optional[str]]
     appearance_importance: Mapped[Optional[str]]
     partner_hygiene_appearance_importance: Mapped[Optional[str]]
-    partner_physical_preferences: Mapped[Optional[str]]  # parent field
-    partner_waist_size: Mapped[Optional[str]]  # child field
+    partner_waist_size: Mapped[Optional[str]]  # parent field
     partner_body_size: Mapped[Optional[str]]  # child field
     partner_clothing_style: Mapped[Optional[str]]  # child field
     care_partner_self_hygiene: Mapped[Optional[str]]  # child field
@@ -115,8 +114,7 @@ class Questionnaire(Base):
     ideal_couple_life_description: Mapped[Optional[str]]
 
     # children_and_family
-    children_infos: Mapped[Optional[str]]  # parent field
-    has_children: Mapped[Optional[str]]  # child field
+    has_children: Mapped[Optional[str]]  # parent field
     number_of_children: Mapped[Optional[str]]  # child field
     wants_children: Mapped[Optional[str]]
     partner_must_want_children: Mapped[Optional[str]]

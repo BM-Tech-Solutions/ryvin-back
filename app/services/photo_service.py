@@ -6,7 +6,7 @@ from uuid import UUID
 import aiofiles
 from fastapi import HTTPException, UploadFile
 from fastapi import status as http_status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Query, Session
 
 from app.core.config import settings
 from app.models import Photo
@@ -23,17 +23,11 @@ class PhotoService(BaseService):
         super().__init__(db)
         self.session = db
 
-    def get_user_photos(self, user_id: UUID, skip: int = 0, limit: int = 100) -> list[Photo]:
+    def get_user_photos(self, user_id: UUID) -> Query[Photo]:
         """
         Get user photos
         """
-        return (
-            self.session.query(Photo)
-            .filter(Photo.user_id == user_id)
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
+        return self.session.query(Photo).filter(Photo.user_id == user_id)
 
     def get_user_primary_photo(self, user_id: UUID) -> Optional[Photo]:
         """

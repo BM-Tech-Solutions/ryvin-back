@@ -303,16 +303,17 @@
             "description": "",
             "order_position": 11,
             "field_type": "boolean",
-            "required": true
-          },
-          {
-            "name": "type_of_pet",
-            "label": "Si oui, quel animal ?",
-            "description": "",
-            "order_position": 12,
-            "field_type": "text",
-            "required": false,
-            "parent_field": "has_pet"
+            "required": true,
+            "children": [
+              {
+                "name": "type_of_pet",
+                "label": "Si oui, quel animal ?",
+                "description": "",
+                "order_position": 12,
+                "field_type": "text",
+                "required": false
+              }
+            ]
           },
           {
             "name": "ready_to_live_with_pet",
@@ -328,16 +329,17 @@
             "description": "",
             "order_position": 14,
             "field_type": "boolean",
-            "required": true
-          },
-          {
-            "name": "which_animals_allergic",
-            "label": "Si oui, lesquels ?",
-            "description": "",
-            "order_position": 15,
-            "field_type": "text",
-            "required": false,
-            "parent_field": "allergic_to_animals"
+            "required": true,
+            "children": [
+              {
+                "name": "which_animals_allergic",
+                "label": "Si oui, lesquels ?",
+                "description": "",
+                "order_position": 15,
+                "field_type": "text",
+                "required": false
+              }
+            ]
           }
         ]
       },
@@ -477,28 +479,20 @@
             "required": true
           },
           {
-            "name": "partner_physical_preferences",
+            "name": "partner_waist_size",
             "label": "Quels aspects physiques sont importants pour toi chez un(e) partenaire, sans que ce soit bloquant ?",
-            "description": "",
+            "description": "Taille Souhaitée",
+            "field_type": "range",
             "order_position": 5,
-            "field_type": "fields_group",
-            "required": true,
+            "required": false,
+            "field_unit": "Cm",
+            "placeholder": "168,180",
             "children": [
-              {
-                "name": "partner_waist_size",
-                "label": "Taille",
-                "description": "Taille Souhaitée",
-                "order_position": 1,
-                "field_type": "range",
-                "required": false,
-                "field_unit": "Cm",
-                "placeholder": "168,180"
-              },
               {
                 "name": "partner_body_size",
                 "label": "Corpulence",
                 "description": "",
-                "order_position": 2,
+                "order_position": 6,
                 "field_type": "select",
                 "required": false
               },
@@ -506,7 +500,7 @@
                 "name": "partner_clothing_style",
                 "label": "Style vestimentaire",
                 "description": "",
-                "order_position": 3,
+                "order_position": 7,
                 "field_type": "select",
                 "required": false
               },
@@ -514,7 +508,7 @@
                 "name": "care_partner_self_hygiene",
                 "label": "Soin de soi / hygiène",
                 "description": "",
-                "order_position": 4,
+                "order_position": 8,
                 "field_type": "boolean",
                 "required": false
               },
@@ -522,7 +516,7 @@
                 "name": "dont_care_partner_physical_aspects",
                 "label": "Peu importe, je me fie surtout au ressenti global",
                 "description": "",
-                "order_position": 5,
+                "order_position": 9,
                 "field_type": "boolean",
                 "required": false
               }
@@ -676,21 +670,13 @@
         "order_position": 1,
         "fields": [
           {
-            "name": "children_infos",
-            "label": "",
+            "name": "has_children",
+            "label": "As-tu des enfants ?",
             "description": "",
             "order_position": 1,
-            "field_type": "fields_group",
+            "field_type": "boolean",
             "required": true,
             "children": [
-              {
-                "name": "has_children",
-                "label": "As-tu des enfants ?",
-                "description": "",
-                "order_position": 1,
-                "field_type": "boolean",
-                "required": true
-              },
               {
                 "name": "number_of_children",
                 "label": "Si oui, combien ?",

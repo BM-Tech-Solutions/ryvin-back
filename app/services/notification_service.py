@@ -1,17 +1,66 @@
 from typing import Any, Dict
+from uuid import UUID
+
+from fastapi import HTTPException
+from fastapi import status as http_status
+from sqlalchemy.orm import Query
 
 from app.models.journey import Journey
 from app.models.match import Match
 from app.models.meeting import MeetingRequest
 from app.models.message import Message
+from app.models.notification import Notification
 from app.models.user import User
+from app.schemas.notifications import NotificationUpdate
+
+from .base_service import BaseService
 
 
-class NotificationService:
+class NotificationService(BaseService):
     """
     Service for sending notifications to users
     In a real application, this would integrate with push notifications, email, or SMS
     """
+
+    def get_notification(self, user: User, notif_id: UUID) -> Notification:
+        """
+        get specific notification with permission verification
+        """
+        notif = self.session.get(Notification, notif_id)
+        if not notif:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"Notification with ID '{notif_id}' not found",
+            )
+
+        if not user.is_admin and notif.user_id != user.id:
+            raise HTTPException(
+                status_code=http_status.HTTP_403_FORBIDDEN,
+                detail=f"Notification with ID '{notif_id}' doesn't belong to this user",
+            )
+
+        return notif
+
+    def get_user_notifs(self, user_id: UUID, is_read: bool = None) -> Query[Notification]:
+        """
+        get user notifications
+        """
+        notifs = self.session.query(Notification).filter(Notification.user_id == user_id)
+        if is_read is not None:
+            notifs = notifs.filter(Notification.is_ready.is_(is_read))
+        return notifs
+
+    def update_notif(self, notif: Notification, notif_in: NotificationUpdate) -> Notification:
+        """
+        Update user notification (read/un-read)
+        """
+        notif_data = notif_in.model_dump(exclude_unset=True)
+        for field, value in notif_data.items():
+            setattr(notif, field, value)
+
+        self.session.commit()
+        self.session.refresh(notif)
+        return notif
 
     def send_notification(
         self, user: User, title: str, body: str, data: Dict[str, Any] = None
@@ -19,27 +68,35 @@ class NotificationService:
         """
         Send a notification to a user
         """
-        # In a real app, this would send to a notification service like Firebase
-        phone_number = f"{user.phone_region}{user.phone_number}"
-        print(f"Sending notification to {phone_number}: {title} - {body}")
         return True
 
-    def send_new_match_notification(self, user: User, match: Match) -> bool:
+    def create_notification(self, user_id: UUID, title: str, body: str) -> Notification:
         """
-        Send notification about a new potential match
+        Create new notification
         """
-        # Get the other user in the match
-        other_user_id = match.user1_id if match.user2_id == user.id else match.user2_id
+        notif = Notification(user_id=user_id, title=title, body=body)
+        self.session.add(notif)
+        self.session.commit()
+        self.session.refresh(notif)
+        return notif
 
-        # In a real app, we would query the database for the other user's name
-        other_user_name = "Someone"  # Placeholder
-
-        return self.send_notification(
-            user,
-            "New Match",
-            f"{other_user_name} [{other_user_id}] might be compatible with you!",
-            {"match_id": str(match.id), "type": "new_match"},
+    def send_new_match_notification(self, match: Match):
+        """
+        Send notification about a new potential match for both users
+        """
+        notif = self.create_notification(
+            user_id=match.user1_id,
+            title="New Match",
+            body=f"'{match.user2.name}' might be compatible with you!",
         )
+        notif.send_to_user(data={"match_id": str(match.id), "type": "new_match"})
+
+        notif = self.create_notification(
+            user_id=match.user2_id,
+            title="New Match",
+            body=f"'{match.user1.name}' might be compatible with you!",
+        )
+        notif.send_to_user(data={"match_id": str(match.id), "type": "new_match"})
 
     def send_match_confirmed_notification(self, user: User, match: Match) -> bool:
         """

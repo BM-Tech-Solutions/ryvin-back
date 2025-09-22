@@ -470,8 +470,7 @@
             "field_type": "range",
             "required": false,
             "field_unit": "années",
-            "placeholder": "168,180",
-            "parent_field": "partner_physical_preferences"
+            "placeholder": "168,180"
           },
           {
             "name": "partner_body_size",
@@ -479,8 +478,7 @@
             "description": "",
             "order_position": 2,
             "field_type": "select",
-            "required": false,
-            "parent_field": "partner_physical_preferences"
+            "required": false
           },
           {
             "name": "partner_clothing_style",
@@ -488,8 +486,7 @@
             "description": "",
             "order_position": 3,
             "field_type": "select",
-            "required": false,
-            "parent_field": "partner_physical_preferences"
+            "required": false
           },
           {
             "name": "care_partner_self_hygiene",
@@ -497,8 +494,7 @@
             "description": "",
             "order_position": 4,
             "field_type": "boolean",
-            "required": false,
-            "parent_field": "partner_physical_preferences"
+            "required": false
           },
           {
             "name": "dont_care_partner_physical_aspects",
@@ -506,8 +502,7 @@
             "description": "",
             "order_position": 5,
             "field_type": "boolean",
-            "required": false,
-            "parent_field": "partner_physical_preferences"
+            "required": false
           }
         ]
       }
@@ -668,8 +663,7 @@
             "description": "",
             "order_position": 1,
             "field_type": "boolean",
-            "required": true,
-            "parent_field": "children_infos"
+            "required": true
           },
           {
             "name": "number_of_children",
@@ -678,8 +672,7 @@
             "placeholder": "4",
             "order_position": 2,
             "field_type": "text",
-            "required": false,
-            "parent_field": "children_infos"
+            "required": false
           }
         ]
       },

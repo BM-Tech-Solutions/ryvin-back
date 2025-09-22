@@ -1,4 +1,4 @@
-from typing import Annotated, Dict, Optional
+from typing import Annotated, Optional
 
 from fastapi import UploadFile
 from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field, field_validator
@@ -10,11 +10,11 @@ PhoneRegion = Annotated[str, AfterValidator(validate_phone_region)]
 PhoneNumber = Annotated[str, AfterValidator(validate_phone_number)]
 
 
-# Request models
+# login models
 class PhoneAuthRequest(BaseModel):
     phone_region: str = Field(description="User's phone number Region")
     phone_number: str = Field(description="User's phone number Number")
-    device_info: Optional[Dict[str, str]] = Field(default=None, description="Device information")
+    firebase_token: str
 
     @field_validator("phone_region")
     def validate_phone_region(cls, v):
@@ -26,25 +26,10 @@ class PhoneAuthRequest(BaseModel):
 
 
 class GoogleAuthRequest(BaseModel):
-    code: str
-
-
-class GoogleAuthMobileRequest(BaseModel):
     id_token: str
+    firebase_token: str
 
 
-class UpdatePhoneRequest(BaseModel):
-    old_phone_region: PhoneRegion | None = Field(description="User's old phone number Region")
-    old_phone_number: PhoneNumber | None = Field(description="User's old phone number Number")
-    new_phone_region: PhoneRegion = Field(description="User's new phone number Region")
-    new_phone_number: PhoneNumber = Field(description="User's new phone number Number")
-
-
-class RefreshTokenRequest(BaseModel):
-    refresh_token: str
-
-
-# Response models
 class AuthResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     user_id: str
@@ -60,6 +45,18 @@ class AuthResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class UpdatePhoneRequest(BaseModel):
+    old_phone_region: PhoneRegion | None = Field(description="User's old phone number Region")
+    old_phone_number: PhoneNumber | None = Field(description="User's old phone number Number")
+    new_phone_region: PhoneRegion = Field(description="User's new phone number Region")
+    new_phone_number: PhoneNumber = Field(description="User's new phone number Number")
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
+# complete profile models
 class CompleteProfileRequest(BaseModel):
     name: str | None = None
     phone_region: PhoneRegion = None
