@@ -28,10 +28,10 @@ class MatchingCronService:
     Service for automated matching between users via cron jobs
     """
 
-    def __init__(self, session: Session = None):
+    def __init__(self, session: Session):
         self.session = session
         self.matching_algorithm = MatchingAlgorithmService()
-        self.notification_service = NotificationService()
+        self.notification_service = NotificationService(session)
         self.min_compatibility_score = 50  # Minimum score to create a match (lowered for testing)
         self.max_matches_per_user = 50  # Maximum matches per user
 
