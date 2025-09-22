@@ -12,7 +12,7 @@ from .meeting import (
 from .message import MessageCreate, MessageInDB
 from .questionnaire import (
     QuestionnaireCreate,
-    QuestionnaireInDB,
+    QuestionnaireOut,
     QuestionnaireUpdate,
     CategoryOut,
     SubCategoryOut,

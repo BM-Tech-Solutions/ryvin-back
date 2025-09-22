@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from .meeting_feedback import MeetingFeedback
     from .meeting_request import MeetingRequest
     from .message import Message
+    from .notification import Notification
     from .photo import Photo
     from .questionnaire import Questionnaire
 
@@ -54,6 +55,9 @@ class User(Base):
     social_id: Mapped[Optional[str]]
     social_image: Mapped[Optional[str]]
 
+    # firebase token
+    firebase_token: Mapped[str | None]
+
     # Relationships
     questionnaire: Mapped[Optional["Questionnaire"]] = relationship(
         back_populates="user", uselist=False, foreign_keys="Questionnaire.user_id"
@@ -77,6 +81,9 @@ class User(Base):
     )
     photos: Mapped[list["Photo"]] = relationship(
         back_populates="user", foreign_keys="Photo.user_id"
+    )
+    notifications: Mapped[list["Notification"]] = relationship(
+        back_populates="user", foreign_keys="Notification.user_id"
     )
 
     def __repr__(self) -> str:

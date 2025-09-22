@@ -98,6 +98,8 @@ class JourneyOut(BaseModel):
 
     id: UUID
     match_id: UUID
+    user1_accepted: bool
+    user2_accepted: bool
     current_step: int
     is_completed: bool
     step1_completed_at: Optional[datetime] = None

@@ -375,7 +375,7 @@ class FieldType(BaseStrEnum):
     INTEGER = "integer"
     RANGE = "range"
     SELECT = "select"
-    FIELDS_GROUP = "fields_group"
+    FIELDS_GROUP = "fields_group"  # not used for now
     BOOLEAN = "boolean"
     MULTIPLE_SELECT = "multiple_select"
     ARRAY = "array"

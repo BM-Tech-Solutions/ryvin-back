@@ -1,10 +1,12 @@
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, UploadFile
+from fastapi import APIRouter, Query, UploadFile
 from fastapi import status as http_status
+from fastapi.requests import Request
 
 from app.core.dependencies import SessionDep, VerifiedUserDep
+from app.core.utils import Page, paginate
 from app.schemas.photos import PhotoOut
 from app.services.photo_service import PhotoService
 
@@ -13,21 +15,23 @@ router = APIRouter()
 
 @router.get(
     "",
-    status_code=http_status.HTTP_201_CREATED,
+    status_code=http_status.HTTP_200_OK,
+    response_model=Page[PhotoOut],
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_photos(
+    request: Request,
     session: SessionDep,
     current_user: VerifiedUserDep,
-    skip: int = 0,
-    limit: int = 100,
-) -> list[PhotoOut]:
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=25, ge=1, le=100),
+) -> Page[PhotoOut]:
     """
     get user's photos
     """
     photo_service = PhotoService(session)
-    photos = photo_service.get_user_photos(current_user.id, skip, limit)
-    return photos
+    photos = photo_service.get_user_photos(current_user.id)
+    return paginate(query=photos, page=page, per_page=per_page, request=request)
 
 
 @router.post(

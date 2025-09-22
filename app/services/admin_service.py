@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import HTTPException
 from fastapi import status as http_status
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Query, Session
 
 from app.core.security import utc_now
 from app.models.enums import JourneyStatus, MatchStatus, MeetingStatus
@@ -31,13 +31,8 @@ class AdminService(BaseService):
         self.session = db
 
     def get_users(
-        self,
-        search: str = None,
-        is_active: bool = None,
-        is_verified: bool = None,
-        skip: int = 0,
-        limit: int = 100,
-    ) -> list[User]:
+        self, search: str = None, is_active: bool = None, is_verified: bool = None
+    ) -> Query[User]:
         """
         Get all users with optional search
         """
@@ -53,11 +48,9 @@ class AdminService(BaseService):
             search_term = f"%{search}%"
             query = query.filter(
                 User.phone_number.ilike(search_term) | User.email.ilike(search_term)
-                # | User.first_name.ilike(search_term)
-                # | User.last_name.ilike(search_term)
             )
 
-        return query.offset(skip).limit(limit).all()
+        return query
 
     def get_user_by_id(self, user_id: UUID) -> Optional[User]:
         """
@@ -105,12 +98,8 @@ class AdminService(BaseService):
         return user
 
     def get_matches(
-        self,
-        status: str = None,
-        min_compatibility_score: float = None,
-        skip: int = 0,
-        limit: int = 100,
-    ) -> list[Match]:
+        self, status: str = None, min_compatibility_score: float = None
+    ) -> Query[Match]:
         """
         Get all matches with optional status filter
         """
@@ -122,11 +111,9 @@ class AdminService(BaseService):
         if min_compatibility_score is not None:
             query = query.filter(Match.compatibility_score >= min_compatibility_score)
 
-        return query.order_by(Match.created_at.desc()).offset(skip).limit(limit).all()
+        return query.order_by(Match.created_at.desc())
 
-    def get_journeys(
-        self, is_completed: bool = None, current_step: int = None, skip: int = 0, limit: int = 100
-    ) -> list[Journey]:
+    def get_journeys(self, is_completed: bool = None, current_step: int = None) -> Query[Journey]:
         """
         Get all journeys with optional filters
         """
@@ -138,7 +125,7 @@ class AdminService(BaseService):
         if current_step:
             query = query.filter(Journey.current_step == current_step)
 
-        return query.order_by(Journey.created_at.desc()).offset(skip).limit(limit).all()
+        return query.order_by(Journey.created_at.desc())
 
     def get_system_stats(self) -> Dict[str, Any]:
         """
@@ -210,7 +197,7 @@ class AdminService(BaseService):
             "meetings": {"total": total_meetings, "accepted": accepted_meetings},
         }
 
-    def get_flagged_messages(self, skip: int = 0, limit: int = 100) -> list[Message]:
+    def get_flagged_messages(self) -> Query[Message]:
         """
         Get messages flagged for moderation
         """
@@ -218,9 +205,6 @@ class AdminService(BaseService):
             self.session.query(Message)
             .filter(Message.is_flagged.is_(True))
             .order_by(Message.created_at.desc())
-            .offset(skip)
-            .limit(limit)
-            .all()
         )
 
     def moderate_message(self, message_id: UUID, action: str) -> Message:

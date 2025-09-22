@@ -5,6 +5,7 @@ from app.api.api_v1.endpoints import (
     auth,
     journey,
     matches,
+    notification,
     photos,
     questionnaire,
     twilio_router,
@@ -26,4 +27,5 @@ api_router.include_router(matches.router, prefix="/matches", tags=["matches"])
 api_router.include_router(journey.router, prefix="/journey", tags=["journey"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
+api_router.include_router(notification.router, prefix="/notification", tags=["notification"])
 api_router.include_router(twilio_router.router, prefix="/twilio", tags=["twilio"], dependencies=[])

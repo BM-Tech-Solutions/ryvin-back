@@ -13,3 +13,4 @@ from .questionnaire_field import QuestionnaireField
 from .token import RefreshToken
 from .user import User
 from .apscheduler_job import APSchedulerJob
+from .notification import Notification

@@ -7,6 +7,18 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validat
 from app.models.enums import FieldType, get_field_enum
 
 
+def is_answered(field):
+    if isinstance(field, str):
+        return field.strip() != ""
+    return field is not None
+
+
+def true_answer(field):
+    if isinstance(field, str):
+        field = field.strip().lower()
+    return field in (True, "yes", "true")
+
+
 class QuestionnaireBase(BaseModel):
     """
     Base schema for user questionnaire data
@@ -77,7 +89,6 @@ class QuestionnaireBase(BaseModel):
     clothing_style: Optional[str] = None
     appearance_importance: Optional[str] = None
     partner_hygiene_appearance_importance: Optional[str] = None
-    partner_physical_preferences: Optional[str] = None
     partner_waist_size: Optional[str] = None
     partner_body_size: Optional[str] = None
     partner_clothing_style: Optional[str] = None
@@ -104,7 +115,6 @@ class QuestionnaireBase(BaseModel):
     ideal_couple_life_description: Optional[str] = None
 
     # children_and_family
-    children_infos: Optional[str] = None
     has_children: Optional[str] = None
     number_of_children: Optional[str] = None
     wants_children: Optional[str] = None
@@ -116,22 +126,43 @@ class QuestionnaireBase(BaseModel):
     imagine_yourself_in10_years: Optional[str] = None
     reason_for_registration: Optional[str] = None
 
+    @field_validator("number_of_children")
+    @classmethod
+    def validate_number_of_children(cls, v, info: ValidationInfo):
+        has_children = true_answer(info.data.get("has_children"))
+        if has_children and not is_answered(v):
+            raise ValueError("'has_children' is required when 'has_children' is True")
+        if not has_children:
+            return None
+        return v
+
+    @field_validator("type_of_pet")
+    @classmethod
+    def validate_type_of_pet(cls, v, info: ValidationInfo):
+        has_pet = true_answer(info.data.get("has_pet"))
+        if has_pet and not is_answered(v):
+            raise ValueError("'type_of_pet' is required when 'has_pet' is True")
+        if not has_pet:
+            return None
+        return v
+
+    @field_validator("which_animals_allergic")
+    @classmethod
+    def validate_which_animals_allergic(cls, v, info: ValidationInfo):
+        allergic_to_animals = true_answer(info.data.get("allergic_to_animals"))
+        if allergic_to_animals and not is_answered(v):
+            raise ValueError(
+                "'which_animals_allergic' is required when 'allergic_to_animals' is True"
+            )
+        if not allergic_to_animals:
+            return None
+        return v
+
 
 class QuestionnaireCreate(QuestionnaireBase):
     """
     Schema for questionnaire creation
     """
-
-    @field_validator("number_of_children")
-    @classmethod
-    def validate_number_of_children_on_create(cls, v, info: ValidationInfo):
-        flag = (info.data.get("has_children") or "").strip().lower()
-        has_kids = flag in ("yes", "true", "1", "y", "oui")
-        if has_kids and (v is None or str(v).strip() == ""):
-            raise ValueError("Number of children is required when has_children is True")
-        if not has_kids:
-            return None  # normalize to None when user indicates no children
-        return v
 
 
 class QuestionnaireUpdate(QuestionnaireBase):
@@ -139,21 +170,10 @@ class QuestionnaireUpdate(QuestionnaireBase):
     Schema for questionnaire update
     """
 
-    @field_validator("number_of_children")
-    @classmethod
-    def validate_number_of_children_on_update(cls, v, info: ValidationInfo):
-        flag = (info.data.get("has_children") or "").strip().lower()
-        has_kids = flag in ("yes", "true", "1", "y", "oui")
-        if has_kids and (v is None or str(v).strip() == ""):
-            raise ValueError("Number of children is required when has_children is True")
-        if not has_kids:
-            return None
-        return v
 
-
-class QuestionnaireInDBBase(QuestionnaireBase):
+class QuestionnaireOut(QuestionnaireBase):
     """
-    Base schema for questionnaire in DB
+    Schema for questionnaire response
     """
 
     id: UUID
@@ -162,13 +182,20 @@ class QuestionnaireInDBBase(QuestionnaireBase):
     created_at: datetime
     updated_at: datetime
 
+    @field_validator("number_of_children")
+    @classmethod
+    def validate_number_of_children(cls, v, info: ValidationInfo):
+        return v
 
-class QuestionnaireInDB(QuestionnaireInDBBase):
-    """
-    Schema for questionnaire in DB (internal use)
-    """
+    @field_validator("type_of_pet")
+    @classmethod
+    def validate_type_of_pet(cls, v, info: ValidationInfo):
+        return v
 
-    pass
+    @field_validator("which_animals_allergic")
+    @classmethod
+    def validate_which_animals_allergic(cls, v, info: ValidationInfo):
+        return v
 
 
 class QuestionnaireCompletion(BaseModel):
