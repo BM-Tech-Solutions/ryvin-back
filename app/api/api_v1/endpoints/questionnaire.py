@@ -8,7 +8,7 @@ from app.schemas.questionnaire import (
     AnsweredCategoryOut,
     CategoryOut,
     QuestionnaireCreate,
-    QuestionnaireInDB,
+    QuestionnaireOut,
     QuestionnaireUpdate,
 )
 from app.services.questionnaire_service import QuestionnaireService
@@ -18,13 +18,13 @@ router = APIRouter()
 
 @router.get(
     "/me",
-    response_model=QuestionnaireInDB,
+    response_model=QuestionnaireOut,
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
 def get_questionnaire(
     session: SessionDep,
     current_user: VerifiedUserDep,
-) -> QuestionnaireInDB:
+) -> QuestionnaireOut:
     """
     Get current user's questionnaire
     """
@@ -45,7 +45,7 @@ def update_questionnaire(
     session: SessionDep,
     current_user: VerifiedUserDep,
     questionnaire_in: QuestionnaireUpdate,
-) -> QuestionnaireInDB:
+) -> QuestionnaireOut:
     """
     Update current user's questionnaire
     """
@@ -63,7 +63,7 @@ def create_questionnaire(
     session: SessionDep,
     current_user: VerifiedUserDep,
     questionnaire_in: QuestionnaireCreate,
-) -> QuestionnaireInDB:
+) -> QuestionnaireOut:
     """
     Create new Questionnaire for the current user
     """
