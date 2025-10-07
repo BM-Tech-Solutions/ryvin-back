@@ -1,10 +1,9 @@
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 from fastapi import status as http_status
 from fastapi.requests import Request
-from firebase_admin.exceptions import FirebaseError
 
 from app.core.dependencies import FlexUserDep, SessionDep
 from app.core.utils import Page, paginate
@@ -13,6 +12,7 @@ from app.models.user import User
 from app.schemas.match import MatchCreateRequest, MatchOut
 from app.services.match_service import MatchService
 from app.services.matching_cron_service import MatchingCronService
+from app.services.notification_service import new_match_notif_task
 
 router = APIRouter()
 
@@ -110,6 +110,7 @@ def create_match_between_users(
     session: SessionDep,
     current_user: FlexUserDep,
     match_request: MatchCreateRequest,
+    background_tasks: BackgroundTasks,
 ) -> MatchOut:
     """
     Create a match between two users by their IDs.
@@ -146,13 +147,11 @@ def create_match_between_users(
             match_request.user2_id,
             match_request.compatibility_score,
         )
+        background_tasks.add_task(new_match_notif_task, match_id=match.id)
         return MatchOut.from_match(match)
-    except (ValueError, FirebaseError) as e:
-        print(f"{e = }")
-        print(f"{type(e) = }")
     except Exception as e:
         raise HTTPException(
-            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=f"Failed to create match: {str(e)}",
         )
 
