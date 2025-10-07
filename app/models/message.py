@@ -52,18 +52,12 @@ class Message(Base):
         return f"<Message {self.id}: Journey {self.journey_id}, Sender {self.sender_id}>"
 
     def send_notif_to_reciever(self, title: str):
-        from app.schemas.message import MessageOut
-
         reciever = self.journey.match.get_other_user(self.sender_id)
         if reciever.firebase_token:
             message = messaging.Message(
                 token=reciever.firebase_token,
                 notification=messaging.Notification(title=title, body=self.content),
-                data=MessageOut.model_validate(self).model_dump(),
+                data={"message_id": str(self.id)},
             )
 
             messaging.send(message)
-
-            print(f"{message.data = }")
-            print(f"{message.notification = }")
-            print(f"{message.token = }")

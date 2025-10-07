@@ -3,7 +3,6 @@ from uuid import UUID
 
 from fastapi import APIRouter, Header, HTTPException, Request
 from fastapi import status as http_status
-from firebase_admin.exceptions import InvalidArgumentError
 from pydantic import BaseModel
 from twilio.request_validator import RequestValidator
 
@@ -62,7 +61,7 @@ async def twilio_chat_webhook(
             if msg:
                 try:
                     msg.send_notif_to_reciever(title="new msg added")
-                except InvalidArgumentError as e:
+                except Exception as e:
                     print(f"error sending new msg notif: {e}")
         if body.get("EventType") == TwilioEvent.ON_MESSAGE_UPDATED:
             msg_service.update_message(body)
@@ -70,9 +69,8 @@ async def twilio_chat_webhook(
             msg_service.delete_message(body)
 
     except Exception as e:
-        print(f"Error Handling Webhook {body.get('EventType')}")
+        print(f"Error Handling Webhook '{body.get('EventType')}':")
         print(f"\t{e}")
-
     return {}
 
 
