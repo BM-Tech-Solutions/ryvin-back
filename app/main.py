@@ -14,7 +14,6 @@ from firebase import init_firebase
 from .core.auth import CombinedAuthMiddleware
 from .core.config import settings
 from .cron_jobs import scheduler
-from .services.twilio_service import TwilioService
 
 # Define security schemes for Swagger docs
 api_key_header = APIKeyHeader(name="API-Token", auto_error=False)
@@ -29,8 +28,8 @@ async def lifespan(app: FastAPI):
     print("firebase initialized successfuly")
 
     # register twilio webhook
-    twilio_service = TwilioService()
-    twilio_service.register_webhook()
+    # twilio_service = TwilioService()
+    # twilio_service.register_webhook()
 
     # periodic jobs schedule
     scheduler.start()

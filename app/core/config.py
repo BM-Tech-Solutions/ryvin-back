@@ -77,6 +77,7 @@ class Settings(BaseSettings):
 
     # Twilio
     TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
     TWILIO_API_KEY_SID: str = ""
     TWILIO_API_KEY_SECRET: str = ""
     TWILIO_SERVICE_SID: str = ""
@@ -85,7 +86,6 @@ class Settings(BaseSettings):
     TWILIO_ACCESS_TOKEN_TTL_SECONDS: int = 60 * 60 * 24 * 7
     TWILIO_CHAT_WEBHOOK_URL: str = ""
     TWILIO_VIDEO_WEBHOOK_URL: str = ""
-    TWILIO_WEBHOOK_URL: str = ""
 
     # Base Directory
     BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
