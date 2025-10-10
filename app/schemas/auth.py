@@ -68,8 +68,8 @@ class CompleteProfileRequest(BaseModel):
 class CompleteProfileResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     user_id: str
-    name: str
-    email: Optional[str]
+    name: Optional[str] = None
+    email: Optional[str] = None
     profile_image: Optional[str] = None
     access_token: str
     refresh_token: str
