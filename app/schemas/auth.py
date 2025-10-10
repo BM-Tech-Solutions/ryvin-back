@@ -14,7 +14,7 @@ PhoneNumber = Annotated[str, AfterValidator(validate_phone_number)]
 class PhoneAuthRequest(BaseModel):
     phone_region: str = Field(description="User's phone number Region")
     phone_number: str = Field(description="User's phone number Number")
-    firebase_token: str
+    firebase_token: str | None = None
 
     @field_validator("phone_region")
     def validate_phone_region(cls, v):
@@ -27,7 +27,7 @@ class PhoneAuthRequest(BaseModel):
 
 class GoogleAuthRequest(BaseModel):
     id_token: str
-    firebase_token: str
+    firebase_token: str | None = None
 
 
 class AuthResponse(BaseModel):

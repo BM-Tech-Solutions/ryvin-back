@@ -4,10 +4,10 @@ Authentication Endpoints
 Endpoints for Firebase phone authentication and Google OAuth.
 """
 
-from typing import Any, Dict
+from typing import Annotated, Any, Dict
 
 import httpx
-from fastapi import APIRouter, Depends, Form, HTTPException, Security, status
+from fastapi import APIRouter, Body, Depends, Form, HTTPException, Security, status
 
 # Firebase Admin SDK
 from firebase_admin import auth as firebase_auth
@@ -38,7 +38,7 @@ router = APIRouter()
 @router.post("/phone-auth", response_model=AuthResponse)
 def phone_auth(
     request: PhoneAuthRequest,
-    db: Session = Depends(get_db),
+    db: SessionDep,
     api_key: str = Security(api_key_header),
 ) -> Any:
     """
@@ -51,10 +51,12 @@ def phone_auth(
     3. Returns login info in both cases
     """
     auth_service = AuthService(db)
+    update_token = "firebase_token" in request.model_dump(exclude_unset=True)
     return auth_service.phone_auth(
         phone_region=request.phone_region,
         phone_number=request.phone_number,
         firebase_token=request.firebase_token,
+        update_token=update_token,
     )
 
 
@@ -75,9 +77,24 @@ async def google_auth(
     5. Returns login info in both cases
     """
     auth_service = AuthService(db)
+    update_token = "firebase_token" in request.model_dump(exclude_unset=True)
     return await auth_service.google_auth(
-        id_token=request.id_token, firebase_token=request.firebase_token
+        id_token=request.id_token,
+        firebase_token=request.firebase_token,
+        update_token=update_token,
     )
+
+
+@router.post("/set-firebase-token", response_model=UserOut)
+def sef_firebase_token(
+    current_user: VerifiedUserDep,
+    session: SessionDep,
+    firebase_token: Annotated[str, Body(embed=True)],
+    api_key: str = Security(api_key_header),
+) -> UserOut:
+    current_user.firebase_token = firebase_token
+    session.commit()
+    return current_user
 
 
 @router.post("/complete-profile", response_model=CompleteProfileResponse)
