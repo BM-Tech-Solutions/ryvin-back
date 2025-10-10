@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import HTTPException
 from fastapi import status as http_status
 from sqlalchemy import or_
+from sqlalchemy.exc import DataError
 from sqlalchemy.orm import Query, Session
 
 from app.core.config import settings
@@ -34,7 +35,11 @@ class JourneyService(BaseService):
         """
         Get journey by ID
         """
-        return self.session.get(Journey, journey_id)
+        try:
+            journey = self.session.get(Journey, journey_id)
+        except DataError:
+            return None
+        return journey
 
     def get_journey_by_match(self, match_id: UUID) -> Optional[Journey]:
         """
@@ -244,7 +249,7 @@ class MessageService(BaseService):
             .first()
         )
 
-    def create_message(self, msg_data: dict) -> Message:
+    def create_message(self, msg_data: dict) -> Message | None:
         """
         Create a new message in a journey (from twilio webhook) (only "Text" messages for now)
         """
@@ -258,16 +263,14 @@ class MessageService(BaseService):
 
         conv = twilio_service.get_conversation(conv_id)
         if not conv:
-            raise HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail=f"Journey with conv: '{conv_id}' not found",
-            )
+            print(f"Conv with id: '{conv_id}' not found on Twilio")
+            return None
+
         journey = journey_service.get_journey_by_id(conv.unique_name)
         if not journey:
-            raise HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail=f"Journey with conv_id='{conv_id}' not found",
-            )
+            print(f"Journey with id='{conv.unique_name}' not found")
+            return
+
         if participant_id:
             try:
                 participant = (
@@ -276,10 +279,8 @@ class MessageService(BaseService):
                     .fetch()
                 )
             except Exception:
-                raise HTTPException(
-                    status_code=http_status.HTTP_404_NOT_FOUND,
-                    detail=f"Participant with id={participant_id} not Found on Twilio",
-                )
+                print(f"Participant with id={participant_id} not Found on Twilio")
+                return None
             sender = self.session.get(User, participant.identity)
             if sender:
                 sender_id = sender.id
@@ -302,7 +303,7 @@ class MessageService(BaseService):
 
         return message
 
-    def update_message(self, msg_data: dict) -> Message:
+    def update_message(self, msg_data: dict) -> Message | None:
         """
         Update message (from twilio webhook)
         """
@@ -311,10 +312,8 @@ class MessageService(BaseService):
 
         message = self.session.query(Message).filter(Message.twilio_msg_id == msg_id).first()
         if not message:
-            raise HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail=f"Message with twilio_msg_id={msg_id} not Found.",
-            )
+            print(f"Message with twilio_msg_id={msg_id} not Found.")
+            return None
 
         message.content = content
         self.session.commit()
@@ -322,7 +321,7 @@ class MessageService(BaseService):
 
         return message
 
-    def delete_message(self, msg_data: dict) -> Message:
+    def delete_message(self, msg_data: dict) -> Message | None:
         """
         Set message as deleted (don't really delete the message)  (from twilio webhook)
         """
@@ -330,10 +329,8 @@ class MessageService(BaseService):
 
         message = self.session.query(Message).filter(Message.twilio_msg_id == msg_id).first()
         if not message:
-            raise HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail=f"Message with twilio_msg_id={msg_id} not Found.",
-            )
+            print(f"Message with twilio_msg_id={msg_id} not Found.")
+            return None
 
         message.is_deleted = True
         message.deleted_at = utc_now()

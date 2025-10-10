@@ -1,8 +1,10 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Header, HTTPException, Request
 from fastapi import status as http_status
 from pydantic import BaseModel
+from twilio.request_validator import RequestValidator
 
 from app.core.config import settings
 from app.core.dependencies import FlexUserDep, SessionDep
@@ -28,25 +30,47 @@ class StartCallSchema(BaseModel):
     room_name: str
 
 
+class WebhookResponse(BaseModel):
+    message: str = ""
+
+
 @router.post("/chat-webhook", openapi_extra={"security": []})
-async def twilio_chat_webhook(request: Request, session: SessionDep):
+async def twilio_chat_webhook(
+    request: Request,
+    session: SessionDep,
+    twilio_sig: Annotated[str, Header(alias="X-Twilio-Signature")] = None,
+):
     # Twilio sends data as application/x-www-form-urlencoded
+    url = settings.TWILIO_CHAT_WEBHOOK_URL
     body = await request.form()
     body = dict(body)
+
     print("Twilio Chat Webhook:")
     print(f"\t{body = }")
+
+    validator = RequestValidator(settings.TWILIO_AUTH_TOKEN)
+    if not validator.validate(url, body, twilio_sig or ""):
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="Invalid Twilio signature.",
+        )
     try:
         msg_service = MessageService(session)
         if body.get("EventType") == TwilioEvent.ON_MESSAGE_ADDED:
-            msg_service.create_message(body)
+            msg = msg_service.create_message(body)
+            if msg:
+                try:
+                    msg.send_notif_to_reciever(title="new msg added")
+                except Exception as e:
+                    print(f"error sending new msg notif: {e}")
         if body.get("EventType") == TwilioEvent.ON_MESSAGE_UPDATED:
             msg_service.update_message(body)
         if body.get("EventType") == TwilioEvent.ON_MESSAGE_REMOVED:
             msg_service.delete_message(body)
 
     except Exception as e:
-        print(f"Error Handling Webhook {body.get('EventType')}: {e}")
-
+        print(f"Error Handling Webhook '{body.get('EventType')}':")
+        print(f"\t{e}")
     return {}
 
 

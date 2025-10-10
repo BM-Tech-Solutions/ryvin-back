@@ -37,3 +37,6 @@ class Match(Base):
 
     def __repr__(self):
         return f"<Match {self.id}: {self.user1_id} - {self.user2_id}, Score: {self.compatibility_score}>"
+
+    def get_other_user(self, user_id: UUID) -> "User":
+        return self.user1 if user_id == self.user2_id else self.user2

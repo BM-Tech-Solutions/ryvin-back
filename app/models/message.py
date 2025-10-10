@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
+from firebase_admin import messaging
 from sqlalchemy import DateTime, ForeignKey, Text, text
 from sqlalchemy.dialects.postgresql import UUID as pgUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -49,3 +50,14 @@ class Message(Base):
 
     def __repr__(self):
         return f"<Message {self.id}: Journey {self.journey_id}, Sender {self.sender_id}>"
+
+    def send_notif_to_reciever(self, title: str):
+        reciever = self.journey.match.get_other_user(self.sender_id)
+        if reciever.firebase_token:
+            message = messaging.Message(
+                token=reciever.firebase_token,
+                notification=messaging.Notification(title=title, body=self.content),
+                data={"message_id": str(self.id)},
+            )
+
+            messaging.send(message)

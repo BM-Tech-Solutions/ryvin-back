@@ -3,8 +3,10 @@ from uuid import UUID
 
 from fastapi import HTTPException
 from fastapi import status as http_status
+from firebase_admin.exceptions import InvalidArgumentError
 from sqlalchemy.orm import Query
 
+from app.core.database import SessionLocal
 from app.models.journey import Journey
 from app.models.match import Match
 from app.models.meeting import MeetingRequest
@@ -213,3 +215,12 @@ class NotificationService(BaseService):
                 "accepted": accepted,
             },
         )
+
+
+def new_match_notif_task(match_id: UUID):
+    with SessionLocal() as session:
+        match = session.get(Match, match_id)
+        try:
+            NotificationService(session).send_new_match_notification(match)
+        except InvalidArgumentError as e:
+            print(f"error sending new match notif: {e}")

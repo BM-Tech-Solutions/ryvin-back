@@ -7,11 +7,9 @@ from sqlalchemy import and_, or_
 from sqlalchemy.orm import Query, Session
 
 from app.models.match import Match, MatchStatus
-from app.models.user import User
 
 from .base_service import BaseService
 from .journey_service import JourneyService
-from .notification_service import NotificationService
 
 
 class MatchService(BaseService):
@@ -88,8 +86,6 @@ class MatchService(BaseService):
         self.session.commit()
         self.session.refresh(match)
 
-        NotificationService(self.session).send_new_match_notification(match)
-
         return match
 
     def accept_match(self, match_id: UUID, user_id: UUID) -> Match:
@@ -118,18 +114,9 @@ class MatchService(BaseService):
         if match.user1_accepted and match.user2_accepted:
             match.status = MatchStatus.ACTIVE
 
-            # Create a journey for the match
-            journey_service = JourneyService(self.session)
+            # Create a journey for the match if it doesn't exist
             if not match.journey:
-                match.journey = journey_service.create_journey(match_id)
-
-            # Send notifications to both users
-            user1 = self.session.get(User, match.user1_id)
-            user2 = self.session.get(User, match.user2_id)
-
-            if user1 and user2:
-                NotificationService(self.session).send_match_confirmed_notification(user1, match)
-                NotificationService(self.session).send_match_confirmed_notification(user2, match)
+                match.journey = JourneyService(self.session).create_journey(match_id)
 
         self.session.commit()
         self.session.refresh(match)
