@@ -1,12 +1,14 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, status
+from fastapi.exceptions import ResponseValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyHeader, HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from psycopg2.errors import UniqueViolation
+from pydantic_core import ValidationError
 from sqlalchemy.exc import IntegrityError
 
 from firebase import init_firebase
@@ -117,6 +119,16 @@ async def sa_integrity_exception_handler(request, exc: IntegrityError):
     if isinstance(exc.orig, UniqueViolation):
         return JSONResponse({"detail": exc.orig.pgerror}, status_code=status.HTTP_401_UNAUTHORIZED)
     return JSONResponse({"detail": exc.args}, status_code=status.HTTP_400_BAD_REQUEST)
+
+
+@app.exception_handler(ValidationError)
+async def pydantic_validation_error_handler(request, exc: ValidationError):
+    return JSONResponse({"detail": exc.errors()}, status_code=status.HTTP_400_BAD_REQUEST)
+
+
+@app.exception_handler(ResponseValidationError)
+async def response_validation_error_handler(request, exc: ResponseValidationError):
+    return JSONResponse({"detail": exc.errors()}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # Import and include API routers

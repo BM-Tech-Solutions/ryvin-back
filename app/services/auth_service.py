@@ -255,7 +255,7 @@ class AuthService(BaseService):
             )
 
     def phone_auth(
-        self, phone_region: str, phone_number: str, firebase_token: str
+        self, phone_region: str, phone_number: str, firebase_token: str, update_token: bool
     ) -> Dict[str, Any]:
         """
         Unified phone authentication method that handles both new and existing users.
@@ -298,7 +298,8 @@ class AuthService(BaseService):
                 )
                 self.db.add(user)
             else:
-                user.firebase_token = firebase_token
+                if update_token:
+                    user.firebase_token = firebase_token
                 # Update last login timestamp
                 user.last_login = utc_now()
 
@@ -360,7 +361,7 @@ class AuthService(BaseService):
                 detail=f"Failed to authenticate user: {str(e)}",
             )
 
-    async def google_auth(self, id_token, firebase_token):
+    async def google_auth(self, id_token, firebase_token, update_token: bool):
         """
         decode the ID token without verification and get_or_create an account.
         """
@@ -404,7 +405,8 @@ class AuthService(BaseService):
             self.db.add(user)
         else:
             # Update existing user
-            user.firebase_token = firebase_token
+            if update_token:
+                user.firebase_token = firebase_token
             user.last_login = utc_now()
             user.is_verified = True
 

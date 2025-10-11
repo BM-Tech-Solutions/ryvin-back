@@ -86,7 +86,7 @@ class UserInDBBase(UserBase):
     social_provider: Optional[str] = None
     social_id: Optional[str] = None
     social_image: Optional[str] = None
-    firebase_token: str
+    firebase_token: Optional[str]
 
 
 class UserInDB(UserInDBBase):
