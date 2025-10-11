@@ -178,7 +178,7 @@ def admin_get_match_by_id(
     match = MatchService(session).get_match_by_id(match_id)
     if not match:
         raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Match not found")
-    return match
+    return MatchOut.from_match(match)
 
 
 @router.get("/users/{user_id}/matches", response_model=Page[MatchOut])
@@ -193,7 +193,9 @@ def admin_get_user_matches(
 ) -> Page[MatchOut]:
     """Get matches for a given user (admin)."""
     matches = MatchService(session).get_user_matches(user_id, status)
-    return paginate(query=matches, page=page, per_page=per_page, request=request)
+    page = paginate(query=matches, page=page, per_page=per_page, request=request)
+    page.items = [MatchOut.from_match(m) for m in page.items]
+    return page
 
 
 @router.get("/users", response_model=Page[UserOut])
@@ -275,7 +277,9 @@ def get_matches(
     Get all matches (admin only)
     """
     matches = AdminService(session).get_matches(status, min_compatibility)
-    return paginate(query=matches, page=page, per_page=per_page, request=request)
+    page = paginate(query=matches, page=page, per_page=per_page, request=request)
+    page.items = [MatchOut.from_match(m) for m in page.items]
+    return page
 
 
 @router.get("/journeys", response_model=Page[JourneyOut])
