@@ -51,13 +51,36 @@ class Message(Base):
     def __repr__(self):
         return f"<Message {self.id}: Journey {self.journey_id}, Sender {self.sender_id}>"
 
+    def get_twilio_msg(self):
+        from app.services.twilio_service import TwilioService
+
+        conv = TwilioService().chat_service.conversations(self.journey_id)
+        return conv.messages(self.twilio_msg_id).fetch()
+
     def send_notif_to_reciever(self, title: str):
         reciever = self.journey.match.get_other_user(self.sender_id)
         if reciever.firebase_token:
+            twilio_msg = self.get_twilio_msg()
             message = messaging.Message(
                 token=reciever.firebase_token,
                 notification=messaging.Notification(title=title, body=self.content),
-                data={"message_id": str(self.id)},
+                data={
+                    "account_sid": str(twilio_msg.account_sid),
+                    "attributes": str(twilio_msg.attributes),
+                    "author": str(twilio_msg.author),
+                    "body": str(twilio_msg.body),
+                    "chat_service_sid": str(twilio_msg.chat_service_sid),
+                    "content_sid": str(twilio_msg.content_sid),
+                    "conversation_sid": str(twilio_msg.conversation_sid),
+                    "date_created": str(twilio_msg.date_created),
+                    "date_updated": str(twilio_msg.date_updated),
+                    "delivery": str(twilio_msg.delivery),
+                    "index": str(twilio_msg.index),
+                    "media": str(twilio_msg.media),
+                    "participant_sid": str(twilio_msg.participant_sid),
+                    "sid": str(twilio_msg.sid),
+                    "url": str(twilio_msg.url),
+                },
             )
 
             messaging.send(message)
