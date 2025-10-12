@@ -8,7 +8,6 @@ from fastapi.requests import Request
 from app.core.dependencies import FlexUserDep, SessionDep
 from app.core.utils import Page, paginate
 from app.models.user import User
-
 from app.schemas.match import MatchCreateRequest, MatchOut
 from app.services.match_service import MatchService
 from app.services.matching_cron_service import MatchingCronService
@@ -35,7 +34,9 @@ def get_my_matches(
     """
     match_service = MatchService(session)
     matches = match_service.get_user_matches(current_user.id, status)
-    return paginate(query=matches, page=page, per_page=per_page, request=request)
+    page = paginate(query=matches, page=page, per_page=per_page, request=request)
+    page.items = [MatchOut.from_match(m) for m in page.items]
+    return page
 
 
 @router.get(
@@ -58,7 +59,7 @@ def get_specific_match(session: SessionDep, current_user: FlexUserDep, match_id:
     # Ownership check: user must be participant in the match
     if current_user.id not in [match.user1_id, match.user2_id]:
         raise HTTPException(status_code=http_status.HTTP_403_FORBIDDEN, detail="Forbidden")
-    return match
+    return MatchOut.from_match(match)
 
 
 @router.post(

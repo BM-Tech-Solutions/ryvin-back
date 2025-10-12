@@ -18,7 +18,7 @@ class Page(BaseModel, Generic[T]):
     total_pages: int
 
 
-def paginate(query: Query, page: int, per_page: int, request: Request) -> Page[T]:
+def paginate(query: Query[T], page: int, per_page: int, request: Request) -> Page[T]:
     # Get total item count
     total_items = query.count()
 

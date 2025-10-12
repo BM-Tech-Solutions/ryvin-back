@@ -50,6 +50,9 @@ async def twilio_chat_webhook(
 
     validator = RequestValidator(settings.TWILIO_AUTH_TOKEN)
     if not validator.validate(url, body, twilio_sig or ""):
+        print("Invalid Twilio signature:")
+        print(f"\t{url=}")
+        print(f"\t{twilio_sig=}")
         raise HTTPException(
             status_code=http_status.HTTP_403_FORBIDDEN,
             detail="Invalid Twilio signature.",
@@ -58,11 +61,14 @@ async def twilio_chat_webhook(
         msg_service = MessageService(session)
         if body.get("EventType") == TwilioEvent.ON_MESSAGE_ADDED:
             msg = msg_service.create_message(body)
+            print(f"msg created: {msg = }")
             if msg:
                 try:
                     msg.send_notif_to_reciever(title="new msg added")
                 except Exception as e:
-                    print(f"error sending new msg notif: {e}")
+                    print(f"error sending new msg notif: {type(e)}")
+                    print(f"{e}")
+
         if body.get("EventType") == TwilioEvent.ON_MESSAGE_UPDATED:
             msg_service.update_message(body)
         if body.get("EventType") == TwilioEvent.ON_MESSAGE_REMOVED:
