@@ -30,6 +30,11 @@ class GoogleAuthRequest(BaseModel):
     firebase_token: str | None = None
 
 
+class AdminLoginRequest(BaseModel):
+    email: str
+    password: str
+
+
 class AuthResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     user_id: str
