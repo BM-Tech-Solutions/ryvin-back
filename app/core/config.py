@@ -13,15 +13,11 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Ryvin Dating API"
     VERSION: str = "0.1.0"
 
-    # SECURITY
+    # JWT Authentication
     SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 14
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
-
-    # JWT Authentication
-    JWT_SECRET_KEY: Optional[str] = None
-    REFRESH_TOKEN_EXPIRE_DAYS: Optional[int] = None
 
     # CORS
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8000"]
