@@ -37,6 +37,7 @@ class User(Base):
     phone_region: Mapped[Optional[str]] = mapped_column(nullable=True)
     phone_number: Mapped[Optional[str]] = mapped_column(nullable=True, index=True)
     email: Mapped[Optional[str]]
+    password: Mapped[Optional[str]]
     name: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
     profile_image: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
     has_completed_questionnaire: Mapped[bool] = mapped_column(default=False)
