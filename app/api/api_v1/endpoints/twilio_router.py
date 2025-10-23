@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Header, HTTPException, Request
 from fastapi import status as http_status
+from firebase_admin import messaging
 from pydantic import BaseModel
 from twilio.request_validator import RequestValidator
 
@@ -61,7 +62,6 @@ async def twilio_chat_webhook(
         msg_service = MessageService(session)
         if body.get("EventType") == TwilioEvent.ON_MESSAGE_ADDED:
             msg = msg_service.create_message(body)
-            print(f"msg created: {msg = }")
             if msg:
                 try:
                     msg.send_notif_to_reciever(title="new msg added")
@@ -166,25 +166,22 @@ async def start_call(
 
     twilio_service = TwilioService()
     try:
-        # 1. Create a new Twilio Video or Audio Room + set the webhook
-        video_room = twilio_service.video_service.rooms.create(
-            unique_name=str(journey_id),
-            max_participants=2,
-            status_callback=settings.TWILIO_VIDEO_WEBHOOK_URL,
-            status_callback_method="POST",
-        )
-
-        # 2. Send a chat message to all participants to notify them
-        # The client-side app will:
-        # - listen for this message
-        # - ask user to join
-        # - request token "call-token" and then join the room
-        twilio_service.chat_service.conversations(str(journey.id)).messages.create(
-            x_twilio_webhook_enabled="true",
-            author="system",
-            subject="new_call",
-            body=f"{video_room.unique_name}",
-        )
+        video_room = twilio_service.get_room(room_name=str(journey_id))
+        if not video_room:
+            video_room = twilio_service.create_room(room_name=str(journey_id))
+        if journey.match.user1.firebase_token:
+            msg1 = messaging.Message(
+                token=journey.match.user1.firebase_token,
+                notification=messaging.Notification(title="new_call", body=video_room.unique_name),
+                data={"room_name": video_room.unique_name},
+            )
+        if journey.match.user2.firebase_token:
+            msg2 = messaging.Message(
+                token=journey.match.user2.firebase_token,
+                notification=messaging.Notification(title="new_call", body=video_room.unique_name),
+                data={"room_name": video_room.unique_name},
+            )
+        messaging.send_each([msg1, msg2])
 
         return {
             "message": "Call successfully initiated.",
