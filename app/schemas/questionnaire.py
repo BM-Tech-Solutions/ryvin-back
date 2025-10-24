@@ -126,38 +126,6 @@ class QuestionnaireBase(BaseModel):
     imagine_yourself_in10_years: Optional[str] = None
     reason_for_registration: Optional[str] = None
 
-    @field_validator("number_of_children")
-    @classmethod
-    def validate_number_of_children(cls, v, info: ValidationInfo):
-        has_children = true_answer(info.data.get("has_children"))
-        if has_children and not is_answered(v):
-            raise ValueError("'has_children' is required when 'has_children' is True")
-        if not has_children:
-            return None
-        return v
-
-    @field_validator("type_of_pet")
-    @classmethod
-    def validate_type_of_pet(cls, v, info: ValidationInfo):
-        has_pet = true_answer(info.data.get("has_pet"))
-        if has_pet and not is_answered(v):
-            raise ValueError("'type_of_pet' is required when 'has_pet' is True")
-        if not has_pet:
-            return None
-        return v
-
-    @field_validator("which_animals_allergic")
-    @classmethod
-    def validate_which_animals_allergic(cls, v, info: ValidationInfo):
-        allergic_to_animals = true_answer(info.data.get("allergic_to_animals"))
-        if allergic_to_animals and not is_answered(v):
-            raise ValueError(
-                "'which_animals_allergic' is required when 'allergic_to_animals' is True"
-            )
-        if not allergic_to_animals:
-            return None
-        return v
-
 
 class QuestionnaireCreate(QuestionnaireBase):
     """
@@ -181,21 +149,6 @@ class QuestionnaireOut(QuestionnaireBase):
     completed_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
-
-    @field_validator("number_of_children")
-    @classmethod
-    def validate_number_of_children(cls, v, info: ValidationInfo):
-        return v
-
-    @field_validator("type_of_pet")
-    @classmethod
-    def validate_type_of_pet(cls, v, info: ValidationInfo):
-        return v
-
-    @field_validator("which_animals_allergic")
-    @classmethod
-    def validate_which_animals_allergic(cls, v, info: ValidationInfo):
-        return v
 
 
 class QuestionnaireCompletion(BaseModel):

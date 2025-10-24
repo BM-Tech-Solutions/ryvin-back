@@ -18,6 +18,7 @@ from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.main import api_key_header
 from app.models.user import User
 from app.schemas.auth import (
+    AdminLoginRequest,
     AuthResponse,
     CompleteProfileRequest,
     CompleteProfileResponse,
@@ -40,7 +41,7 @@ def phone_auth(
     request: PhoneAuthRequest,
     db: SessionDep,
     api_key: str = Security(api_key_header),
-) -> Any:
+) -> dict:
     """
     Authenticate with phone number.
 
@@ -65,7 +66,7 @@ async def google_auth(
     request: GoogleAuthRequest,
     db: Session = Depends(get_db),
     api_key: str = Security(api_key_header),
-) -> Any:
+) -> dict:
     """
     Authenticate with Google OAuth token.
     Handles both new and existing users.
@@ -83,6 +84,19 @@ async def google_auth(
         firebase_token=request.firebase_token,
         update_token=update_token,
     )
+
+
+@router.post("/admin-login")
+async def admin_login(
+    request: AdminLoginRequest,
+    session: SessionDep,
+    api_key: str = Security(api_key_header),
+) -> dict:
+    """
+    login endpoint for the Admin
+    """
+    auth_service = AuthService(session)
+    return await auth_service.admin_login(email=request.email, password=request.password)
 
 
 @router.post("/set-firebase-token", response_model=UserOut)

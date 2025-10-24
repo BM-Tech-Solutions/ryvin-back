@@ -8,7 +8,7 @@ from fastapi.requests import Request
 from pydantic import BaseModel, EmailStr
 
 from app.core.dependencies import AdminViaTokenDep, SessionDep
-from app.core.security import utc_now
+from app.core.security import get_password_hash, utc_now
 from app.core.utils import Page, paginate
 from app.main import api_key_header
 from app.models.enums import MatchStatus
@@ -31,15 +31,16 @@ router = APIRouter()
 
 
 class SeedAdminRequest(BaseModel):
-    phone_region: str
-    phone_number: str
-    email: EmailStr | None = None
+    phone_region: str | None = None
+    phone_number: str | None = None
+    email: EmailStr
+    password: str
 
 
 @router.post("/seed-admin", status_code=http_status.HTTP_200_OK)
 def seed_admin(
     session: SessionDep,
-    payload: SeedAdminRequest,
+    request: SeedAdminRequest,
     api_key: str = Security(api_key_header),
 ) -> dict:
     """
@@ -47,35 +48,30 @@ def seed_admin(
     - Protected by API-Token (master) via middleware and route Security.
     - Upserts by email or phone_number, sets is_admin and is_verified to True.
     """
-    # Try find by email first, then by phone
+    # Try find by email first
     user: User | None = None
-    if payload.email:
-        user = session.query(User).filter(User.email == payload.email).first()
-    if not user:
-        user = (
-            session.query(User)
-            .filter(
-                User.phone_region == payload.phone_region,
-                User.phone_number == payload.phone_number,
-            )
-            .first()
-        )
+    if request.email:
+        user = session.query(User).filter(User.email == request.email).first()
 
-    created = False
+    created = not user
     if not user:
         user = User(
-            phone_region=payload.phone_region,
-            phone_number=payload.phone_number,
-            email=str(payload.email) if payload.email else None,
-            is_active=True,
-            is_verified=True,
-            verified_at=utc_now(),
+            phone_region=request.phone_region,
+            phone_number=request.phone_number,
+            email=str(request.email) if request.email else None,
+            password=get_password_hash(request.password),
         )
         session.add(user)
         session.flush()
-        created = True
+    else:
+        if "phone_region" in request.model_dump(exclude_unset=True):
+            user.phone_region = request.phone_region
+        if "phone_number" in request.model_dump(exclude_unset=True):
+            user.phone_number = request.phone_number
+        user.password = get_password_hash(request.password)
 
     # Promote to admin and verify
+    user.is_active = True
     user.is_admin = True
     user.is_verified = True
     if not user.verified_at:

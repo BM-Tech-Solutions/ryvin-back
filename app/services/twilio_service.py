@@ -84,6 +84,20 @@ class TwilioService:
             return self.chat_service.conversations(conv_sid).fetch()
         return None
 
+    def get_room(self, room_name: str):
+        try:
+            return self.video_service.rooms(room_name).fetch()
+        except TwilioRestException:
+            return None
+
+    def create_room(self, room_name: str):
+        return self.video_service.rooms.create(
+            unique_name=room_name,
+            max_participants=2,
+            status_callback=settings.TWILIO_VIDEO_WEBHOOK_URL,
+            status_callback_method="POST",
+        )
+
     def register_webhook(self, events: list[TwilioEvent] = None):
         if events is None:
             events = [event.value for event in TwilioEvent]

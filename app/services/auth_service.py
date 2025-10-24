@@ -18,7 +18,7 @@ from firebase_admin import auth as firebase_auth
 from jose import jwt
 
 from app.core.config import settings
-from app.core.security import create_access_token, create_refresh_token, utc_now
+from app.core.security import create_access_token, create_refresh_token, utc_now, verify_password
 from app.models.enums import SocialProviders
 from app.models.token import RefreshToken
 from app.models.user import User
@@ -237,7 +237,9 @@ class AuthService(BaseService):
 
             # Update the refresh token in the database
             db_refresh_token.token = new_refresh_token
-            db_refresh_token.expires_at = utc_now() + timedelta(days=30)
+            db_refresh_token.expires_at = utc_now() + timedelta(
+                minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES
+            )
 
             self.db.commit()
 
@@ -316,7 +318,7 @@ class AuthService(BaseService):
             refresh_token = self._generate_unique_refresh_token(str(user.id))
 
             # Store the refresh token in the database
-            expires_at = utc_now() + timedelta(days=30)
+            expires_at = utc_now() + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
 
             # Check if a refresh token already exists for this user
             existing_token = (
@@ -492,6 +494,53 @@ class AuthService(BaseService):
             access_token=access_token,
         )
         return decoded_token
+
+    async def admin_login(self, email: str, password: str):
+        user = self.db.query(User).filter(User.email == email, User.is_admin.is_(True)).first()
+        if not user or not verify_password(password, user.password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="wrong email or password",
+            )
+        # Generate tokens
+        access_token = create_access_token(subject=str(user.id))
+        refresh_token = self._generate_unique_refresh_token(str(user.id))
+
+        # Store the refresh token in the database
+        expires_at = utc_now() + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
+
+        # Check if a refresh token already exists for this user
+        existing_token = self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
+
+        if existing_token:
+            # Update existing token
+            existing_token.token = refresh_token
+            existing_token.expires_at = expires_at
+            existing_token.is_revoked = False
+        else:
+            # Create new refresh token record
+            db_refresh_token = RefreshToken(
+                id=uuid.uuid4(),
+                user_id=user.id,
+                token=refresh_token,
+                expires_at=expires_at,
+                is_revoked=False,
+            )
+            self.db.add(db_refresh_token)
+
+        self.db.commit()
+
+        return {
+            "user_id": str(user.id),
+            "phone_region": user.phone_region,
+            "phone_number": user.phone_number,
+            "email": user.email,
+            "name": user.name,
+            "profile_image": user.profile_image,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+        }
 
     def _get_google_user_info(self, google_token: str) -> Dict[str, Any]:
         """

@@ -251,7 +251,7 @@ class MessageService(BaseService):
 
     def create_message(self, msg_data: dict) -> Message | None:
         """
-        Create a new message in a journey (from twilio webhook) (only "Text" messages for now)
+        Create a new message in a journey (from twilio webhook)
         """
         conv_id = msg_data.get("ConversationSid")
         msg_id = msg_data.get("MessageSid")
