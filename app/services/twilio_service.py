@@ -2,7 +2,7 @@ from contextlib import suppress
 
 from twilio.base.exceptions import TwilioRestException
 from twilio.jwt.access_token import AccessToken
-from twilio.jwt.access_token.grants import ChatGrant, VideoGrant
+from twilio.jwt.access_token.grants import ChatGrant, VideoGrant, VoiceGrant
 from twilio.rest import Client
 
 from app.core.config import settings
@@ -40,7 +40,7 @@ class TwilioService:
             account_sid=settings.TWILIO_ACCOUNT_SID,
             signing_key_sid=settings.TWILIO_API_KEY_SID,
             secret=settings.TWILIO_API_KEY_SECRET,
-            grants=[VideoGrant(room=room_name)],
+            grants=[VideoGrant(room=room_name), VoiceGrant(incoming_allow=True)],
             ttl=settings.TWILIO_ACCESS_TOKEN_TTL_SECONDS,
             identity=user_id,
         )
