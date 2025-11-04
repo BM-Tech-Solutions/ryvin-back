@@ -80,8 +80,8 @@ class Settings(BaseSettings):
     TWILIO_SERVICE_ROLE_SID: str = ""
     TWILIO_CHANNEL_ROLE_SID: str = ""
     TWILIO_ACCESS_TOKEN_TTL_SECONDS: int = 60 * 60 * 24 * 7
-    TWILIO_CHAT_WEBHOOK_URL: str = ""
-    TWILIO_VIDEO_WEBHOOK_URL: str = ""
+    TWIML_APP_SID: str = ""
+    SERVER_BASE_URL: str = ""
 
     # Base Directory
     BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
@@ -114,6 +114,22 @@ class Settings(BaseSettings):
 
         # Return as PostgresDsn
         return connection_str
+
+    @property
+    def TWILIO_CHAT_WEBHOOK_URL(self) -> str:
+        return self.SERVER_BASE_URL + "api/v1/twilio/chat-webhook"
+
+    @property
+    def TWILIO_VIDEO_WEBHOOK_URL(self) -> str:
+        return self.SERVER_BASE_URL + "api/v1/twilio/video-webhook"
+
+    @property
+    def TWILIO_VOICE_WEBHOOK_URL(self) -> str:
+        return self.SERVER_BASE_URL + "api/v1/twilio/voice-webhook"
+
+    @property
+    def TWILIO_VOICE_REQUEST_URL(self) -> str:
+        return self.SERVER_BASE_URL + "api/v1/twilio/voice-request"
 
 
 settings = Settings()
