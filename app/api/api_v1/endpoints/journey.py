@@ -7,6 +7,7 @@ from fastapi.requests import Request
 
 from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.core.utils import Page, paginate
+from app.models.enums import JourneyStep
 from app.schemas.journey import JourneyOut
 from app.schemas.meeting import (
     MeetingFeedbackCreate,
@@ -15,7 +16,8 @@ from app.schemas.meeting import (
     MeetingRequestOut,
 )
 from app.schemas.message import MessageOut
-from app.services import JourneyService, MeetingService, MessageService
+from app.schemas.photos import PhotoOut
+from app.services import JourneyService, MeetingService, MessageService, PhotoService
 
 router = APIRouter()
 
@@ -297,3 +299,44 @@ def create_meeting_feedback(
 
     feedback = meeting_service.create_meeting_feedback(current_user.id, feedback_in)
     return feedback
+
+
+# Photos
+@router.get(
+    "/{journey_id}/photos", openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]}
+)
+def get_other_user_photos(
+    request: Request,
+    session: SessionDep,
+    current_user: VerifiedUserDep,
+    journey_id: UUID,
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=25, ge=1, le=100),
+) -> Page[PhotoOut]:
+    """
+    Get all Photos of the other user in this journey
+    """
+    journey_service = JourneyService(session)
+    journey = journey_service.get_journey_by_id(journey_id)
+    if not journey:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail=f"Journey with ID '{journey_id}' not found",
+        )
+
+    if current_user.id not in [journey.match.user1_id, journey.match.user2_id]:
+        raise HTTPException(
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            detail="User not related to this journey",
+        )
+
+    if journey.current_step < JourneyStep.STEP3_PHOTOS_UNLOCKED:
+        raise HTTPException(
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            detail=f"Journey hasn't reached step '3' yet! (current step: '{journey.current_step}')",
+        )
+
+    other_user = journey.match.get_other_user(current_user.id)
+    photo_service = PhotoService(session)
+    photos = photo_service.get_user_photos(other_user.id)
+    return paginate(photos, page=page, per_page=per_page, request=request)

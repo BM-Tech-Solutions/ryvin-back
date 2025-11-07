@@ -2,7 +2,7 @@ from contextlib import suppress
 
 from twilio.base.exceptions import TwilioRestException
 from twilio.jwt.access_token import AccessToken
-from twilio.jwt.access_token.grants import ChatGrant, VideoGrant
+from twilio.jwt.access_token.grants import ChatGrant, VideoGrant, VoiceGrant
 from twilio.rest import Client
 
 from app.core.config import settings
@@ -34,13 +34,31 @@ class TwilioService:
 
         return token.to_jwt()
 
-    def get_call_token(self, user_id: str, room_name: str):
+    def get_video_token(self, user_id: str, room_name: str):
         # Create the access token for the Video Service
         token = AccessToken(
             account_sid=settings.TWILIO_ACCOUNT_SID,
             signing_key_sid=settings.TWILIO_API_KEY_SID,
             secret=settings.TWILIO_API_KEY_SECRET,
             grants=[VideoGrant(room=room_name)],
+            ttl=settings.TWILIO_ACCESS_TOKEN_TTL_SECONDS,
+            identity=user_id,
+        )
+
+        return token.to_jwt()
+
+    def get_voice_token(self, user_id: str):
+        # Create the access token for the Voice Service
+        token = AccessToken(
+            account_sid=settings.TWILIO_ACCOUNT_SID,
+            signing_key_sid=settings.TWILIO_API_KEY_SID,
+            secret=settings.TWILIO_API_KEY_SECRET,
+            grants=[
+                VoiceGrant(
+                    incoming_allow=True,
+                    outgoing_application_sid=settings.TWIML_APP_SID,
+                ),
+            ],
             ttl=settings.TWILIO_ACCESS_TOKEN_TTL_SECONDS,
             identity=user_id,
         )
@@ -98,7 +116,25 @@ class TwilioService:
             status_callback_method="POST",
         )
 
-    def register_webhook(self, events: list[TwilioEvent] = None):
+    def register_voice_webhook(self):
+        try:
+            self.client.applications(settings.TWIML_APP_SID).update(
+                voice_url=settings.TWILIO_VOICE_REQUEST_URL,
+                voice_method="POST",
+                voice_fallback_url=settings.TWILIO_VOICE_REQUEST_URL,
+                voice_fallback_method="POST",
+                status_callback=settings.TWILIO_VOICE_WEBHOOK_URL,
+                status_callback_method="POST",
+            )
+            print("Twilio Voice Request & Webhook Registration Success:")
+        except Exception as e:
+            print("Twilio Webhook Registration Failed:")
+            print(f"Error: {e}")
+
+        print(f"request url: '{settings.TWILIO_VOICE_REQUEST_URL}'")
+        print(f"webhook url: '{settings.TWILIO_VOICE_WEBHOOK_URL}'")
+
+    def register_chat_webhook(self, events: list[TwilioEvent] = None):
         if events is None:
             events = [event.value for event in TwilioEvent]
 

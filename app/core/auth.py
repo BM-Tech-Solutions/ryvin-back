@@ -18,6 +18,8 @@ def _is_protected_path(path: str) -> bool:
         or path.endswith("/redoc")
         or path.endswith("/twilio/chat-webhook")
         or path.endswith("/twilio/video-webhook")
+        or path.endswith("/twilio/voice-webhook")
+        or path.endswith("/twilio/voice-request")
         or path == "/"
     ):
         return False

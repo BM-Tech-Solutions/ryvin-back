@@ -125,7 +125,7 @@ class JourneyService(BaseService):
 
         elif journey.current_step == JourneyStep.STEP2_VOICE_VIDEO_CALL:
             # Voice/Video Call to Photos Unlocked
-            # we will check for call duration from twillio later
+            # we will check for video and voice call duration from twillio later
             pass
 
         elif journey.current_step == JourneyStep.STEP3_PHOTOS_UNLOCKED:
