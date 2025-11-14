@@ -4,8 +4,6 @@ Service for Firebase authentication operations with simplified flow.
 """
 
 import os
-import random
-import string
 import uuid
 from datetime import timedelta
 from typing import Any, Dict, Optional
@@ -148,31 +146,7 @@ class AuthService(BaseService):
 
             # Generate new tokens
             access_token = create_access_token(subject=str(user.id))
-            refresh_token = self._generate_unique_refresh_token(str(user.id))
-
-            # Store the refresh token in the database
-            expires_at = utc_now() + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
-
-            # Check if a refresh token already exists for this user
-            existing_token = (
-                self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
-            )
-
-            if existing_token:
-                # Update existing token
-                existing_token.token = refresh_token
-                existing_token.expires_at = expires_at
-                existing_token.is_revoked = False
-            else:
-                # Create new refresh token record
-                db_refresh_token = RefreshToken(
-                    id=uuid.uuid4(),
-                    user_id=user.id,
-                    token=refresh_token,
-                    expires_at=expires_at,
-                    is_revoked=False,
-                )
-                self.db.add(db_refresh_token)
+            refresh_token = self.generate_user_refresh_token(user)
 
             self.db.commit()
 
@@ -230,16 +204,19 @@ class AuthService(BaseService):
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid or expired refresh token",
                 )
-
+            refresh_expires_at = utc_now() + timedelta(
+                minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES
+            )
             # Create new tokens
             access_token = create_access_token(subject=str(db_refresh_token.user_id))
-            new_refresh_token = self._generate_unique_refresh_token(str(db_refresh_token.user_id))
+            new_refresh_token = create_refresh_token(
+                str(db_refresh_token.user_id),
+                expires_at=refresh_expires_at,
+            )
 
             # Update the refresh token in the database
             db_refresh_token.token = new_refresh_token
-            db_refresh_token.expires_at = utc_now() + timedelta(
-                minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES
-            )
+            db_refresh_token.expires_at = refresh_expires_at
 
             self.db.commit()
 
@@ -253,7 +230,7 @@ class AuthService(BaseService):
             print(f"Error in refresh_tokens: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to refresh tokens: {str(e)}",
+                detail=f"Failed to refresh tokens: {e}",
             )
 
     def phone_auth(
@@ -315,31 +292,7 @@ class AuthService(BaseService):
 
             # Generate tokens
             access_token = create_access_token(subject=str(user.id))
-            refresh_token = self._generate_unique_refresh_token(str(user.id))
-
-            # Store the refresh token in the database
-            expires_at = utc_now() + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
-
-            # Check if a refresh token already exists for this user
-            existing_token = (
-                self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
-            )
-
-            if existing_token:
-                # Update existing token
-                existing_token.token = refresh_token
-                existing_token.expires_at = expires_at
-                existing_token.is_revoked = False
-            else:
-                # Create new refresh token record
-                db_refresh_token = RefreshToken(
-                    id=uuid.uuid4(),
-                    user_id=user.id,
-                    token=refresh_token,
-                    expires_at=expires_at,
-                    is_revoked=False,
-                )
-                self.db.add(db_refresh_token)
+            refresh_token = self.generate_user_refresh_token(user)
 
             self.db.commit()
 
@@ -420,28 +373,7 @@ class AuthService(BaseService):
 
         # Generate tokens
         access_token = create_access_token(user.id)
-        refresh_token = create_refresh_token(user.id)
-
-        # Store the refresh token in the database
-        expires_at = utc_now() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-
-        # Check if a refresh token already exists for this user
-        existing_token = self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
-
-        if existing_token:
-            # Update existing token
-            existing_token.token = refresh_token
-            existing_token.expires_at = expires_at
-            existing_token.is_revoked = False
-        else:
-            # Create new refresh token record
-            db_refresh_token = RefreshToken(
-                user_id=user.id,
-                token=refresh_token,
-                expires_at=expires_at,
-                is_revoked=False,
-            )
-            self.db.add(db_refresh_token)
+        refresh_token = self.generate_user_refresh_token(user)
 
         self.db.commit()
 
@@ -502,31 +434,10 @@ class AuthService(BaseService):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="wrong email or password",
             )
+
         # Generate tokens
         access_token = create_access_token(subject=str(user.id))
-        refresh_token = self._generate_unique_refresh_token(str(user.id))
-
-        # Store the refresh token in the database
-        expires_at = utc_now() + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
-
-        # Check if a refresh token already exists for this user
-        existing_token = self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
-
-        if existing_token:
-            # Update existing token
-            existing_token.token = refresh_token
-            existing_token.expires_at = expires_at
-            existing_token.is_revoked = False
-        else:
-            # Create new refresh token record
-            db_refresh_token = RefreshToken(
-                id=uuid.uuid4(),
-                user_id=user.id,
-                token=refresh_token,
-                expires_at=expires_at,
-                is_revoked=False,
-            )
-            self.db.add(db_refresh_token)
+        refresh_token = self.generate_user_refresh_token(user)
 
         self.db.commit()
 
@@ -587,16 +498,6 @@ class AuthService(BaseService):
                 detail=f"Failed to logout: {str(e)}",
             )
 
-    def _generate_unique_refresh_token(self, user_id: str) -> str:
-        """
-        Generate a unique refresh token with a random suffix to ensure uniqueness
-        """
-        # Generate a random suffix (8 characters)
-        suffix = "".join(random.choices(string.ascii_letters + string.digits, k=8))
-
-        # Create a refresh token with the user ID and random suffix
-        return create_refresh_token(subject=f"{user_id}:{suffix}")
-
     def generate_test_token(self, phone_region: str, phone_number: str) -> Optional[str]:
         """
         Generate a test Firebase ID token for a given phone number.
@@ -632,3 +533,28 @@ class AuthService(BaseService):
                 return None
         except Exception as e:
             print(f"Error generating test token: {e}")
+
+    def generate_user_refresh_token(self, user: User) -> str:
+        expires_at = utc_now() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        refresh_token = create_refresh_token(subject=user.id, expires_at=expires_at)
+
+        # Check if a refresh token already exists for this user
+        existing_token = self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
+
+        if existing_token:
+            # Update existing token
+            existing_token.token = refresh_token
+            existing_token.expires_at = expires_at
+            existing_token.is_revoked = False
+        else:
+            # Create new refresh token record
+            db_refresh_token = RefreshToken(
+                user_id=user.id,
+                token=refresh_token,
+                expires_at=expires_at,
+                is_revoked=False,
+            )
+            self.db.add(db_refresh_token)
+
+        self.db.commit()
+        return refresh_token
