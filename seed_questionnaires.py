@@ -399,7 +399,7 @@ def seed_questionnaires_from_db(session: Session):
             gender = "homme" if created_count % 2 == 0 else "femme"
             user_name = user.email.split("@")[0].replace(".", " ").title()
 
-            questionnaire = create_questionnaire_for_user(user.id, gender, user_name)
+            questionnaire = create_questionnaire_for_user(session, user.id, gender, user_name)
             if questionnaire:
                 created_count += 1
 
@@ -409,8 +409,6 @@ def seed_questionnaires_from_db(session: Session):
     except Exception as e:
         print(f"❌ Error loading users: {str(e)}")
         return False
-    finally:
-        session.close()
 
 
 def main():
