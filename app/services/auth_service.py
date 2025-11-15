@@ -22,6 +22,7 @@ from app.models.token import RefreshToken
 from app.models.user import User
 from app.schemas.auth import CompleteProfileRequest, UpdatePhoneRequest
 from app.services.base_service import BaseService
+from app.services.user_service import UserService
 
 
 class AuthService(BaseService):
@@ -287,6 +288,10 @@ class AuthService(BaseService):
             self.db.commit()
             self.db.refresh(user)
 
+            # make sure twilio user is created
+            user_service = UserService(self.db)
+            user_service.create_twilio_user(user)
+
             # Check if profile is complete
             is_profile_complete = user.name is not None and user.email is not None
 
@@ -367,6 +372,10 @@ class AuthService(BaseService):
 
         self.db.commit()
         self.db.refresh(user)
+
+        # make sure twilio user is created
+        user_service = UserService(self.db)
+        user_service.create_twilio_user(user)
 
         # Check if profile is complete
         is_profile_complete = user.name is not None and user.email is not None

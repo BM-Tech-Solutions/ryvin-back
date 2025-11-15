@@ -58,6 +58,7 @@ class UserService(BaseService):
         self.session.add(user)
         self.session.commit()
         self.session.refresh(user)
+        self.create_twilio_user(user)
         return user
 
     def create_twilio_user(self, user: User):
