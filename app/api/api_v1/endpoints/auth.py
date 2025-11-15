@@ -7,13 +7,11 @@ Endpoints for Firebase phone authentication and Google OAuth.
 from typing import Annotated, Any, Dict
 
 import httpx
-from fastapi import APIRouter, Body, Depends, Form, HTTPException, Security, status
+from fastapi import APIRouter, Body, Form, HTTPException, Security, status
 
 # Firebase Admin SDK
 from firebase_admin import auth as firebase_auth
-from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.main import api_key_header
 from app.models.user import User
@@ -64,7 +62,7 @@ def phone_auth(
 @router.post("/google-auth")
 async def google_auth(
     request: GoogleAuthRequest,
-    db: Session = Depends(get_db),
+    db: SessionDep,
     api_key: str = Security(api_key_header),
 ) -> dict:
     """
@@ -141,7 +139,7 @@ def update_phone_number(
 
 
 @router.post("/refresh-token", response_model=TokenResponse)
-def refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_db)) -> Any:
+def refresh_token(request: RefreshTokenRequest, db: SessionDep) -> Any:
     """
     Refresh access token
     """
@@ -150,7 +148,7 @@ def refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_db)) -
 
 
 @router.post("/logout", response_model=LogoutResponse)
-def logout(request: RefreshTokenRequest, db: Session = Depends(get_db)) -> Any:
+def logout(request: RefreshTokenRequest, db: SessionDep) -> Any:
     """
     Logout user by revoking refresh token
     """
@@ -161,7 +159,6 @@ def logout(request: RefreshTokenRequest, db: Session = Depends(get_db)) -> Any:
 @router.get("/test-token/{phone_number}")
 def get_test_token(
     phone_number: str,
-    db: Session = Depends(get_db),
     api_key: str = Security(api_key_header),
 ) -> Dict[str, str]:
     """
@@ -182,7 +179,7 @@ def get_test_token(
 
 @router.get("/test-google-token/{email}")
 async def get_test_google_token(
-    email: str, db: Session = Depends(get_db), api_key: str = Security(api_key_header)
+    email: str, api_key: str = Security(api_key_header)
 ) -> Dict[str, Any]:
     """
     Generate a test Firebase ID token for a given email.
@@ -251,7 +248,7 @@ async def exchange_custom_token_for_id_token(custom_token: str) -> str:
 
 @router.get("/test-user/{user_id}")
 def get_user_data(
-    user_id: str, db: Session = Depends(get_db), api_key: str = Security(api_key_header)
+    user_id: str, db: SessionDep, api_key: str = Security(api_key_header)
 ) -> Dict[str, Any]:
     """
     Get user data by ID for testing purposes.

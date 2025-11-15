@@ -73,7 +73,9 @@ class AuthService(BaseService):
         if request.name:
             # Check if name is already in use
             same_name_user = (
-                self.db.query(User).filter(User.name == request.name, User.id != user.id).first()
+                self.session.query(User)
+                .filter(User.name == request.name, User.id != user.id)
+                .first()
             )
 
             if same_name_user:
@@ -126,8 +128,8 @@ class AuthService(BaseService):
             for key, value in user_data.items():
                 setattr(user, key, value)
 
-            self.db.commit()
-            self.db.refresh(user)
+            self.session.commit()
+            self.session.refresh(user)
 
             if request.profile_image:
                 # save the image to filesystem
@@ -136,8 +138,8 @@ class AuthService(BaseService):
                 old_file_path = user.profile_image
                 user.profile_image = file_path
 
-                self.db.commit()
-                self.db.refresh(user)
+                self.session.commit()
+                self.session.refresh(user)
 
                 if old_file_path:
                     try:
@@ -149,7 +151,7 @@ class AuthService(BaseService):
             access_token = create_access_token(subject=str(user.id))
             refresh_token = self.generate_user_refresh_token(user)
 
-            self.db.commit()
+            self.session.commit()
 
             return {
                 "user_id": str(user.id),
@@ -191,7 +193,7 @@ class AuthService(BaseService):
         try:
             # Find the refresh token in the database
             db_refresh_token = (
-                self.db.query(RefreshToken)
+                self.session.query(RefreshToken)
                 .filter(
                     RefreshToken.token == refresh_token,
                     RefreshToken.is_revoked.is_(False),
@@ -219,7 +221,7 @@ class AuthService(BaseService):
             db_refresh_token.token = new_refresh_token
             db_refresh_token.expires_at = refresh_expires_at
 
-            self.db.commit()
+            self.session.commit()
 
             return {
                 "access_token": access_token,
@@ -257,7 +259,7 @@ class AuthService(BaseService):
 
         # Check if user exists in our database
         user = (
-            self.db.query(User)
+            self.session.query(User)
             .filter(User.phone_region == phone_region, User.phone_number == phone_number)
             .first()
         )
@@ -276,7 +278,7 @@ class AuthService(BaseService):
                     profile_image=None,
                     firebase_token=firebase_token,
                 )
-                self.db.add(user)
+                self.session.add(user)
             else:
                 if update_token:
                     user.firebase_token = firebase_token
@@ -285,11 +287,11 @@ class AuthService(BaseService):
 
             # Device info is accepted but not stored as the User model has no such columns
 
-            self.db.commit()
-            self.db.refresh(user)
+            self.session.commit()
+            self.session.refresh(user)
 
             # make sure twilio user is created
-            user_service = UserService(self.db)
+            user_service = UserService(self.session)
             user_service.create_twilio_user(user)
 
             # Check if profile is complete
@@ -299,7 +301,7 @@ class AuthService(BaseService):
             access_token = create_access_token(subject=str(user.id))
             refresh_token = self.generate_user_refresh_token(user)
 
-            self.db.commit()
+            self.session.commit()
 
             return {
                 "user_id": str(user.id),
@@ -340,7 +342,7 @@ class AuthService(BaseService):
         social_id = decoded_id_token.get("sub")
 
         user = (
-            self.db.query(User)
+            self.session.query(User)
             .filter(
                 User.social_provider == SocialProviders.GOOGLE,
                 User.social_id == social_id,
@@ -362,7 +364,7 @@ class AuthService(BaseService):
                 social_id=social_id,
                 firebase_token=firebase_token,
             )
-            self.db.add(user)
+            self.session.add(user)
         else:
             # Update existing user
             if update_token:
@@ -370,11 +372,11 @@ class AuthService(BaseService):
             user.last_login = utc_now()
             user.is_verified = True
 
-        self.db.commit()
-        self.db.refresh(user)
+        self.session.commit()
+        self.session.refresh(user)
 
         # make sure twilio user is created
-        user_service = UserService(self.db)
+        user_service = UserService(self.session)
         user_service.create_twilio_user(user)
 
         # Check if profile is complete
@@ -384,7 +386,7 @@ class AuthService(BaseService):
         access_token = create_access_token(user.id)
         refresh_token = self.generate_user_refresh_token(user)
 
-        self.db.commit()
+        self.session.commit()
 
         return {
             "user_id": str(user.id),
@@ -437,7 +439,7 @@ class AuthService(BaseService):
         return decoded_token
 
     async def admin_login(self, email: str, password: str):
-        user = self.db.query(User).filter(User.email == email, User.is_admin.is_(True)).first()
+        user = self.session.query(User).filter(User.email == email, User.is_admin.is_(True)).first()
         if not user or not verify_password(password, user.password):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -448,7 +450,7 @@ class AuthService(BaseService):
         access_token = create_access_token(subject=str(user.id))
         refresh_token = self.generate_user_refresh_token(user)
 
-        self.db.commit()
+        self.session.commit()
 
         return {
             "user_id": str(user.id),
@@ -488,7 +490,7 @@ class AuthService(BaseService):
         try:
             # Find the refresh token in the database
             db_refresh_token = (
-                self.db.query(RefreshToken).filter(RefreshToken.token == refresh_token).first()
+                self.session.query(RefreshToken).filter(RefreshToken.token == refresh_token).first()
             )
 
             if not db_refresh_token:
@@ -496,7 +498,7 @@ class AuthService(BaseService):
 
             # Revoke the token
             db_refresh_token.is_revoked = True
-            self.db.commit()
+            self.session.commit()
 
             return {"message": "Successfully logged out"}
 
@@ -548,7 +550,9 @@ class AuthService(BaseService):
         refresh_token = create_refresh_token(subject=user.id, expires_at=expires_at)
 
         # Check if a refresh token already exists for this user
-        existing_token = self.db.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
+        existing_token = (
+            self.session.query(RefreshToken).filter(RefreshToken.user_id == user.id).first()
+        )
 
         if existing_token:
             # Update existing token
@@ -563,7 +567,7 @@ class AuthService(BaseService):
                 expires_at=expires_at,
                 is_revoked=False,
             )
-            self.db.add(db_refresh_token)
+            self.session.add(db_refresh_token)
 
-        self.db.commit()
+        self.session.commit()
         return refresh_token
