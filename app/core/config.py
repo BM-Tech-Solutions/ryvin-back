@@ -93,6 +93,12 @@ class Settings(BaseSettings):
     # allowed extensions for images
     ALLOWED_EXTENSIONS: list[str] = [".jpg", ".jpeg", ".png"]
 
+    # gunicorn settings (we don't need them here but we use stric mode for pydantic)
+    GUNICORN_RELOAD: str = ""
+    GUNICORN_WORKERS: str = ""
+    GUNICORN_THREADS: str = ""
+    GUNICORN_LOGLEVEL: str = ""
+
     @field_validator("DATABASE_URI", mode="before")
     def assemble_db_connection(cls, v: Optional[str], info: ValidationInfo) -> Any:
         if isinstance(v, str):

@@ -46,4 +46,5 @@ dependencies = [
     "twilio>=9.7.0",
     "aiofiles>=24.1.0",
     "furl>=2.1.4",
+    "gunicorn>=23.0.0",
 ]
