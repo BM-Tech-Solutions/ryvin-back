@@ -125,12 +125,11 @@ class JourneyService(BaseService):
 
             journey.step1_completed_at = utc_now()
 
-        elif journey.current_step == JourneyStep.STEP2_VOICE_VIDEO_CALL:
+        elif journey.current_step == JourneyStep.STEP3_VOICE_VIDEO_CALL:
             # Voice/Video Call to Photos Unlocked
-            # TODO: validate video and voice call duration from twillio in order to advance
             journey.step2_completed_at = utc_now()
 
-        elif journey.current_step == JourneyStep.STEP3_PHOTOS_UNLOCKED:
+        elif journey.current_step == JourneyStep.STEP2_PHOTOS_UNLOCKED:
             # Photos Unlocked to Physical Meeting
             # no checks required!
             journey.step3_completed_at = utc_now()
