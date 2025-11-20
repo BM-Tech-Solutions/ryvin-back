@@ -125,14 +125,14 @@ class JourneyService(BaseService):
 
             journey.step1_completed_at = utc_now()
 
-        elif journey.current_step == JourneyStep.STEP3_VOICE_VIDEO_CALL:
-            # Voice/Video Call to Photos Unlocked
-            journey.step2_completed_at = utc_now()
-
         elif journey.current_step == JourneyStep.STEP2_PHOTOS_UNLOCKED:
             # Photos Unlocked to Physical Meeting
             # no checks required!
             journey.step3_completed_at = utc_now()
+
+        elif journey.current_step == JourneyStep.STEP3_VOICE_VIDEO_CALL:
+            # Voice/Video Call to Photos Unlocked
+            journey.step2_completed_at = utc_now()
 
         elif journey.current_step == JourneyStep.STEP4_PHYSICAL_MEETING:
             # Physical Meeting to Meeting Feedback
