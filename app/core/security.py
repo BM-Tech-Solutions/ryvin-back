@@ -13,28 +13,24 @@ def utc_now():
     return datetime.now(timezone.utc)
 
 
-def create_access_token(subject: Any, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(subject: Any, expires_at: Optional[timedelta] = None) -> str:
     """
     Create a JWT access token
     """
-    if expires_delta:
-        expire = utc_now() + expires_delta
-    else:
-        expire = utc_now() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode = {"exp": expire, "sub": str(subject), "type": "access"}
+    expires_at = expires_at or utc_now() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    to_encode = {"exp": expires_at, "sub": str(subject), "type": "access"}
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
     return encoded_jwt
 
 
-def create_refresh_token(subject: Any, expires_delta: Optional[timedelta] = None) -> str:
+def create_refresh_token(subject: Any, expires_at: Optional[timedelta] = None) -> str:
     """
     Create a JWT refresh token
     """
-    if expires_delta:
-        expire = utc_now() + expires_delta
-    else:
-        expire = utc_now() + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
-    to_encode = {"exp": expire, "sub": str(subject), "type": "refresh"}
+    expires_at = expires_at or utc_now() + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
+
+    to_encode = {"exp": expires_at, "sub": str(subject), "type": "refresh"}
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
     return encoded_jwt
 

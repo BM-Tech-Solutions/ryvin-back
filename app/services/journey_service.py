@@ -123,15 +123,16 @@ class JourneyService(BaseService):
                     detail=f"At least {settings.MIN_NBR_MESSAGES} messages must be exchanged before advancing",
                 )
 
-        elif journey.current_step == JourneyStep.STEP2_VOICE_VIDEO_CALL:
-            # Voice/Video Call to Photos Unlocked
-            # we will check for video and voice call duration from twillio later
-            pass
+            journey.step1_completed_at = utc_now()
 
-        elif journey.current_step == JourneyStep.STEP3_PHOTOS_UNLOCKED:
+        elif journey.current_step == JourneyStep.STEP2_PHOTOS_UNLOCKED:
             # Photos Unlocked to Physical Meeting
             # no checks required!
-            pass
+            journey.step3_completed_at = utc_now()
+
+        elif journey.current_step == JourneyStep.STEP3_VOICE_VIDEO_CALL:
+            # Voice/Video Call to Photos Unlocked
+            journey.step2_completed_at = utc_now()
 
         elif journey.current_step == JourneyStep.STEP4_PHYSICAL_MEETING:
             # Physical Meeting to Meeting Feedback
@@ -144,14 +145,19 @@ class JourneyService(BaseService):
                 )
                 .first()
             )
-
             if not meeting_request:
                 raise HTTPException(
                     status_code=http_status.HTTP_400_BAD_REQUEST,
                     detail="An accepted meeting request is required before advancing",
                 )
 
-        elif journey.current_step >= JourneyStep.STEP5_MEETING_FEEDBACK:
+            journey.step4_completed_at = utc_now()
+
+        elif journey.current_step == JourneyStep.STEP5_MEETING_FEEDBACK:
+            # TODO: validate that users have given feedback on the meeting
+            journey.step5_completed_at = utc_now()
+
+        elif journey.current_step > JourneyStep.STEP5_MEETING_FEEDBACK:
             raise HTTPException(
                 status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail="Journey is already at the final step",

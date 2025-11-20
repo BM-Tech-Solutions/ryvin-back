@@ -1,9 +1,8 @@
 services:
   web:
     build: .
-    # Use the entrypoint script with web service
     entrypoint: [ "/entrypoint.sh" ]
-    command: [ "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000" ]
+    command: [ "gunicorn" ]
     env_file:
       - .env
     volumes:
@@ -21,7 +20,6 @@ services:
 
   migrations:
     build: .
-    # Use the entrypoint script with migrations parameter
     entrypoint: [ "/entrypoint.sh" ]
     command: [ "migrations" ]
     env_file:

@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import HTTPException
 from fastapi import status as http_status
 from sqlalchemy import and_, or_
-from sqlalchemy.orm import Query, Session
+from sqlalchemy.orm import Query
 
 from app.models.match import Match, MatchStatus
 
@@ -16,12 +16,6 @@ class MatchService(BaseService):
     """
     Service for match-related operations
     """
-
-    def __init__(self, db: Session):
-        # Initialize BaseService (sets self.db)
-        super().__init__(db)
-        # Backward-compatibility: methods reference self.session
-        self.session = db
 
     def get_match_by_id(self, match_id: UUID) -> Optional[Match]:
         """

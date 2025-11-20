@@ -11,11 +11,25 @@ from app.core.security import utc_now
 
 from .config import settings
 
-# Create a synchronous engine
-engine = create_engine(str(settings.DATABASE_URI), echo=False, future=True)
+engine = create_engine(
+    str(settings.DATABASE_URI),
+    pool_size=10,
+    max_overflow=5,
+    pool_recycle=3600,
+    echo=False,
+    future=True,
+)
 
 # Create a configured session class
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+
+
+def get_session() -> Generator[Session, None, None]:
+    with SessionLocal() as session:
+        yield session
+
+
+SessionDep = Annotated[Session, Depends(get_session)]
 
 
 # Base class for all models
@@ -33,26 +47,3 @@ class Base(DeclarativeBase):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, onupdate=utc_now
     )
-
-
-def get_session() -> Generator[Session, None, None]:
-    session = SessionLocal()
-    try:
-        yield session
-    finally:
-        session.close()
-
-
-def get_db() -> Generator[Session, None, None]:
-    """
-    Backward-compatible alias for obtaining a database session.
-    Mirrors get_session() so modules can depend on get_db.
-    """
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-SessionDep = Annotated[Session, Depends(get_session)]

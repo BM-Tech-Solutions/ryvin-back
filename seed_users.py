@@ -8,22 +8,22 @@ import random
 import sys
 from datetime import timedelta
 
+from sqlalchemy.orm import Session
+
+from app.core.database import SessionLocal
 from app.core.security import utc_now
 
 # Add the app directory to the path
 sys.path.append(os.path.join(os.path.dirname(__file__), "app"))
 
-from app.core.database import get_session
 from app.models.enums import SubscriptionType
 from app.models.user import User
 
 
-def create_test_users():
+def create_test_users(session: Session):
     """Create 60 test users with realistic French names and data"""
 
     print("🚀 Starting user seeding process...")
-
-    session = next(get_session())
 
     # ignore formatting for these lists
     # fmt: off
@@ -146,16 +146,12 @@ def create_test_users():
         print(f"❌ Error creating users: {str(e)}")
         session.rollback()
         return []
-    finally:
-        session.close()
 
 
-def list_existing_users():
+def list_existing_users(session: Session):
     """List existing users in the database"""
 
     print("📋 Checking existing users...")
-
-    session = next(get_session())
 
     try:
         users = session.query(User).filter(User.is_active.is_(True)).all()
@@ -173,8 +169,6 @@ def list_existing_users():
     except Exception as e:
         print(f"❌ Error listing users: {str(e)}")
         return []
-    finally:
-        session.close()
 
 
 def main():
@@ -183,19 +177,20 @@ def main():
     print("🌱 RYVIN DATING APP - USER SEEDING SCRIPT")
     print("=" * 50)
 
-    # Check existing users
-    existing_users = list_existing_users()
+    with SessionLocal() as session:
+        # Check existing users
+        existing_users = list_existing_users(session)
 
-    if existing_users:
-        response = input(
-            f"\n⚠️  Found {len(existing_users)} existing users. Continue anyway? (y/N): "
-        )
-        if response.lower() != "y":
-            print("❌ Seeding cancelled")
-            return
+        if existing_users:
+            response = input(
+                f"\n⚠️  Found {len(existing_users)} existing users. Continue anyway? (y/N): "
+            )
+            if response.lower() != "y":
+                print("❌ Seeding cancelled")
+                return
 
-    # Create new users
-    created_users = create_test_users()
+        # Create new users
+        created_users = create_test_users(session)
 
     if created_users:
         print("\n🎯 Next Steps:")

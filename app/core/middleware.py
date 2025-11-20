@@ -11,19 +11,16 @@ class APITokenMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request: Request, call_next):
-        # Skip API token validation for non-protected paths
-        if not self._is_protected_path(request.url.path):
-            return await call_next(request)
+        if self._is_protected_path(request.url.path):
+            # Get API token from headers (support both API-Token and X-API-Key)
+            api_token = request.headers.get("API-Token") or request.headers.get("X-API-Key")
 
-        # Get API token from headers (support both API-Token and X-API-Key)
-        api_token = request.headers.get("API-Token") or request.headers.get("X-API-Key")
-
-        # Validate API token
-        if not api_token or api_token != settings.API_TOKEN:
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={"detail": "Invalid or missing API token"},
-            )
+            # Validate API token
+            if not api_token or api_token != settings.API_TOKEN:
+                return JSONResponse(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    content={"detail": "Invalid or missing API token"},
+                )
 
         # Continue processing the request
         return await call_next(request)

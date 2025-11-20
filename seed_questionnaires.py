@@ -8,10 +8,13 @@ import os
 import random
 import sys
 
+from sqlalchemy.orm import Session
+
+from app.core.database import SessionLocal
+
 # Add the app directory to the path
 sys.path.append(os.path.join(os.path.dirname(__file__), "app"))
 
-from app.core.database import get_session
 from app.core.security import utc_now
 from app.models.questionnaire import Questionnaire
 from app.models.user import User
@@ -226,132 +229,122 @@ def get_realistic_questionnaire_data(gender: str, user_name: str):
     return data
 
 
-def create_questionnaire_for_user(user_id: int, gender: str, user_name: str):
+def create_questionnaire_for_user(session: Session, user_id: int, gender: str, user_name: str):
     """Create a realistic questionnaire for a specific user"""
 
-    session = next(get_session())
+    # Check if questionnaire already exists
+    existing = session.query(Questionnaire).filter(Questionnaire.user_id == user_id).first()
 
-    try:
-        # Check if questionnaire already exists
-        existing = session.query(Questionnaire).filter(Questionnaire.user_id == user_id).first()
+    if existing:
+        print(f"  ⚠️  Questionnaire already exists for {user_name}")
+        return existing
 
-        if existing:
-            print(f"  ⚠️  Questionnaire already exists for {user_name}")
-            return existing
+    # Generate realistic data
+    data = get_realistic_questionnaire_data(gender, user_name)
 
-        # Generate realistic data
-        data = get_realistic_questionnaire_data(gender, user_name)
+    # Create questionnaire
+    questionnaire = Questionnaire(
+        user_id=user_id,
+        first_name=data["first_name"],
+        age=data["age"],
+        gender=data["gender"],
+        city_of_residence=data["city_of_residence"],
+        nationality_cultural_origin=data["nationality_cultural_origin"],
+        languages_spoken=data["languages_spoken"],
+        relationship_goal=data["relationship_goal"],
+        professional_situation=data["professional_situation"],
+        education_level=data["education_level"],
+        previously_married=data["previously_married"],
+        # Religious & Spiritual
+        religion_spirituality=data["religion_spirituality"],
+        religious_practice=data["religious_practice"],
+        partner_must_share_religion=data["partner_must_share_religion"],
+        accept_non_believer=data["accept_non_believer"],
+        faith_transmission_to_children=data["faith_transmission_to_children"],
+        partner_same_religious_education_vision=data["partner_same_religious_education_vision"],
+        # Political
+        political_orientation=data["political_orientation"],
+        partner_share_convictions_importance=data["partner_share_convictions_importance"],
+        # Lifestyle
+        sport_frequency=data["sport_frequency"],
+        specific_dietary_habits=data["specific_dietary_habits"],
+        hygiene_tidiness_approach=data["hygiene_tidiness_approach"],
+        smoker=data["smoker"],
+        drinks_alcohol=data["drinks_alcohol"],
+        # Partner Lifestyle
+        partner_sport_frequency=data["partner_sport_frequency"],
+        partner_same_dietary_habits=data["partner_same_dietary_habits"],
+        partner_cleanliness_importance=data["partner_cleanliness_importance"],
+        accept_smoker_partner=data["accept_smoker_partner"],
+        accept_alcohol_consumer_partner=data["accept_alcohol_consumer_partner"],
+        # Pets
+        has_pet=data["has_pet"],
+        ready_to_live_with_pet=data["ready_to_live_with_pet"],
+        # Personality
+        personality_type=data["personality_type"],
+        partner_personality_preference=data["partner_personality_preference"],
+        primary_love_language=data["primary_love_language"],
+        partner_same_love_language=data["partner_same_love_language"],
+        friends_visit_frequency=data["friends_visit_frequency"],
+        tolerance_social_vs_homebody=data["tolerance_social_vs_homebody"],
+        conflict_management=data["conflict_management"],
+        # Physical & Attraction
+        physical_description=data["physical_description"],
+        clothing_style=data["clothing_style"],
+        appearance_importance=data["appearance_importance"],
+        partner_hygiene_appearance_importance=data["partner_hygiene_appearance_importance"],
+        # Sexuality & Intimacy
+        importance_of_sexuality=data["importance_of_sexuality"],
+        ideal_intimate_frequency=data["ideal_intimate_frequency"],
+        comfort_level_talking_sexuality=data["comfort_level_talking_sexuality"],
+        partner_sexual_values_alignment=data["partner_sexual_values_alignment"],
+        comfortable_public_affection=data["comfortable_public_affection"],
+        ideal_sexuality_vision=data["ideal_sexuality_vision"],
+        # Compatibility
+        partner_similarity_preference=data["partner_similarity_preference"],
+        partner_age_range=data["partner_age_range"],
+        # Socio-economic
+        importance_financial_situation_partner=data["importance_financial_situation_partner"],
+        ideal_partner_education_profession=data["ideal_partner_education_profession"],
+        money_approach_in_couple=data["money_approach_in_couple"],
+        # Children & Family
+        has_children=data["has_children"],
+        wants_children=data["wants_children"],
+        partner_must_want_children=data["partner_must_want_children"],
+        educational_approach=data["educational_approach"],
+        accept_partner_with_children=data["accept_partner_with_children"],
+        share_same_educational_values=data["share_same_educational_values"],
+        # Descriptions
+        lessons_from_past_relationships=data["lessons_from_past_relationships"],
+        greatest_quality_in_relationship=data["greatest_quality_in_relationship"],
+        what_attracts_you=data["what_attracts_you"],
+        intolerable_flaw=data["intolerable_flaw"],
+        ideal_partner_description=data["ideal_partner_description"],
+        ideal_couple_life_description=data["ideal_couple_life_description"],
+        imagine_yourself_in10_years=data["imagine_yourself_in10_years"],
+        reason_for_registration=data["reason_for_registration"],
+        completed_at=utc_now(),
+    )
 
-        # Create questionnaire
-        questionnaire = Questionnaire(
-            user_id=user_id,
-            first_name=data["first_name"],
-            age=data["age"],
-            gender=data["gender"],
-            city_of_residence=data["city_of_residence"],
-            nationality_cultural_origin=data["nationality_cultural_origin"],
-            languages_spoken=data["languages_spoken"],
-            relationship_goal=data["relationship_goal"],
-            professional_situation=data["professional_situation"],
-            education_level=data["education_level"],
-            previously_married=data["previously_married"],
-            # Religious & Spiritual
-            religion_spirituality=data["religion_spirituality"],
-            religious_practice=data["religious_practice"],
-            partner_must_share_religion=data["partner_must_share_religion"],
-            accept_non_believer=data["accept_non_believer"],
-            faith_transmission_to_children=data["faith_transmission_to_children"],
-            partner_same_religious_education_vision=data["partner_same_religious_education_vision"],
-            # Political
-            political_orientation=data["political_orientation"],
-            partner_share_convictions_importance=data["partner_share_convictions_importance"],
-            # Lifestyle
-            sport_frequency=data["sport_frequency"],
-            specific_dietary_habits=data["specific_dietary_habits"],
-            hygiene_tidiness_approach=data["hygiene_tidiness_approach"],
-            smoker=data["smoker"],
-            drinks_alcohol=data["drinks_alcohol"],
-            # Partner Lifestyle
-            partner_sport_frequency=data["partner_sport_frequency"],
-            partner_same_dietary_habits=data["partner_same_dietary_habits"],
-            partner_cleanliness_importance=data["partner_cleanliness_importance"],
-            accept_smoker_partner=data["accept_smoker_partner"],
-            accept_alcohol_consumer_partner=data["accept_alcohol_consumer_partner"],
-            # Pets
-            has_pet=data["has_pet"],
-            ready_to_live_with_pet=data["ready_to_live_with_pet"],
-            # Personality
-            personality_type=data["personality_type"],
-            partner_personality_preference=data["partner_personality_preference"],
-            primary_love_language=data["primary_love_language"],
-            partner_same_love_language=data["partner_same_love_language"],
-            friends_visit_frequency=data["friends_visit_frequency"],
-            tolerance_social_vs_homebody=data["tolerance_social_vs_homebody"],
-            conflict_management=data["conflict_management"],
-            # Physical & Attraction
-            physical_description=data["physical_description"],
-            clothing_style=data["clothing_style"],
-            appearance_importance=data["appearance_importance"],
-            partner_hygiene_appearance_importance=data["partner_hygiene_appearance_importance"],
-            # Sexuality & Intimacy
-            importance_of_sexuality=data["importance_of_sexuality"],
-            ideal_intimate_frequency=data["ideal_intimate_frequency"],
-            comfort_level_talking_sexuality=data["comfort_level_talking_sexuality"],
-            partner_sexual_values_alignment=data["partner_sexual_values_alignment"],
-            comfortable_public_affection=data["comfortable_public_affection"],
-            ideal_sexuality_vision=data["ideal_sexuality_vision"],
-            # Compatibility
-            partner_similarity_preference=data["partner_similarity_preference"],
-            partner_age_range=data["partner_age_range"],
-            # Socio-economic
-            importance_financial_situation_partner=data["importance_financial_situation_partner"],
-            ideal_partner_education_profession=data["ideal_partner_education_profession"],
-            money_approach_in_couple=data["money_approach_in_couple"],
-            # Children & Family
-            has_children=data["has_children"],
-            wants_children=data["wants_children"],
-            partner_must_want_children=data["partner_must_want_children"],
-            educational_approach=data["educational_approach"],
-            accept_partner_with_children=data["accept_partner_with_children"],
-            share_same_educational_values=data["share_same_educational_values"],
-            # Descriptions
-            lessons_from_past_relationships=data["lessons_from_past_relationships"],
-            greatest_quality_in_relationship=data["greatest_quality_in_relationship"],
-            what_attracts_you=data["what_attracts_you"],
-            intolerable_flaw=data["intolerable_flaw"],
-            ideal_partner_description=data["ideal_partner_description"],
-            ideal_couple_life_description=data["ideal_couple_life_description"],
-            imagine_yourself_in10_years=data["imagine_yourself_in10_years"],
-            reason_for_registration=data["reason_for_registration"],
-            completed_at=utc_now(),
-        )
+    session.add(questionnaire)
+    session.commit()
 
-        session.add(questionnaire)
+    # Update user completion status
+    user = session.query(User).filter(User.id == user_id).first()
+    if user:
+        user.has_completed_questionnaire = True
         session.commit()
 
-        # Update user completion status
-        user = session.query(User).filter(User.id == user_id).first()
-        if user:
-            user.has_completed_questionnaire = True
-            session.commit()
+    print(f"  ✅ Created questionnaire for {user_name}")
+    print(f"     Age: {data['age']}, Goal: {data['relationship_goal']}")
+    print(
+        f"     Location: {data['city_of_residence']}, Profession: {data['professional_situation']}"
+    )
 
-        print(f"  ✅ Created questionnaire for {user_name}")
-        print(f"     Age: {data['age']}, Goal: {data['relationship_goal']}")
-        print(
-            f"     Location: {data['city_of_residence']}, Profession: {data['professional_situation']}"
-        )
-
-        return questionnaire
-
-    except Exception as e:
-        print(f"  ❌ Error creating questionnaire for {user_name}: {str(e)}")
-        session.rollback()
-        return None
-    finally:
-        session.close()
+    return questionnaire
 
 
-def seed_questionnaires_from_file():
+def seed_questionnaires_from_file(session: Session):
     """Seed questionnaires for users from created_users.json"""
 
     print("📋 Loading users from created_users.json...")
@@ -375,7 +368,7 @@ def seed_questionnaires_from_file():
         user_name = user_data["name"]
         gender = user_data["gender"]
 
-        questionnaire = create_questionnaire_for_user(user_id, gender, user_name)
+        questionnaire = create_questionnaire_for_user(session, user_id, gender, user_name)
         if questionnaire:
             created_count += 1
 
@@ -383,12 +376,10 @@ def seed_questionnaires_from_file():
     return True
 
 
-def seed_questionnaires_from_db():
+def seed_questionnaires_from_db(session: Session):
     """Seed questionnaires for all active users in database"""
 
     print("📋 Loading users from database...")
-
-    session = next(get_session())
 
     try:
         users = (
@@ -408,7 +399,7 @@ def seed_questionnaires_from_db():
             gender = "homme" if created_count % 2 == 0 else "femme"
             user_name = user.email.split("@")[0].replace(".", " ").title()
 
-            questionnaire = create_questionnaire_for_user(user.id, gender, user_name)
+            questionnaire = create_questionnaire_for_user(session, user.id, gender, user_name)
             if questionnaire:
                 created_count += 1
 
@@ -418,8 +409,6 @@ def seed_questionnaires_from_db():
     except Exception as e:
         print(f"❌ Error loading users: {str(e)}")
         return False
-    finally:
-        session.close()
 
 
 def main():
@@ -428,12 +417,13 @@ def main():
     print("📝 RYVIN DATING APP - QUESTIONNAIRE SEEDING SCRIPT")
     print("=" * 55)
 
-    # Try to load from file first, then from database
-    success = seed_questionnaires_from_file()
+    with SessionLocal() as session:
+        # Try to load from file first, then from database
+        success = seed_questionnaires_from_file(session)
 
-    if not success:
-        print("\n🔄 Trying to load users from database...")
-        success = seed_questionnaires_from_db()
+        if not success:
+            print("\n🔄 Trying to load users from database...")
+            success = seed_questionnaires_from_db(session)
 
     if success:
         print("\n🎯 Next Steps:")

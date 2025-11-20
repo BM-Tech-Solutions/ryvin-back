@@ -330,7 +330,7 @@ def get_other_user_photos(
             detail="User not related to this journey",
         )
 
-    if journey.current_step < JourneyStep.STEP3_PHOTOS_UNLOCKED:
+    if journey.current_step < JourneyStep.STEP2_PHOTOS_UNLOCKED:
         raise HTTPException(
             status_code=http_status.HTTP_401_UNAUTHORIZED,
             detail=f"Journey hasn't reached step '3' yet! (current step: '{journey.current_step}')",
