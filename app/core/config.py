@@ -79,7 +79,7 @@ class Settings(BaseSettings):
     TWILIO_SERVICE_SID: str = ""
     TWILIO_SERVICE_ROLE_SID: str = ""
     TWILIO_CHANNEL_ROLE_SID: str = ""
-    TWILIO_ACCESS_TOKEN_TTL_SECONDS: int = 60 * 60 * 24 * 7
+    TWILIO_ACCESS_TOKEN_TTL_SECONDS: int = 60 * 60 * 24
     TWIML_APP_SID: str = ""
     SERVER_BASE_URL: str = ""
 
