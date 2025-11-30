@@ -4,14 +4,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile
 from fastapi import status as http_status
-from firebase_admin import messaging
 from pydantic import BaseModel
 from twilio.request_validator import RequestValidator
 from twilio.twiml.voice_response import VoiceResponse
 
 from app.core.config import settings
 from app.core.database import SessionLocal
-from app.core.dependencies import FlexUserDep, SessionDep
+from app.core.dependencies import SessionDep, VerifiedUserDep
 from app.models.enums import TwilioEvent
 from app.services.journey_service import JourneyService, MessageService
 from app.services.match_service import MatchService
@@ -86,7 +85,7 @@ VoiceRequestBodyDep = Annotated[
 
 # chat
 @router.get("/chat-token", openapi_extra={"security": []})
-async def get_twilio_chat_token(current_user: FlexUserDep) -> TwilioChatTokenOut:
+async def get_twilio_chat_token(current_user: VerifiedUserDep) -> TwilioChatTokenOut:
     # Create the access token
     twilio_service = TwilioService()
     token = twilio_service.get_chat_token(user_id=str(current_user.id))
@@ -105,7 +104,7 @@ def twilio_chat_webhook(session: SessionDep, body: ChatWebhookBodyDep):
             msg = msg_service.create_message(body)
             if msg:
                 try:
-                    msg.send_notif_to_reciever(title="new msg added")
+                    msg.send_notif_to_receiver(title="new msg added")
                 except Exception as e:
                     print(f"error sending new msg notif: {type(e)}")
                     print(f"{e}")
@@ -125,7 +124,7 @@ def twilio_chat_webhook(session: SessionDep, body: ChatWebhookBodyDep):
 # video
 @router.get("/video-token/{journey_id}", openapi_extra={"security": []})
 async def get_twilio_video_token(
-    session: SessionDep, current_user: FlexUserDep, journey_id: UUID
+    session: SessionDep, current_user: VerifiedUserDep, journey_id: UUID
 ) -> TwilioVideoTokenOut:
     # video_room.unique_name == journey_id == conversation.unique_name
     room_name = str(journey_id)
@@ -158,7 +157,9 @@ async def twilio_video_webhook(body: VideoWebhookBodyDep):
 
 
 @router.get("/start-video/{journey_id}", openapi_extra={"security": []})
-def start_video(session: SessionDep, current_user: FlexUserDep, journey_id: UUID) -> StartVideoOut:
+def start_video(
+    session: SessionDep, current_user: VerifiedUserDep, journey_id: UUID
+) -> StartVideoOut:
     """
     Starts a new Twilio Video room with journey_id as a name
     """
@@ -186,15 +187,7 @@ def start_video(session: SessionDep, current_user: FlexUserDep, journey_id: UUID
         other_user = journey.match.get_other_user(current_user.id)
         other_user_token = twilio_service.get_video_token(str(other_user.id), room_name)
         current_user_token = twilio_service.get_video_token(str(current_user.id), room_name)
-
-        if other_user.firebase_token:
-            msg = messaging.Message(
-                token=other_user.firebase_token,
-                notification=messaging.Notification(title="New Call"),
-                data={"room_name": room_name, "video_token": other_user_token},
-            )
-        messaging.send(msg)
-
+        other_user.send_new_video_call_notif(room_name=room_name, video_token=other_user_token)
         return {"room_name": room_name, "video_token": current_user_token}
 
     except Exception as e:
@@ -204,7 +197,7 @@ def start_video(session: SessionDep, current_user: FlexUserDep, journey_id: UUID
 
 # voice
 @router.get("/voice-token", openapi_extra={"security": []})
-async def get_twilio_voice_token(current_user: FlexUserDep) -> TwilioVoiceTokenOut:
+async def get_twilio_voice_token(current_user: VerifiedUserDep) -> TwilioVoiceTokenOut:
     twilio_service = TwilioService()
     token = twilio_service.get_voice_token(user_id=str(current_user.id))
 

@@ -57,12 +57,12 @@ class Message(Base):
         conv = TwilioService().chat_service.conversations(self.journey_id)
         return conv.messages(self.twilio_msg_id).fetch()
 
-    def send_notif_to_reciever(self, title: str):
-        reciever = self.journey.match.get_other_user(self.sender_id)
-        if reciever.firebase_token:
+    def send_notif_to_receiver(self, title: str):
+        receiver = self.journey.match.get_other_user(self.sender_id)
+        if receiver.firebase_token and receiver.is_active and not receiver.is_deleted:
             twilio_msg = self.get_twilio_msg()
             message = messaging.Message(
-                token=reciever.firebase_token,
+                token=receiver.firebase_token,
                 notification=messaging.Notification(title=title, body=self.content),
                 data={
                     "account_sid": str(twilio_msg.account_sid),
