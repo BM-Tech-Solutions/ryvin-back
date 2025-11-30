@@ -35,11 +35,10 @@ class Notification(Base):
         return f"notif: '{self.title}' to '{self.user}'"
 
     def send_to_user(self, data: dict = None):
-        if self.user.firebase_token:
+        if self.user.firebase_token and self.user.is_active and not self.user.is_deleted:
             message = messaging.Message(
                 token=self.user.firebase_token,
                 notification=messaging.Notification(title=self.title, body=self.body),
                 data=data or {},
             )
-
             messaging.send(message)
