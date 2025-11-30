@@ -265,28 +265,31 @@ class AuthService(BaseService):
         )
         is_new_user = user is None
 
-        try:
-            if is_new_user:
-                # Create new user with null profile fields
-                user = User(
-                    phone_region=phone_region,
-                    phone_number=phone_number,
-                    is_verified=True,
-                    last_login=utc_now(),
-                    name=None,
-                    email=None,
-                    profile_image=None,
-                    firebase_token=firebase_token,
+        if is_new_user:
+            # Create new user with null profile fields
+            user = User(
+                phone_region=phone_region,
+                phone_number=phone_number,
+                is_verified=True,
+                last_login=utc_now(),
+                name=None,
+                email=None,
+                profile_image=None,
+                firebase_token=firebase_token,
+            )
+            self.session.add(user)
+        else:
+            if user.is_deleted or not user.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"User: '{user}' is Deleted/Inactive",
                 )
-                self.session.add(user)
-            else:
-                if update_token:
-                    user.firebase_token = firebase_token
-                # Update last login timestamp
-                user.last_login = utc_now()
+            if update_token:
+                user.firebase_token = firebase_token
+            # Update last login timestamp
+            user.last_login = utc_now()
 
-            # Device info is accepted but not stored as the User model has no such columns
-
+        try:
             self.session.commit()
             self.session.refresh(user)
 
@@ -366,6 +369,11 @@ class AuthService(BaseService):
             )
             self.session.add(user)
         else:
+            if user.is_deleted or not user.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"User: '{user}' is Deleted/Inactive",
+                )
             # Update existing user
             if update_token:
                 user.firebase_token = firebase_token
