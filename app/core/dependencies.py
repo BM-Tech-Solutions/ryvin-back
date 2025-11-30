@@ -103,7 +103,7 @@ async def get_current_user_flexible(
             raise credentials_exception
 
         user = session.get(User, token_data.sub)
-        if not user:
+        if not user or user.is_deleted:
             raise credentials_exception
         return user
 
