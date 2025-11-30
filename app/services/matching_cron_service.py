@@ -164,6 +164,7 @@ class MatchingCronService:
             .join(Questionnaire, User.id == Questionnaire.user_id)
             .filter(
                 User.is_active.is_(True),
+                User.is_deleted.is_(False),
                 User.is_verified.is_(True),
                 User.is_banned.is_(False),
                 User.has_completed_questionnaire.is_(True),
@@ -193,6 +194,9 @@ class MatchingCronService:
             True if eligible, False otherwise
         """
         if not (user.is_active and user.is_verified and not user.is_banned):
+            return False
+
+        if user.is_deleted:
             return False
 
         if not user.has_completed_questionnaire:
@@ -394,7 +398,7 @@ class MatchingCronService:
             self.session.query(Match)
             .filter(
                 or_(Match.user1_id == user_id, Match.user2_id == user_id),
-                Match.status != "declined",
+                Match.status != MatchStatus.DECLINED,
             )
             .count()
         )

@@ -24,7 +24,12 @@ class AdminService(BaseService):
     """
 
     def get_users(
-        self, search: str = None, is_active: bool = None, is_verified: bool = None
+        self,
+        search: str = None,
+        is_active: bool = None,
+        is_deleted: bool = None,
+        is_verified: bool = None,
+        requested_deletion: bool = None,
     ) -> Query[User]:
         """
         Get all users with optional search
@@ -34,8 +39,16 @@ class AdminService(BaseService):
         if is_active is not None:
             query = query.filter(User.is_active == is_active)
 
+        if is_deleted is not None:
+            query = query.filter(User.is_deleted == is_deleted)
+
         if is_verified is not None:
             query = query.filter(User.is_verified == is_verified)
+
+        if requested_deletion is True:
+            query = query.filter(User.deletion_requested_at.is_not(None))
+        if requested_deletion is False:
+            query = query.filter(User.deletion_requested_at.is_(None))
 
         if search:
             search_term = f"%{search}%"
