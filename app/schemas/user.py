@@ -76,6 +76,10 @@ class UserInDBBase(UserBase):
     id: UUID
     is_verified: bool
     is_active: bool
+    deactivated_at: Optional[datetime] = None
+    is_deleted: bool
+    deleted_at: Optional[datetime] = None
+    deletion_requested_at: Optional[datetime] = None
     has_completed_questionnaire: bool
     is_admin: bool
     created_at: datetime
@@ -118,6 +122,10 @@ class TestUserCreate(BaseModel):
     is_verified: bool = True
     has_completed_questionnaire: bool = False
     is_active: bool = True
+    deactivated_at: Optional[datetime] = None
+    is_deleted: bool = False
+    deleted_at: Optional[datetime] = None
+    deletion_requested_at: Optional[datetime] = None
     is_admin: bool = True
     last_login: datetime = Field(default_factory=utc_now)
     subscription_type: SubscriptionType
