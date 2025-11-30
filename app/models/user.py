@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
+from firebase_admin import messaging
 from sqlalchemy import CheckConstraint, DateTime, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -41,23 +42,32 @@ class User(Base):
     name: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
     profile_image: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
     has_completed_questionnaire: Mapped[bool] = mapped_column(default=False)
+
+    # subscription
     subscription_type: Mapped[str] = mapped_column(default=SubscriptionType.FREE)
     subscription_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    last_login: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+
+    # account management
     is_active: Mapped[bool] = mapped_column(default=True)
+    deactivated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    is_deleted: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    deletion_requested_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     is_admin: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
     is_verified: Mapped[bool] = mapped_column(default=False)
     verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     is_banned: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
     ban_reason: Mapped[Optional[str]]
     banned_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    last_login: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+
     # OAuth
     social_provider: Mapped[Optional[str]]
     social_id: Mapped[Optional[str]]
     social_image: Mapped[Optional[str]]
 
     # firebase token
-    firebase_token: Mapped[str | None]
+    firebase_token: Mapped[Optional[str]]
 
     # Relationships
     questionnaire: Mapped[Optional["Questionnaire"]] = relationship(
@@ -89,3 +99,12 @@ class User(Base):
 
     def __repr__(self) -> str:
         return f"<User {self.id}: {self.phone_region} {self.phone_number}>"
+
+    def send_new_video_call_notif(self, room_name: str, video_token: str):
+        if self.firebase_token and self.is_active and not self.is_deleted:
+            msg = messaging.Message(
+                token=self.firebase_token,
+                notification=messaging.Notification(title="New Call"),
+                data={"room_name": room_name, "video_token": video_token},
+            )
+        messaging.send(msg)
