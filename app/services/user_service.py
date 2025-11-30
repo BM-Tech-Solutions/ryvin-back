@@ -2,9 +2,11 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.security import utc_now
+from app.models.token import RefreshToken
 from app.models.user import User
 from app.schemas.user import UserUpdate
 
@@ -26,6 +28,12 @@ class UserService(BaseService):
         Get user by ID
         """
         return self.session.get(User, user_id)
+
+    def get_user_or_404(self, user_id: UUID) -> User:
+        user = self.session.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User Not Found")
+        return user
 
     def get_user_by_phone(self, phone_region: str, phone_number: str) -> Optional[User]:
         """
@@ -114,8 +122,10 @@ class UserService(BaseService):
         Deactivate a user
         """
         user.is_active = False
+        user.deactivated_at = utc_now()
         self.session.commit()
         self.session.refresh(user)
+        self.revoke_all_tokens(user_id=user.id)
         return user
 
     def reactivate_user(self, user: User) -> User:
@@ -123,6 +133,53 @@ class UserService(BaseService):
         Reactivate a user
         """
         user.is_active = True
+        user.deactivated_at = None
+        self.session.commit()
+        self.session.refresh(user)
+        return user
+
+    def delete_user(self, user: User) -> User:
+        """
+        Soft Delete a User
+        """
+        user.is_deleted = True
+        user.deleted_at = utc_now()
+        user.is_active = False
+        user.deactivated_at = utc_now()
+
+        self.session.commit()
+        self.session.refresh(user)
+        self.revoke_all_tokens(user_id=user.id)
+
+        # TODO: delete User related resources
+
+        return user
+
+    def restore_user(self, user: User) -> User:
+        """
+        Soft Delete a User
+        """
+        user.is_deleted = False
+        user.deleted_at = None
+        user.deletion_requested_at = None
+        user.is_active = True
+        user.deactivated_at = None
+
+        self.session.commit()
+        self.session.refresh(user)
+
+        # TODO: restore User related resources
+
+        return user
+
+    def request_deletion(self, user: User) -> User:
+        user.deletion_requested_at = utc_now()
+        self.session.commit()
+        self.session.refresh(user)
+        return user
+
+    def cancel_request_deletion(self, user: User) -> User:
+        user.deletion_requested_at = None
         self.session.commit()
         self.session.refresh(user)
         return user
@@ -162,3 +219,9 @@ class UserService(BaseService):
         self.session.commit()
         self.session.refresh(user)
         return user
+
+    def revoke_all_tokens(self, user_id: UUID) -> None:
+        tokens = self.session.query(RefreshToken).filter(RefreshToken.user_id == user_id).all()
+        for token in tokens:
+            token.is_revoked = True
+        self.session.commit()

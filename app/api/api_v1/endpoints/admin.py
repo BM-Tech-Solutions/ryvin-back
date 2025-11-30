@@ -7,7 +7,7 @@ from fastapi import status as http_status
 from fastapi.requests import Request
 from pydantic import BaseModel, EmailStr
 
-from app.core.dependencies import AdminViaTokenDep, SessionDep
+from app.core.dependencies import AdminUserDep, SessionDep
 from app.core.security import get_password_hash, utc_now
 from app.core.utils import Page, paginate
 from app.main import api_key_header
@@ -19,6 +19,7 @@ from app.schemas.user import UserOut
 from app.services.admin_service import AdminService
 from app.services.match_service import MatchService
 from app.services.matching_cron_service import MatchingCronService
+from app.services.user_service import UserService
 from seed_questionnaires import (
     seed_questionnaires_from_db,
     seed_questionnaires_from_file,
@@ -97,7 +98,7 @@ class SeedUsersResponse(BaseModel):
 @router.post("/seed-users", status_code=http_status.HTTP_200_OK, response_model=SeedUsersResponse)
 def seed_users_endpoint(
     session: SessionDep,
-    current_user: AdminViaTokenDep,
+    admin_user: AdminUserDep,
 ) -> SeedUsersResponse:
     """
     Seed 60 test users (30 male, 30 female).
@@ -125,7 +126,7 @@ class SeedQuestionnairesResponse(BaseModel):
 )
 def seed_questionnaires_endpoint(
     session: SessionDep,
-    current_user: AdminViaTokenDep,
+    admin_user: AdminUserDep,
 ) -> SeedQuestionnairesResponse:
     """
     Seed questionnaires for users.
@@ -143,7 +144,7 @@ def seed_questionnaires_endpoint(
 @router.post("/matching/trigger", status_code=http_status.HTTP_200_OK)
 async def trigger_matching_all(
     session: SessionDep,
-    current_user: AdminViaTokenDep,
+    admin_user: AdminUserDep,
     background_tasks: BackgroundTasks,
 ) -> dict:
     """Trigger matching algorithm for all users (admin)."""
@@ -156,7 +157,7 @@ async def trigger_matching_all(
 async def trigger_matching_for_user(
     session: SessionDep,
     user_id: UUID,
-    current_user: AdminViaTokenDep,
+    admin_user: AdminUserDep,
 ) -> dict:
     """Trigger matching for a specific user (admin)."""
     matching_service = MatchingCronService(session)
@@ -168,7 +169,7 @@ async def trigger_matching_for_user(
 def admin_get_match_by_id(
     session: SessionDep,
     match_id: UUID,
-    current_user: AdminViaTokenDep,
+    admin_user: AdminUserDep,
 ) -> MatchOut:
     """Get a specific match by ID (admin)."""
     match = MatchService(session).get_match_by_id(match_id)
@@ -181,7 +182,7 @@ def admin_get_match_by_id(
 def admin_get_user_matches(
     request: Request,
     session: SessionDep,
-    current_user: AdminViaTokenDep,
+    admin_user: AdminUserDep,
     user_id: UUID,
     status: str | None = Query(None, description="Filter by match status"),
     page: int = Query(default=1, ge=1),
@@ -198,24 +199,32 @@ def admin_get_user_matches(
 def get_users(
     request: Request,
     session: SessionDep,
-    current_user: AdminViaTokenDep,
+    admin_user: AdminUserDep,
     search: str | None = Query(None, description="Search Query"),
     is_active: bool | None = Query(None, description="Filter by active status"),
+    is_deleted: bool | None = Query(None, description="Filter by deletion status"),
     is_verified: bool | None = Query(None, description="Filter by verification status"),
+    requested_deletion: bool | None = Query(None, description="Filter by Request Deletion"),
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=25, ge=1, le=100),
 ) -> Page[UserOut]:
     """
     Get all users (admin only)
     """
-    users = AdminService(session).get_users(search, is_active, is_verified)
+    users = AdminService(session).get_users(
+        search=search,
+        is_active=is_active,
+        is_deleted=is_deleted,
+        is_verified=is_verified,
+        requested_deletion=requested_deletion,
+    )
     return paginate(query=users, page=page, per_page=per_page, request=request)
 
 
 @router.get("/users/{user_id}", response_model=Optional[UserOut])
 def get_user(
     session: SessionDep,
-    current_user: AdminViaTokenDep,
+    admin_user: AdminUserDep,
     user_id: UUID,
 ) -> Optional[UserOut]:
     """
@@ -229,7 +238,7 @@ def get_user(
 @router.post("/users/{user_id}/ban", status_code=http_status.HTTP_200_OK)
 def ban_user(
     session: SessionDep,
-    current_user: AdminViaTokenDep,
+    admin_user: AdminUserDep,
     user_id: UUID,
     reason: str,
 ) -> Any:
@@ -243,11 +252,7 @@ def ban_user(
 
 
 @router.post("/users/{user_id}/unban", status_code=http_status.HTTP_200_OK)
-def unban_user(
-    session: SessionDep,
-    current_user: AdminViaTokenDep,
-    user_id: UUID,
-) -> Any:
+def unban_user(session: SessionDep, admin_user: AdminUserDep, user_id: UUID):
     """
     Unban a user (admin only)
     """
@@ -257,11 +262,53 @@ def unban_user(
     return {"message": "User unbanned successfully"}
 
 
+@router.get("/users/{user_id}/deactivate", response_model=UserOut)
+def deactivate_user(session: SessionDep, admin_user: AdminUserDep, user_id: UUID):
+    """
+    Deactivate a user account
+    """
+    user_service = UserService(session)
+    user = user_service.get_user_or_404(user_id)
+    return user_service.deactivate_user(user=user)
+
+
+@router.get("/users/{user_id}/activate", response_model=UserOut)
+def activate_user(session: SessionDep, admin_user: AdminUserDep, user_id: UUID):
+    """
+    Deactivate a user account
+    """
+    user_service = UserService(session)
+    user = user_service.get_user_or_404(user_id)
+    if user.is_deleted:
+        raise HTTPException(status_code=http_status.HTTP_400_BAD_REQUEST, detail="User Is Deleted")
+    return user_service.reactivate_user(user=user)
+
+
+@router.get("/users/{user_id}/delete")
+def delete_user(session: SessionDep, admin_user: AdminUserDep, user_id: UUID):
+    """
+    Soft Delete a user and its related resources
+    """
+    user_service = UserService(session)
+    user = user_service.get_user_or_404(user_id)
+    return user_service.delete_user(user=user)
+
+
+@router.get("/users/{user_id}/restore", response_model=UserOut)
+def restore_user(session: SessionDep, admin_user: AdminUserDep, user_id: UUID):
+    """
+    Restore a soft deleted user and its related resources
+    """
+    user_service = UserService(session)
+    user = user_service.get_user_or_404(user_id)
+    return user_service.restore_user(user=user)
+
+
 @router.get("/matches", response_model=Page[MatchOut])
 def get_matches(
     request: Request,
     session: SessionDep,
-    current_user: AdminViaTokenDep,
+    current_user: AdminUserDep,
     status: Optional[MatchStatus] = Query(None, description="Filter by match status"),
     min_compatibility: float = Query(
         None, ge=0, le=100, description="Filter by minimum compatibility score"
@@ -282,7 +329,7 @@ def get_matches(
 def get_journeys(
     request: Request,
     session: SessionDep,
-    current_user: AdminViaTokenDep,
+    current_user: AdminUserDep,
     current_step: int = Query(None, description="Filter by current step"),
     is_completed: bool = Query(None, description="Filter by completion status"),
     page: int = Query(default=1, ge=1),
@@ -298,7 +345,7 @@ def get_journeys(
 
 
 @router.get("/stats", status_code=http_status.HTTP_200_OK)
-def get_stats(session: SessionDep, current_user: AdminViaTokenDep) -> Any:
+def get_stats(session: SessionDep, current_user: AdminUserDep) -> Any:
     """
     Get system statistics (admin only)
     """
@@ -309,7 +356,7 @@ def get_stats(session: SessionDep, current_user: AdminViaTokenDep) -> Any:
 @router.post("/moderate/message/{message_id}", status_code=http_status.HTTP_200_OK)
 def moderate_message(
     session: SessionDep,
-    current_user: AdminViaTokenDep,
+    current_user: AdminUserDep,
     message_id: UUID,
     action: str,
     reason: str = None,

@@ -29,6 +29,7 @@ from app.schemas.auth import (
 )
 from app.schemas.user import UserOut
 from app.services.auth_service import AuthService
+from app.services.user_service import UserService
 from firebase import init_firebase
 
 router = APIRouter()
@@ -139,21 +140,48 @@ def update_phone_number(
 
 
 @router.post("/refresh-token", response_model=TokenResponse)
-def refresh_token(request: RefreshTokenRequest, db: SessionDep) -> Any:
+def refresh_token(request: RefreshTokenRequest, session: SessionDep) -> Any:
     """
     Refresh access token
     """
-    auth_service = AuthService(db)
+    auth_service = AuthService(session)
     return auth_service.refresh_tokens(request.refresh_token)
 
 
 @router.post("/logout", response_model=LogoutResponse)
-def logout(request: RefreshTokenRequest, db: SessionDep) -> Any:
+def logout(request: RefreshTokenRequest, session: SessionDep) -> Any:
     """
     Logout user by revoking refresh token
     """
-    auth_service = AuthService(db)
+    auth_service = AuthService(session)
     return auth_service.logout(request.refresh_token)
+
+
+@router.get("/deactivate", response_model=UserOut)
+def deactivate(session: SessionDep, current_user: VerifiedUserDep):
+    """
+    Deactivate the current user account
+    """
+    user_service = UserService(session)
+    return user_service.deactivate_user(user=current_user)
+
+
+@router.get("/request-deletion", response_model=UserOut)
+def request_user_deletion(session: SessionDep, current_user: VerifiedUserDep):
+    """
+    Request to soft delete the current user account
+    """
+    user_service = UserService(session)
+    return user_service.request_deletion(user=current_user)
+
+
+@router.get("/cancel-request-deletion", response_model=UserOut)
+def cancel_request_user_deletion(session: SessionDep, current_user: VerifiedUserDep):
+    """
+    Cancel Request to soft delete the current user account
+    """
+    user_service = UserService(session)
+    return user_service.cancel_request_deletion(user=current_user)
 
 
 @router.get("/test-token/{phone_number}")
