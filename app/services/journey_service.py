@@ -112,7 +112,7 @@ class JourneyService(BaseService):
 
         # Check step-specific requirements
         if journey.current_step == JourneyStep.STEP1_PRE_COMPATIBILITY:
-            # Pre-compatibility to Voice/Video Call
+            # Pre-compatibility to Photos Unlocked
             # Check if there are enough messages exchanged
             message_count = (
                 self.session.query(Message).filter(Message.journey_id == journey.id).count()
@@ -126,13 +126,14 @@ class JourneyService(BaseService):
             journey.step1_completed_at = utc_now()
 
         elif journey.current_step == JourneyStep.STEP2_PHOTOS_UNLOCKED:
-            # Photos Unlocked to Physical Meeting
+            # Photos Unlocked to Voice/Video Call
             # no checks required!
-            journey.step3_completed_at = utc_now()
+            journey.step2_completed_at = utc_now()
 
         elif journey.current_step == JourneyStep.STEP3_VOICE_VIDEO_CALL:
-            # Voice/Video Call to Photos Unlocked
-            journey.step2_completed_at = utc_now()
+            # Voice/Video Call to Physical Meeting
+            # TODO: validate video and voice call duration from twilio
+            journey.step3_completed_at = utc_now()
 
         elif journey.current_step == JourneyStep.STEP4_PHYSICAL_MEETING:
             # Physical Meeting to Meeting Feedback

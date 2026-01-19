@@ -177,6 +177,8 @@ def start_video(
             detail="User not related to this journey",
         )
 
+    # TODO: validate that journey step is 2 when trying twilio voice call
+
     room_name = str(journey_id)
     twilio_service = TwilioService()
 
@@ -230,7 +232,7 @@ async def twilio_voice_request(body: VoiceRequestBodyDep):
         service = MatchService(sess)
         try:
             match = service.get_match_by_users(caller, recipient)
-            # TODO: add validation for Journey Step
+            # TODO: validate that journey step is 2 when trying twilio voice call
         except Exception:
             match = None
 

@@ -9,8 +9,6 @@ services:
       - .:/app
     ports:
       - "8001:8000"
-    environment:
-      - ACCESS_TOKEN_EXPIRE_MINUTES=11520 # 8 days for testing
     depends_on:
       migrations:
         condition: service_completed_successfully
@@ -34,7 +32,7 @@ services:
       - ryvin-network
 
   db:
-    image: postgres:15-alpine
+    image: postgres:17-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
