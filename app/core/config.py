@@ -38,12 +38,6 @@ class Settings(BaseSettings):
     STORAGE_BACKEND: str = "local"  # Options: local, s3
     STORAGE_DIR: str = "media"  # For local storage
 
-    # S3 STORAGE (if used)
-    S3_BUCKET_NAME: Optional[str] = None
-    S3_ACCESS_KEY: Optional[str] = None
-    S3_SECRET_KEY: Optional[str] = None
-    S3_REGION: Optional[str] = None
-
     # Firebase Admin SDK Credentials
     FIREBASE_SERVICE_ACCOUNT_PATH: Optional[str] = None
     FIREBASE_API_KEY: Optional[str] = None
