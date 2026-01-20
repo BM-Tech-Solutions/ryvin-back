@@ -15,7 +15,8 @@ engine = create_engine(
     str(settings.DATABASE_URI),
     pool_size=10,
     max_overflow=5,
-    pool_recycle=3600,
+    pool_recycle=300,
+    pool_pre_ping=True,
     echo=False,
     future=True,
 )
