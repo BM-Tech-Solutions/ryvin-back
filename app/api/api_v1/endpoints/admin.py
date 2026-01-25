@@ -96,15 +96,12 @@ class SeedUsersResponse(BaseModel):
 
 
 @router.post("/seed-users", status_code=http_status.HTTP_200_OK, response_model=SeedUsersResponse)
-def seed_users_endpoint(
-    session: SessionDep,
-    admin_user: AdminUserDep,
-) -> SeedUsersResponse:
+def seed_users_endpoint(session: SessionDep, admin_user: AdminUserDep) -> SeedUsersResponse:
     """
     Seed 60 test users (30 male, 30 female).
     Also writes created_users.json for questionnaire seeding.
     """
-    users = create_test_users() or []
+    users = create_test_users(session) or []
     try:
         with open("created_users.json", "w", encoding="utf-8") as f:
             json.dump(users, f, ensure_ascii=False, indent=2, default=str)
@@ -125,8 +122,7 @@ class SeedQuestionnairesResponse(BaseModel):
     response_model=SeedQuestionnairesResponse,
 )
 def seed_questionnaires_endpoint(
-    session: SessionDep,
-    admin_user: AdminUserDep,
+    session: SessionDep, admin_user: AdminUserDep
 ) -> SeedQuestionnairesResponse:
     """
     Seed questionnaires for users.
@@ -134,10 +130,10 @@ def seed_questionnaires_endpoint(
     """
     # Prefer file-based seeding if file exists
     mode = "file"
-    success = seed_questionnaires_from_file()
+    success = seed_questionnaires_from_file(session)
     if not success:
         mode = "db"
-        success = seed_questionnaires_from_db()
+        success = seed_questionnaires_from_db(session)
     return SeedQuestionnairesResponse(success=bool(success), mode=mode)
 
 
