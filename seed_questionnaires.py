@@ -397,7 +397,7 @@ def seed_questionnaires_from_db(session: Session):
         for user in users:
             # Determine gender from email pattern or random
             gender = "homme" if created_count % 2 == 0 else "femme"
-            user_name = user.email.split("@")[0].replace(".", " ").title()
+            user_name = user.email or "Some User"
 
             questionnaire = create_questionnaire_for_user(session, user.id, gender, user_name)
             if questionnaire:
