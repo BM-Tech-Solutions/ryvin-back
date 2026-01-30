@@ -22,7 +22,6 @@ from app.services.matching_cron_service import MatchingCronService
 from app.services.user_service import UserService
 from seed_questionnaires import (
     seed_questionnaires_from_db,
-    seed_questionnaires_from_file,
 )
 
 # Import seeding utilities
@@ -130,14 +129,9 @@ def seed_questionnaires_endpoint(
 ) -> SeedQuestionnairesResponse:
     """
     Seed questionnaires for users.
-    Tries created_users.json first, falls back to seeding directly from DB.
     """
-    # Prefer file-based seeding if file exists
-    mode = "file"
-    success = seed_questionnaires_from_file(session)
-    if not success:
-        mode = "db"
-        success = seed_questionnaires_from_db(session)
+    mode = "db"
+    success = seed_questionnaires_from_db(session)
     return SeedQuestionnairesResponse(success=bool(success), mode=mode)
 
 
