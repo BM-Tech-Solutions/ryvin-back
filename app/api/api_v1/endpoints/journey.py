@@ -219,6 +219,7 @@ def create_meeting_request(
 
 @router.post(
     "/{journey_id}/meeting-requests/{meeting_request_id}/accept",
+    response_model=MeetingRequestOut,
     status_code=http_status.HTTP_200_OK,
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
@@ -227,18 +228,28 @@ def accept_meeting_request(
     current_user: VerifiedUserDep,
     journey_id: UUID,
     meeting_request_id: UUID,
-) -> Any:
+) -> MeetingRequestOut:
     """
-    Accept a meeting request (not implemented yet)
+    Accept a meeting request
     """
-    # meeting_service = MeetingService(session)
-    # meeting_service.accept_meeting_request(journey_id, meeting_request_id, current_user.id)
-
-    return {"message": "not implemented yet"}
+    meeting_service = MeetingService(session)
+    meeting_request = meeting_service.get_meeting_request_by_id(meeting_request_id)
+    if not meeting_request or meeting_request.journey_id != journey_id:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail="Meeting request not found",
+        )
+    if meeting_request.requested_by == current_user.id:
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="You cannot accept your own meeting request",
+        )
+    return meeting_service.respond_to_meeting_request(meeting_request, current_user.id, accept=True)
 
 
 @router.post(
     "/{journey_id}/meeting-requests/{meeting_request_id}/decline",
+    response_model=MeetingRequestOut,
     status_code=http_status.HTTP_200_OK,
     openapi_extra={"security": [{"APIKeyHeader": [], "HTTPBearer": []}]},
 )
@@ -247,14 +258,23 @@ def decline_meeting_request(
     current_user: VerifiedUserDep,
     journey_id: UUID,
     meeting_request_id: UUID,
-) -> Any:
+) -> MeetingRequestOut:
     """
-    Decline a meeting request (not implemented yet)
+    Decline a meeting request
     """
-    # meeting_service = MeetingService(session)
-    # meeting_service.decline_meeting_request(journey_id, meeting_request_id, current_user.id)
-
-    return {"message": "not implemented yet"}
+    meeting_service = MeetingService(session)
+    meeting_request = meeting_service.get_meeting_request_by_id(meeting_request_id)
+    if not meeting_request or meeting_request.journey_id != journey_id:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail="Meeting request not found",
+        )
+    if meeting_request.requested_by == current_user.id:
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="You cannot decline your own meeting request",
+        )
+    return meeting_service.respond_to_meeting_request(meeting_request, current_user.id, accept=False)
 
 
 # Meeting Feedback
