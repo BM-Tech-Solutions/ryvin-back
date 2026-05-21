@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.security import utc_now
 from app.models.enums import MeetingStatus
+from app.schemas.user import UserOut
 
 
 class MeetingRequestBase(BaseModel):
@@ -95,7 +96,7 @@ class MeetingRequestOut(MeetingRequestInDBBase):
     Schema for meeting request response
     """
 
-    pass
+    requester: Optional[UserOut] = None
 
 
 class MeetingFeedbackBase(BaseModel):
