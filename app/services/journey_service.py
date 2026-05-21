@@ -434,8 +434,8 @@ class MeetingService(BaseService):
 
         # Update status
         meeting_request.status = MeetingStatus.ACCEPTED if accept else MeetingStatus.REJECTED
-        meeting_request.responded_at = utc_now()
-        meeting_request.responder_id = user_id
+        if accept:
+            meeting_request.confirmed_at = utc_now()
 
         self.session.commit()
         self.session.refresh(meeting_request)
@@ -443,7 +443,7 @@ class MeetingService(BaseService):
         # Send notification to requester
         requester = self.session.get(User, meeting_request.requested_by)
         if requester:
-            NotificationService().send_meeting_response_notification(
+            NotificationService(self.session).send_meeting_response_notification(
                 requester, meeting_request, accept
             )
 
