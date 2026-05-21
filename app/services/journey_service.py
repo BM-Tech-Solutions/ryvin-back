@@ -413,7 +413,7 @@ class MeetingService(BaseService):
 
             if other_user and requester:
                 requester_name = requester.questionnaire.first_name or "Your Match"
-                NotificationService().send_meeting_request_notification(
+                NotificationService(self.session).send_meeting_request_notification(
                     other_user, meeting_request, requester_name
                 )
 
