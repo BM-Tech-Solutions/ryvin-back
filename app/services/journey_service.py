@@ -393,7 +393,7 @@ class MeetingService(BaseService):
         # Create meeting request
         meeting_request = MeetingRequest(
             journey_id=journey_id,
-            requester_id=requester_id,
+            requested_by=requester_id,
             proposed_date=meeting_data.proposed_date,
             proposed_location=meeting_data.proposed_location,
             status=MeetingStatus.PROPOSED,

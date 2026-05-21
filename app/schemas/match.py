@@ -7,6 +7,16 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.models.enums import MatchStatus
 
 
+class MatchUserOut(BaseModel):
+    """Minimal user info embedded in match responses"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    name: Optional[str] = None
+    profile_image: Optional[str] = None
+
+
 class MatchBase(BaseModel):
     """
     Base schema for match data
@@ -111,12 +121,14 @@ class MatchOut(BaseModel):
     user1_accepted: bool = Field(default=False)
     user2_accepted: bool = Field(default=False)
     journey_id: Optional[UUID] = Field(default=None, description="ID of the journey created when both users accept the match")
-    
+    user1: Optional[MatchUserOut] = None
+    user2: Optional[MatchUserOut] = None
+
     @classmethod
     def from_match(cls, match):
         """Create MatchOut from Match model, including journey_id if available"""
         journey_id = match.journey.id if match.journey else None
-        
+
         return cls(
             id=match.id,
             user1_id=match.user1_id,
@@ -127,5 +139,7 @@ class MatchOut(BaseModel):
             updated_at=match.updated_at,
             user1_accepted=match.user1_accepted,
             user2_accepted=match.user2_accepted,
-            journey_id=journey_id
+            journey_id=journey_id,
+            user1=MatchUserOut.model_validate(match.user1) if match.user1 else None,
+            user2=MatchUserOut.model_validate(match.user2) if match.user2 else None,
         )

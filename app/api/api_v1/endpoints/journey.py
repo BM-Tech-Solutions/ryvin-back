@@ -44,7 +44,9 @@ def get_journeys(
     journeys = journey_service.get_journeys(
         user_id=current_user.id, current_step=current_step, is_completed=is_completed
     )
-    return paginate(query=journeys, page=page, per_page=per_page, request=request)
+    page = paginate(query=journeys, page=page, per_page=per_page, request=request)
+    page.items = [JourneyOut.from_journey(j) for j in page.items]
+    return page
 
 
 @router.get(
@@ -67,7 +69,7 @@ def get_journey(
             status_code=http_status.HTTP_404_NOT_FOUND,
             detail=f"Journey with ID '{journey_id}' not found",
         )
-    return journey
+    return JourneyOut.from_journey(journey)
 
 
 @router.post(

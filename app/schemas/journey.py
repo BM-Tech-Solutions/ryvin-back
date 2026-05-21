@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.enums import JourneyStep
+from app.schemas.match import MatchOut
 
 
 class JourneyBase(BaseModel):
@@ -111,3 +112,25 @@ class JourneyOut(BaseModel):
     end_reason: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    match: Optional[MatchOut] = None
+
+    @classmethod
+    def from_journey(cls, journey) -> "JourneyOut":
+        return cls(
+            id=journey.id,
+            match_id=journey.match_id,
+            user1_accepted=journey.match.user1_accepted if journey.match else False,
+            user2_accepted=journey.match.user2_accepted if journey.match else False,
+            current_step=journey.current_step,
+            is_completed=journey.is_completed,
+            step1_completed_at=journey.step1_completed_at,
+            step2_completed_at=journey.step2_completed_at,
+            step3_completed_at=journey.step3_completed_at,
+            step4_completed_at=journey.step4_completed_at,
+            step5_completed_at=journey.step5_completed_at,
+            ended_by=journey.ended_by,
+            end_reason=journey.end_reason,
+            created_at=journey.created_at,
+            updated_at=journey.updated_at,
+            match=MatchOut.from_match(journey.match) if journey.match else None,
+        )
