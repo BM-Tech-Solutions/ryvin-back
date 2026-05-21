@@ -69,6 +69,13 @@ class CompleteProfileRequest(BaseModel):
     email: EmailStr | None = None
     profile_image: UploadFile | None = None
 
+    @field_validator("profile_image", mode="before")
+    @classmethod
+    def empty_str_to_none(cls, v):
+        if v == "" or v is None:
+            return None
+        return v
+
 
 class CompleteProfileResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
