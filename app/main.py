@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import ResponseValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
@@ -130,7 +131,7 @@ async def pydantic_validation_error_handler(request, exc: ValidationError):
 
 @app.exception_handler(ResponseValidationError)
 async def response_validation_error_handler(request, exc: ResponseValidationError):
-    return JSONResponse({"detail": exc.errors()}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    return JSONResponse(jsonable_encoder({"detail": exc.errors()}), status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # Import and include API routers
