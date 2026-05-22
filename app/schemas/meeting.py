@@ -30,19 +30,17 @@ class MeetingRequestBase(BaseModel):
             )
         return v
 
-    @field_validator("proposed_date")
-    def validate_proposed_date(cls, v):
-        if v < utc_now():
-            raise ValueError("Proposed date must be in the future")
-        return v
-
 
 class MeetingRequestCreate(MeetingRequestBase):
     """
     Schema for meeting request creation
     """
 
-    pass
+    @field_validator("proposed_date")
+    def validate_proposed_date(cls, v):
+        if v < utc_now():
+            raise ValueError("Proposed date must be in the future")
+        return v
 
 
 class MeetingRequestUpdate(BaseModel):
