@@ -104,6 +104,30 @@ class MatchInDB(MatchInDBBase):
     pass
 
 
+class JourneyBasicOut(BaseModel):
+    """
+    Journey schema embedded in MatchOut (no match field to avoid circular reference)
+    """
+
+    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
+
+    id: UUID
+    match_id: UUID
+    user1_accepted: bool
+    user2_accepted: bool
+    current_step: int
+    is_completed: bool
+    step1_completed_at: Optional[datetime] = None
+    step2_completed_at: Optional[datetime] = None
+    step3_completed_at: Optional[datetime] = None
+    step4_completed_at: Optional[datetime] = None
+    step5_completed_at: Optional[datetime] = None
+    ended_by: Optional[UUID] = None
+    end_reason: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+
 class MatchOut(BaseModel):
     """
     Schema for detailed match response with user information
@@ -123,11 +147,13 @@ class MatchOut(BaseModel):
     journey_id: Optional[UUID] = Field(default=None, description="ID of the journey created when both users accept the match")
     user1: Optional[MatchUserOut] = None
     user2: Optional[MatchUserOut] = None
+    journey: Optional[JourneyBasicOut] = None
 
     @classmethod
     def from_match(cls, match):
-        """Create MatchOut from Match model, including journey_id if available"""
-        journey_id = match.journey.id if match.journey else None
+        """Create MatchOut from Match model, including journey if available"""
+        journey = match.journey
+        journey_out = JourneyBasicOut.model_validate(journey) if journey else None
 
         return cls(
             id=match.id,
@@ -139,7 +165,8 @@ class MatchOut(BaseModel):
             updated_at=match.updated_at,
             user1_accepted=match.user1_accepted,
             user2_accepted=match.user2_accepted,
-            journey_id=journey_id,
+            journey_id=journey.id if journey else None,
             user1=MatchUserOut.model_validate(match.user1) if match.user1 else None,
             user2=MatchUserOut.model_validate(match.user2) if match.user2 else None,
+            journey=journey_out,
         )

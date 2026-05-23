@@ -225,8 +225,8 @@ class JourneyService(BaseService):
         user2 = self.session.get(User, match.user2_id)
 
         if user1 and user2:
-            NotificationService().send_journey_ended_notification(user1, journey, reason)
-            NotificationService().send_journey_ended_notification(user2, journey, reason)
+            NotificationService(self.session).send_journey_ended_notification(user1, journey, reason)
+            NotificationService(self.session).send_journey_ended_notification(user2, journey, reason)
 
         return journey
 
